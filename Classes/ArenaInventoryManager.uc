@@ -1,0 +1,323 @@
+/*******************************************************************************
+	ArenaInventoryManager
+
+	Creation date: 06/07/2012 01:27
+	Copyright (c) 2012, Trystan
+	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
+*******************************************************************************/
+
+class ArenaInventoryManager extends InventoryManager;
+
+var ArenaAbility PendingAbility;
+
+/**
+ * Switches to Previous weapon
+ * Network: Client
+ */
+simulated function PrevAbility()
+{
+	local ArenaAbility candidate, start, iter;
+
+	start = ArenaPawn(Instigator).ActiveAbility;
+	
+	if (PendingAbility != None )
+	{
+		start = PendingAbility;
+	}
+
+	// Get previous
+	ForEach InventoryActors(class'ArenaAbility', iter)
+	{
+		if (iter == start)
+		{
+			break;
+		}
+		
+		candidate = iter;
+	}
+
+	// if none found, get last
+	if (candidate == None)
+	{
+		ForEach InventoryActors( class'ArenaAbility', iter )
+		{
+			candidate = iter;
+		}
+	}
+
+	// If same weapon, do not change
+	if (candidate == ArenaPawn(Instigator).ActiveAbility)
+	{
+		return;
+	}
+
+	SetCurrentAbility(candidate);
+}
+
+
+/**
+ * Switches to Next weapon
+ * Network: Client
+ */
+simulated function NextAbility()
+{
+	local ArenaAbility start, candidate, iter;
+	local bool bBreakNext;
+
+	start = ArenaPawn(Instigator).ActiveAbility;
+	
+	if (PendingAbility != None)
+	{
+		start = PendingAbility;
+	}
+
+	ForEach InventoryActors(class'ArenaAbility', iter)
+	{
+		if (bBreakNext || (start == None))
+		{
+			candidate = iter;
+			break;
+		}
+		if (iter == start)
+		{
+			bBreakNext = true;
+		}
+	}
+
+	if (candidate == None)
+	{
+		ForEach InventoryActors(class'ArenaAbility', iter)
+		{
+			candidate = iter;
+			break;
+		}
+	}
+	// If same weapon, do not change
+	if (candidate == ArenaPawn(Instigator).ActiveAbility)
+	{
+		return;
+	}
+
+	SetCurrentAbility(candidate);
+}
+
+
+/**
+ * Set DesiredWeapon as Current (Active) Weapon.
+ * Network: LocalPlayer
+ *
+ * @param	DesiredWeapon, Desired weapon to assign to player
+ */
+reliable client function SetCurrentAbility(ArenaAbility desired)
+{
+	// Switch to this weapon
+	InternalSetCurrentAbility(desired);
+
+	// Tell the server we have changed the pending weapon
+	if( Role < Role_Authority )
+	{
+		ServerSetCurrentAbility(desired);
+	}
+}
+
+simulated function PrevWeapon()
+{
+	local ArenaWeapon	CandidateWeapon, StartWeapon, W;
+
+	StartWeapon = ArenaWeapon(Instigator.Weapon);
+	if ( PendingWeapon != None )
+	{
+		StartWeapon = ArenaWeapon(PendingWeapon);
+	}
+
+	// Get previous
+	ForEach InventoryActors( class'ArenaWeapon', W )
+	{
+		if ( W == StartWeapon )
+		{
+			break;
+		}
+		CandidateWeapon = W;
+	}
+
+	// if none found, get last
+	if ( CandidateWeapon == None )
+	{
+		ForEach InventoryActors( class'ArenaWeapon', W )
+		{
+			CandidateWeapon = W;
+		}
+	}
+
+	// If same weapon, do not change
+	if ( CandidateWeapon == Instigator.Weapon )
+	{
+		return;
+	}
+
+	SetCurrentWeapon(CandidateWeapon);
+}
+
+simulated function NextWeapon()
+{
+	local ArenaWeapon	StartWeapon, CandidateWeapon, W;
+	local bool		bBreakNext;
+
+	StartWeapon = ArenaWeapon(Instigator.Weapon);
+	
+	if( PendingWeapon != None )
+	{
+		StartWeapon = ArenaWeapon(PendingWeapon);
+	}
+
+	ForEach InventoryActors( class'ArenaWeapon', W )
+	{
+		if( bBreakNext || (StartWeapon == None) )
+		{
+			CandidateWeapon = W;
+			break;
+		}
+		if( W == StartWeapon )
+		{
+			bBreakNext = true;
+		}
+	}
+
+	if( CandidateWeapon == None )
+	{
+		ForEach InventoryActors( class'ArenaWeapon', W )
+		{
+			CandidateWeapon = W;
+			break;
+		}
+	}
+	// If same weapon, do not change
+	if( CandidateWeapon == Instigator.Weapon )
+	{
+		return;
+	}
+
+	SetCurrentWeapon(CandidateWeapon);
+}
+
+/**
+ * ServerSetCurrentWeapon begins the Putdown sequence on the server.  This function makes
+ * the assumption that if TryPutDown succeeded on the client, it will succeed on the server.
+ * This function shouldn't be called from anywhere except SetCurrentWeapon
+ *
+ * Network: Dedicated Server
+ */
+reliable server function ServerSetCurrentAbility(ArenaAbility desired)
+{
+	InternalSetCurrentAbility(desired);
+}
+
+simulated private function InternalSetCurrentAbility(ArenaAbility desired)
+{
+	local ArenaAbility prev;
+
+	prev = ArenaPawn(Instigator).ActiveAbility;
+
+	`LogInv("Prev Ability:" @ prev @ "Desired Ability:" @ desired);
+
+	// Make sure we are switching to a new weapon
+	// Handle the case where we're selecting again a weapon we've just deselected
+	if (prev != None && desired == prev)
+	{
+		return;
+	}
+
+	// Set the new weapon as pending
+	PendingAbility = desired;
+
+	// if there is an old weapon handle it first.
+	//if (prev != None && prev != desired && !prev.bDeleteMe && !prev.IsInState('Inactive') )
+	//{
+		// Try to put the weapon down.
+		//`LogInv("Try to put down previous ability first.");
+		//prev.TryPutdown();
+	//}
+	//else
+	//{
+		// We don't have a weapon, force the call to ChangedWeapon
+		ChangedAbility();
+	//}
+}
+
+/**
+ * ChangedAbility is called when the current ability is finished being deactivated
+ */
+simulated function ChangedAbility()
+{
+	local ArenaAbility old;
+
+	// Save current weapon as old weapon
+	old = ArenaPawn(Instigator).ActiveAbility;
+
+	// Make sure we can switch to a null weapon, otherwise, reactivate the current weapon
+	`LogInv(`showvar(PendingAbility)@`showvar(bMustHoldWeapon));
+	
+	//if (PendingAbility == None && bMustHoldWeapon)
+	//{
+		//if (old != None)
+		//{
+			//old.Activate();
+			//PendingAbility = old;
+		//}
+	//}
+
+	`LogInv("switch from" @ old @ "to" @ PendingAbility);
+
+	// switch to Pending Weapon
+	ArenaPawn(Instigator).ActiveAbility = PendingAbility;
+
+	// Play any Weapon Switch Animations
+	//Instigator.PlayWeaponSwitch(old, PendingAbility);
+
+	// If we are going to an actual weapon, activate it.
+	if (PendingAbility != None)
+	{
+		// Setup the Weapon
+		PendingAbility.Instigator = Instigator;
+
+		// Make some noise
+		if (WorldInfo.Game != None)
+		{
+			//Instigator.MakeNoise( 0.1, 'ChangedWeapon' );
+		}
+
+		// Activate the Weapon
+		PendingAbility.Activate();
+		PendingAbility = None;
+	}
+
+	// Notify of a weapon change
+	if (Instigator.Controller != None)
+	{
+		//Instigator.Controller.NotifyChangedWeapon(old, Instigator.Weapon);
+	}
+}
+
+/*
+ * Gets the summed weight of all of the weapons in the inventory.
+ *
+ * @return Returns the total weight of the weapons in the inventory.
+ */
+function float GetInventoryWeight()
+{
+	local WeaponBase iter;
+	local float weight;
+	
+	foreach InventoryActors(class'WeaponBase', iter)
+	{
+		weight += iter.GetWeight();
+	}
+	
+	return weight;
+}
+
+defaultproperties
+{
+	PendingFire(0)=0
+	PendingFire(1)=0
+}
