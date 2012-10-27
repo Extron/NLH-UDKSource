@@ -12,7 +12,7 @@ abstract;
 defaultproperties
 {
 	WeaponFireTypes(0)=EWFT_InstantHit
-	InstantHitDamageTypes(0)=class'Arena.ShockDamage'
+	InstantHitDamageTypes(0)=class'Arena.Dmg_Shock'
 	InstantHitMomentum(0)=+0.0
 	
 	CanHold=false

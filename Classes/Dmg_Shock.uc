@@ -1,16 +1,15 @@
 /*******************************************************************************
-	ChargedEffect
+	ShockDamage
 
-	Creation date: 08/07/2012 20:39
+	Creation date: 24/06/2012 17:50
 	Copyright (c) 2012, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class ChargedEffect extends EnvironmentEffect;
+class Dmg_Shock extends AbilityDamageType;
 
 defaultproperties
 {
-	Properties(0)="Conductive"
-	StatusEffects(0)=class'Arena.ElectrocutedEffect'
-	Duration=15
+	EnvironmentEffects[0]=class'Arena.EE_Charged'
+	StatusEffects[0]=class'Arena.SE_Electrocuted'
 }

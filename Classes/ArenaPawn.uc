@@ -8,12 +8,6 @@
 
 class ArenaPawn extends UDKPawn;
 
-/* The maximum health a player has by default. */
-const PlayerMaxHealth = 1000;
-
-/* The maximum energy a player has by default. */
-const PlayerMaxEnergy = 1000;
-
 
 /* The list of active effects that the player has. */
 var Array<StatusEffect> ActiveEffects;
@@ -74,22 +68,40 @@ replication
 		Stats, initInv;
 }
 
+
+/**
+ * Calculates the player's camera location based on the location of the pawn.
+ *
+ * @param fDeltaTime - The time difference since the last update.
+ * @param out_CamLoc - The resulting camera location.
+ * @param out_CamRot - The relulting camera rotation.
+ * @param out_FOV - The resulting FOV.
+ * @returns Returns whether or not the pawn can modify the camera.
+ */
 simulated function bool CalcCamera( float fDeltaTime, out vector out_CamLoc, out rotator out_CamRot, out float out_FOV )
 {
 	GetActorEyesViewPoint(out_CamLoc, out_CamRot);
 	return true;
 }
 
-simulated function Tick(float DeltaTime)
+/** 
+ * Ticks the pawn.
+ *
+ * @param dt - The amount of time that has passed since the last update.
+ */
+simulated function Tick(float dt)
 {
 	local float healthRate;
 	local float energyRate;
 	local float staminaRate;
+	local int i;
+	
+	//super.Tick(dt);
 	
 	if (CanRegenHealth && Health < HealthMax) 
 	{
 		healthRate = Stats.GetHealingRate();
-		FHealth = FHealth + 50 * healthRate * DeltaTime;
+		FHealth = FHealth + 50 * healthRate * dt;
 		
 		Health = FHealth;
 		
@@ -103,7 +115,7 @@ simulated function Tick(float DeltaTime)
 	if (CanRegenEnergy && Energy < EnergyMax) 
 	{
 		energyRate = Stats.GetEnergyRate();
-		Energy = Energy + (energyRate / DeltaTime);
+		Energy = Energy + (energyRate / dt);
 		
 		if (Energy > EnergyMax)
 		{
@@ -115,7 +127,7 @@ simulated function Tick(float DeltaTime)
 	if (CanRegenStamina && Stamina < StaminaMax) 
 	{
 		staminaRate = Stats.GetStaminaRate();
-		Stamina = Stamina + (staminaRate / DeltaTime);
+		Stamina = Stamina + (staminaRate / dt);
 		
 		if (Stamina > StaminaMax)
 		{
@@ -130,7 +142,7 @@ simulated function Tick(float DeltaTime)
 	{
 		MovementSpeedModifier *= Stats.GetSprintSpeed();
 		
-		SpendStamina(DeltaTime * StaminaMax);
+		SpendStamina(dt * StaminaMax);
 		
 		if (Stamina <= 0)
 		{
@@ -141,6 +153,19 @@ simulated function Tick(float DeltaTime)
 	if (ArenaWeapon(Weapon) != None)
 	{
 		ArenaWeapon(Weapon).SetPosition(Self);
+	}
+	
+	for (i = 0; i < ActiveEffects.Length; i++)
+	{
+		ActiveEffects[i].Tick(dt);
+	}
+	
+	if (ArenaInventoryManager(InvManager) != None)
+	{
+		for (i = 0; i < ArenaInventoryManager(InvManager).Abilities.Length; i++)
+		{
+			ArenaInventoryManager(InvManager).Abilities[i].Tick(dt);
+		}
 	}
 }
 
@@ -175,6 +200,29 @@ simulated function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, in
 	
 	CanRegenHealth = false;
 	SetTimer(Stats.GetRegenHealthDelay(), false, 'AllowRegenHealth');
+}
+
+simulated function HitWall(Vector HitNormal, Actor Wall, PrimitiveComponent WallComp)
+{	
+	super.HitWall(HitNormal, Wall, WallComp);
+	
+	if (IEnvObj(Wall) != None)
+	{
+		IEnvObj(Wall).TouchPawn(self);
+	}
+}
+
+simulated function Bump(Actor other, PrimitiveComponent otherComp, Vector hitNormal)
+{
+	local int i;
+	
+	if (ArenaPawn(other) != None && ArenaInventoryManager(InvManager) != None)
+	{
+		for (i = 0; i < ArenaInventoryManager(InvManager).Abilities.Length; i++)
+		{
+			ArenaInventoryManager(InvManager).Abilities[i].ProcessHitPawn(ArenaPawn(other));
+		}
+	}
 }
 
 function AddVelocity(vector newVel, vector hitLoc, class<DamageType> damageType, optional TraceHitInfo hitInfo)
@@ -263,6 +311,29 @@ simulated function AimDownSights()
 	ADS = true;
 }
 
+simulated function Melee()
+{
+	local vector x, y, z, hitloc, momentum;
+	local ArenaPawn target;
+
+	GetAxes(GetViewRotation(), x, y, z);
+
+	foreach VisibleCollidingActors(class'ArenaPawn', target, Stats.GetMeleeRange(), Location)
+	{
+		hitloc = target.Location + (target.Location - Location);
+
+		target.TakeDamage(Stats.GetMeleeDamage(), ArenaPlayerController(Owner), hitloc, Normal(x), None);
+
+		//momentum = (traget.Location - Location) * 1000/target.Mass;
+		//Other.Velocity += momentum;
+	}
+}
+
+simulated function RebootElectronics(ArenaPawn pawn)
+{
+	//TODO: Reboot electronics of the player here.
+}
+
 simulated function ReplicatedEvent(name property)
 {
 	if (property == nameof(InvManager))
@@ -298,7 +369,7 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		CreateInventory(class'Arena.Ab_Deflection', true);
+		CreateInventory(class'Arena.Ab_ChargedShock', true);
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
 }
@@ -361,6 +432,11 @@ simulated function SpendStamina(float StaminaAmount)
 	}
 }
 
+simulated function bool CanSpendEnergy(float energyAmount)
+{
+	return Stats.GetEnergyCost(energyAmount) <= Energy;
+}
+
 /*
  * Adds a status effect to the player. 
  */
@@ -373,6 +449,11 @@ simulated function AddEffect(StatusEffect effect)
 simulated function RemoveEffect(StatusEffect effect)
 {
 	ActiveEffects.RemoveItem(effect);
+}
+
+simulated function AddStatMod(PlayerStatModifier mod)
+{
+	Stats.AddModifier(mod);
 }
 
 simulated function AllowRegenHealth()
@@ -389,42 +470,6 @@ simulated function AllowRegenEnergy()
 simulated function AllowRegenStamina()
 {
 	CanRegenStamina = true;
-}
-
-simulated function HitWall(Vector HitNormal, Actor Wall, PrimitiveComponent WallComp)
-{	
-	local EnvironmentEffect e;
-	local class<StatusEffect> sClass;
-	local StatusEffect s;
-	local int i;
-	local int j;
-	
-	super.HitWall(HitNormal, Wall, WallComp);
-	
-	if (EnvironmentObject(Wall) != None)
-	{
-		for (i = 0; i < EnvironmentObject(Wall).ActiveEffects.Length; i++)
-		{
-			e = EnvironmentObject(Wall).ActiveEffects[i];
-			
-			for (j = 0; j < e.StatusEffects.Length; j++)
-			{
-				sClass = e.StatusEffects[i];
-				
-				if (!HasStatus(e.Affector, sClass.Default.EffectName, s))
-				{
-					`log("You have been affected.");
-					s = spawn(sClass, Self);
-					s.Affector = e.Affector;
-					AddEffect(s);
-				}
-				else
-				{
-					s.ExtendEffect();
-				}
-			}
-		}
-	}
 }
 
 function bool HasStatus(ArenaPlayerController player, string effectName, out StatusEffect effect)
@@ -445,13 +490,6 @@ function bool HasStatus(ArenaPlayerController player, string effectName, out Sta
 	
 	effect = None;
 	return false;
-}
-
-exec function SetMobility(float m)
-{
-	Stats.Mobility = m;
-	`log("Turn Factor" @ Stats.GetLookFactor());
-	`log("MovementSpeed" @ Stats.GetMovementSpeed());
 }
 
 exec function KillMe()
@@ -581,6 +619,12 @@ defaultproperties
 	Energy=1000
 	Stamina=1000
 	StaminaMax=1000
+	
+	EyeHeight=64
+	
+	CrouchHeight=40.0
+	CrouchRadius=21.0
+	bCanCrouch=true
 	
 	initInv=True
 }

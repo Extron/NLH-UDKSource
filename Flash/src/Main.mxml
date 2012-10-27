@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   minWidth="955" minHeight="600"
+			   backgroundColor="black">
+	
+	<!-- Launch your application by right clicking within this class and select Debug As > FDT SWF Application -->
+	<mx:Label id="VersionLabel" text="Arena Alpha Build 0.0.0.1" color="white" fontSize="20"/>
+	<mx:Label id="TitleLabel" text="Arena" color="red" fontSize="56" x="477" y="300"/>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</s:Application>

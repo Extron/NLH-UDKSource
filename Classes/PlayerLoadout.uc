@@ -8,12 +8,41 @@
 
 class PlayerLoadout extends Object;
 
-/* The schematic of the weapon to use with this loadout. */
+enum PlayerModel
+{
+	PMPurebreed,
+	PMHybrid,
+	PMMutt
+};
+
+/**
+ * The schematic of the weapon to use with this loadout. 
+ */
 var WeaponSchematic Weapon;
 
-/* The name of the loadout. */
+/**
+ * The ability class of the player.
+ */
+var class<PlayerClass> AbilityClass;
+
+/** 
+ * The name of the loadout.
+ */
 var string LoadoutName;
+
+/**
+ * The model that the loadout uses.
+ */
+var PlayerModel Model;
+
+
+simulated function InitializeLoadout(ArenaPlayerController player)
+{	
+	ArenaPawn(player.Pawn).AddStatMod(AbilityClass.Default.Mod);
+}
 
 defaultproperties
 {
+	LoadoutName="Custom Loadout"
+	AbilityClass=class'Arena.PC_Electricity'
 }

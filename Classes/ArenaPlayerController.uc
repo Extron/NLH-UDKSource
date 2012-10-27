@@ -8,8 +8,15 @@
 
 class ArenaPlayerController extends UDKPlayerController;
 
+
+
 /* The current loadout that the player is using. */
 var PlayerLoadout Loadout;
+
+/**
+ * The default location (without ADS).
+  */
+var vector DefaultLoc;
 
 /* The viewpoint offset to use when aiming down the sights. */
 var vector ADSOffset;
@@ -19,6 +26,9 @@ var vector DesiredADSOffset;
 
 /* The vector to use to accelerate the pawn in the next player tick. */
 var vector RushDestination;
+
+/** Gets the amount of time since the player has been dead. */
+var float TimeDead;
 
 /* Indicates that the player is in the process of aiming down the sights. */
 var bool Aiming;
@@ -30,6 +40,8 @@ var bool FiringAbility;
 
 /* Indicates that the pawn will be accelerated on the next player tick. */
 var bool AccelPawn;
+
+
 
 simulated function ReceivedGameClass(class<GameInfo> GameClass)
 {
@@ -46,7 +58,7 @@ simulated function ReceivedGameClass(class<GameInfo> GameClass)
 function Possess(Pawn newPawn, bool bVehicleTransition)
 {
 	super.Possess(newPawn, bVehicleTransition);
-	
+
 	newPawn.GoToState('Idle');
 }
 
@@ -69,6 +81,8 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 {
 	super.GetPlayerViewPoint(loc, rot);
 	
+	DefaultLoc = loc;
+	
 	if (ArenaPawn(Pawn) != None && Role < Role_Authority)
 	{
 		//rot += ArenaPawn(Pawn).GetRecoil();
@@ -77,6 +91,16 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 		{
 			loc += (ADSOffset >> rot);
 		}
+	}
+}
+
+function CheckJumpOrDuck()
+{
+	super.CheckJumpOrDuck();
+	
+	if(Pawn != None && (Pawn.Physics != PHYS_Falling && Pawn.bCanCrouch))
+	{
+		Pawn.ShouldCrouch(bDuck != 0);
 	}
 }
 
@@ -99,11 +123,14 @@ exec function ADS()
 
 simulated function PlayerTick(float DeltaTime)
 {
+	local float t;
+	
 	super.PlayerTick(DeltaTime);
 	
 	if (Aiming)
 	{
-		ADSOffset += DesiredADSOffset * DeltaTime / ArenaPawn(Pawn).Stats.GetADSSpeed() * ADSDirection;
+		t = 1 - GetRemainingTimeForTimer('AimingComplete') / ArenaPawn(Pawn).Stats.GetADSSpeed();
+		ADSOffset = DesiredADSOffset * t;
 	}
 }
 
@@ -112,13 +139,14 @@ simulated function ReplicatedEvent(name property)
 	if (property == nameof(Pawn))
 	{
 		if (ArenaPawn(Pawn) != None)
-		{
-			`log("Pawn is not None");
-		
+		{		
 			ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
-			
+				
+			Loadout.InitializeLoadout(self);
+	
 			if (Role < Role_Authority)
 			{
+				`log("Replicating event");
 				ServerInitializePlayerStats();
 			}
 		}
@@ -162,6 +190,51 @@ state PlayerWalking
 			}
 		}
 		
+	}
+}
+
+state Dead
+{
+	event BeginState(name prev)
+	{
+		if ((Pawn != None) && (Pawn.Controller == self))
+			Pawn.Controller = None;
+
+		Pawn = None;
+		FOVAngle = DesiredFOV;
+		Enemy = None;
+		bFrozen = true;
+		bPressedJump = false;
+		
+		FindGoodView();
+	    SetTimer(ArenaGRI(WorldInfo.GRI).RespawnTime, false);
+		CleanOutSavedMoves();
+	}
+	
+	event Timer()
+	{
+		if (!bFrozen)
+			return;
+
+		bFrozen = false;
+		bPressedJump = false;
+		
+		if (ArenaGRI(WorldInfo.GRI).ForceRespawn)
+				ServerReStartPlayer();
+	}
+	
+	exec function StartFire( optional byte FireModeNum )
+	{
+		if (bFrozen)
+		{
+			if (!IsTimerActive() || GetTimerCount() > ArenaGRI(WorldInfo.GRI).RespawnTime)
+				bFrozen = false;
+				
+			return;
+		}
+
+		if (ArenaGRI(WorldInfo.GRI).AllowFastRespawn)
+			ServerReStartPlayer();
 	}
 }
 

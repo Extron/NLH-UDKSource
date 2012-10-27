@@ -26,7 +26,9 @@ defaultproperties
 	WeaponFireTypes(0)=EWFT_Projectile
 	InstantHitDamageTypes(0)=None
 	WeaponProjectiles(0)=class'Arena.RifleBullet'
-	Mode=FMFullAuto
+	Mode=FMSemiAuto
+	CycleTime=0.25
+	BurstCount=3
 	
 	FireSound=SoundCue'A_Weapon_Link.Cue.A_Weapon_Link_FireCue'
 	

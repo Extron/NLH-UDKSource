@@ -1,14 +1,16 @@
 /*******************************************************************************
-	AdvancedMagnetismDamage
+	ArenaTeamDeathmatch
 
-	Creation date: 29/07/2012 21:15
+	Creation date: 01/07/2012 16:59
 	Copyright (c) 2012, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class AdvancedMagnetismDamage extends MagnetismDamage;
+class GI_SquadronAssault extends ArenaGameInfo;
 
 defaultproperties
 {
-	KDamageImpulse=4000.0
+	bTeamGame=true
+	
+	//GameTypeName="Squadron Assault"
 }

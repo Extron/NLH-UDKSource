@@ -10,3 +10,21 @@ class Wp_Optics extends ArenaWeaponComponent;
 
 /* The offset of the optics. */
 var vector OpticsOffset;
+
+function vector GetOpticsOffset(vector location, rotator rotation)
+{
+	local vector opticLoc;
+	local vector socketLoc;
+	local vector v;
+	local rotator socketRot;
+
+	if (SkeletalMeshComponent(Mesh) != None && SkeletalMeshComponent(Mesh).GetSocketByName('OpticsOffsetSocket') != None)
+	{
+		if (SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndRotation('OpticsOffsetSocket', socketLoc, socketRot, 0))
+		{
+			v = socketLoc - location;
+			
+			
+		}
+	}
+}

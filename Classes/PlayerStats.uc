@@ -8,6 +8,38 @@
 
 class PlayerStats extends Object;
 
+/**
+ * Helps maintain a list of stat values for a player.
+ */
+enum PStatValues
+{
+	PSVWeight,
+	PSVMobility,
+	PSVAccuracy,
+	PSVStability,
+	PSVMovement,
+	PSVJump,
+	PSVMaxHealth,
+	PSVMaxEnergy,
+	PSVMaxStamina,
+	PSVObstruction,
+	PSVGlobalDamageInput,
+	PSVHealthRegenDelay,
+	PSVEnergyRegenDelay,
+	PSVStaminaRegenDelay,
+	PSVHealthRegenRate,
+	PSVEnergyRegenRate,
+	PSVStaminaRegenRate,
+	PSVEnergyCostFactor,
+	PSVStaminaCostFactor,
+	PSVEnergyDamageFactor,
+	PSVMeleeDamage,
+	PSVMeleeRange,
+	PSVGlobalDamageOutput,
+	PSVAbilityCooldownFactor
+};
+
+
 /* The pawn that owns the stats. */
 var ArenaPawn Owner;
 
@@ -24,95 +56,57 @@ var Array<class<DamageType> > DamageTypeMap;
 var Array<float> TypeDamageOutput;
 
 /* A list of factors that modify the damage taken by the player per damage type. */
-var Array<float> TypeDamageResistance;
+var Array<float> TypeDamageInput;
 
 /* A reference to the game's constants. */
 var GlobalGameConstants Constants;
 
 /* A list of damage reductions for a player's body parts. */
-var float DamageReduction[5];
+var float DamageInput[5];
 
-/* The amount of time a player has to avoid damage for before his health starts regenerating. */
-var float RegenHealthDelay;
+/** A list of values, indexed by enum, for the stats. */
+var array<float> Values;
 
-/* The amount of time a player has to wait for energy to start regenerating. */
-var float RegenEnergyDelay;
+/** Stores the starting values of the stats. */
+var array<float> DefaultValues;
 
-/* The amount of time a player has to wait for energy to start regenerating. */
-var float RegenStaminaDelay;
 
-/* The player's health regeneration rate. */
-var float HealthRegenRate;
-
-/* The player's energy regeneration rate. */
-var float EnergyRegenRate;
-
-/* The player's stamina regeneration rate. */
-var float StaminaRegenRate;
-
-/* The total weight that the player is carrying. */
-var float Weight;
-
-/* The total amount of mobility that the player has. */
-var float Mobility;
-
-/* The total amount of accuracy that the player has. */
-var float Accuracy;
-
-/* The total amount of stability that the player has. */
-var float Stability;
-
-/* The player's movement speed factor. */
-var float Movement;
-
-/* The player's jump height factor. */
-var float Jump;
-
-/* The global damage reduction. */
-var float GlobalDamageReduction;
-
-/* The level of a player's visual obstruction. */
-var float Obstruction;
-
-/* Modifies how much energy the player spends. */
-var float EnergyCostFactor;
-
-/* Modifies how much stamina the player spends. */
-var float StaminaCostFactor;
-
-/* Modifies how much energy damage the player takes. */
-var float EnergyDamageFactor;
-
-/* A factor that modifies the player's melee damage. */
-var float MeleeDamage;
-
-/* A factor that modifies all damage the player deals to enemies. */
-var float GlobalDamageOutput;
-
-/*
+/**
  * Sets the player's initial stats. 
  * 
- * pawn - The pawn to set the stats for.
+ * @param pawn - The pawn to set the stats for.
  */
-function SetInitialStats(ArenaPawn pawn, GlobalGameConstants gameConstants)
+simulated function SetInitialStats(ArenaPawn pawn, GlobalGameConstants gameConstants)
 {
 	Owner = pawn;
 	Constants = gameConstants;
+	
+	InitValues();
 	ComputeStats();
+	
+	pawn.HealthMax = Values[PSVMaxHealth];
+	pawn.Health = int(Values[PSVMaxHealth]);
+	pawn.FHealth = Values[PSVMaxHealth];
+	
+	pawn.EnergyMax = Values[PSVMaxEnergy];
+	pawn.Energy = Values[PSVMaxEnergy];
+	
+	pawn.StaminaMax = Values[PSVMaxStamina];
+	pawn.Stamina = Values[PSVMaxStamina];
 }
 
-/*
- * Computes the player's weight. 
+/**
+ * Computes the movement speed factor to use.
  * 
- * pawn - The pawn to compute the weight for.
+ * @returns Returns the movement speed factor.
  */
 function float GetMovementSpeed()
 {
 	local float x;
-	
+
 	if (Constants != None)
 	{
-		x = Constants.NormalizedStat("Movement", Movement) * Constants.NormalizedStat("Mobility", Mobility) / (Constants.NormalizedStat("Weight", Weight));
+		x = Constants.NormalizedStat("Movement", Values[PSVMovement]) * Constants.NormalizedStat("Mobility", Values[PSVMobility]) / (Constants.NormalizedStat("Weight", Values[PSVWeight]));
 	
 		return Constants.GetFactorMin("Movement Speed") * (1 - Constants.GetFactorConstant("Movement Speed") * x) + Constants.GetFactorMax("Movement Speed") * Constants.GetFactorConstant("Movement Speed") * x;
 	}
@@ -122,13 +116,18 @@ function float GetMovementSpeed()
 	}
 }
 
+/**
+ * Computes the sprint speed factor to use during sprinting.
+ *
+ * @returns Returns the sprint factor to increase the movement speed with.
+ */
 function float GetSprintSpeed()
 {
 	local float x;
 	
 	if (Constants != None)
 	{
-		x = Constants.NormalizedStat("Movement", Movement) * Constants.NormalizedStat("Mobility", Mobility) * Constants.NormalizedStat("Health", Owner.FHealth) / (Constants.NormalizedStat("Weight", Weight));
+		x = Constants.NormalizedStat("Movement", Values[PSVMovement]) * Constants.NormalizedStat("Mobility", Values[PSVMobility]) * Constants.NormalizedStat("Health", Owner.FHealth) / (Constants.NormalizedStat("Weight", Values[PSVWeight]));
 	
 		return Constants.GetFactorMin("Sprint Speed") * (1 - Constants.GetFactorConstant("Sprint Speed") * x) + Constants.GetFactorMax("Sprint Speed") * Constants.GetFactorConstant("Sprint Speed") * x;
 	}
@@ -138,48 +137,77 @@ function float GetSprintSpeed()
 	}
 }
 
-/*
+/**
  * Gets the player's health regen rate. 
  * 
- * returns - Returns the healing rate.
+ * @returns Returns the healing rate.
  */
 function float GetHealingRate()
 {
-	return ((2 ** (float(Owner.Health) / float(Owner.HealthMax))) - 1) * HealthRegenRate;
+	return ((2 ** (float(Owner.Health) / float(Owner.HealthMax))) - 1) * Values[PSVHealthRegenRate];
 }
 
-/*
+/**
  * Gets the player's energy regen rate. 
  * 
- * returns - Returns the energy regen rate.
+ * @returns - Returns the energy regen rate.
  */
 function float GetEnergyRate()
 {
-	return Owner.EnergyMax * EnergyRegenRate / 10000;
+	return Owner.EnergyMax * Values[PSVEnergyRegenRate] / 10000;
 }
 
+/**
+ * Gets the player's stamina regen rate. 
+ * 
+ * @returns - Returns the stamina regen rate.
+ */
 function float GetStaminaRate()
 {
 	return 0;
 }
 
-function float GetEnergyCost(float energy)
+/**
+ * Gets the player's maximum health. 
+ * 
+ * @returns - Returns the maximum health.
+ */
+function float GetMaxHealth()
 {
-	if (Owner.Energy >= energy * EnergyCostFactor)
-	{
-		return energy * EnergyCostFactor;
-	}
-	else
-	{
-		return 0;
-	}
+	return Values[PSVMaxHealth];
 }
 
-function float GetStaminaCost(float stamina)
+/**
+ * Gets the player's maximum energy. 
+ * 
+ * @returns - Returns the maximum energy.
+ */
+function float GetMaxEnergy()
 {
-	if (Owner.Stamina >= stamina * StaminaCostFactor)
+	return Values[PSVMaxEnergy];
+}
+
+/**
+ * Gets the player's maximum stamina. 
+ * 
+ * @returns - Returns the maximum stamina.
+ */
+function float GetMaxStamina()
+{
+	return Values[PSVMaxStamina];
+}
+
+/**
+ * Changes a specified amount of energy to change based on the energy cost factor.
+ * 
+ * @param energy - The energy cost to change.
+ * @returns - Returns the changed energy cost.
+ */
+function float GetEnergyCost(float energy)
+{
+	if (Owner.Energy >= energy * Values[PSVEnergyCostFactor])
 	{
-		return stamina * StaminaCostFactor;
+		return energy * Values[PSVEnergyCostFactor];
 	}
 	else
 	{
@@ -188,7 +216,27 @@ function float GetStaminaCost(float stamina)
 }
 
 /*
+ * Changes a specified amount of stamina to change based on the stamina cost factor.
+ * 
+ * @param stamina - The stamina cost to change.
+ * @returns - Returns the changed stamina cost.
+ */
+function float GetStaminaCost(float stamina)
+{
+	if (Owner.Stamina >= stamina * Values[PSVStaminaCostFactor])
+	{
+		return stamina * Values[PSVStaminaCostFactor];
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/**
  * Gets the player's ADS speed.
+ *
+ * @returns Returns the amount of time in seconds that the user should spend aiming down the sights.
  */
 function float GetADSSpeed()
 {
@@ -196,7 +244,7 @@ function float GetADSSpeed()
 	
 	if (Constants != None)
 	{
-		x = Constants.NormalizedStat("WeaponWeight", WeaponBase(Owner.Weapon).GetWeight()) / (fmax(Constants.NormalizedStat("Mobility", Mobility), 0.2));
+		x = Constants.NormalizedStat("WeaponWeight", WeaponBase(Owner.Weapon).GetWeight()) / (fmax(Constants.NormalizedStat("Mobility", Values[PSVMobility]), 0.2));
 
 		if (Owner != None && WeaponBase(Owner.Weapon) != None)
 		{		
@@ -215,6 +263,8 @@ function float GetADSSpeed()
 
 /**
  * Gets the multiplicitave factor to change the reload speed by.
+ *
+ * @returns Returns the factor to change the reload speed by.
  */
 function float GetReloadSpeed()
 {
@@ -235,7 +285,7 @@ function float GetInaccuracyFactor()
 {
 	local float x;
 	
-	x = Constants.GetFactorConstant("Accuracy Factor") * (1 / fmax(Accuracy, 0.01));
+	x = Constants.GetFactorConstant("Accuracy Factor") * (1 / fmax(Values[PSVAccuracy], 0.01));
 	
 	return Constants.GetFactorMin("Accuracy Factor") * x + Constants.GetFactorMax("Accuracy Factor") * x;
 }
@@ -244,7 +294,7 @@ function float GetBloomFactor()
 {
 	local float x;
 	
-	x = Constants.NormalizedStat("Stability", Stability);
+	x = Constants.NormalizedStat("Stability", Values[PSVStability]);
 	
 	return Constants.GetFactorMin("Bloom Factor") * x + Constants.GetFactorMax("Bloom Factor") * (1 - x);
 }
@@ -253,7 +303,7 @@ function float GetLookFactor()
 {
 	if (Constants != None)
 	{
-		return Constants.GetFactorMin("Look Factor") * (1 - Constants.GetFactorConstant("Look Factor") * Mobility) + Constants.GetFactorMax("Look Factor") * Constants.GetFactorConstant("Look Factor") * Mobility;
+		return Constants.GetFactorMin("Look Factor") * (1 - Constants.GetFactorConstant("Look Factor") * Values[PSVMobility]) + Constants.GetFactorMax("Look Factor") * Constants.GetFactorConstant("Look Factor") * Values[PSVMobility];
 	}
 	else
 	{
@@ -267,8 +317,8 @@ function float GetJumpZ()
 
 	if (Constants != None)
 	{
-		x = Constants.NormalizedStat("Mobility", Mobility) * Constants.NormalizedStat("Jump", Jump) * Constants.NormalizedStat("Health", Owner.FHealth) *
-			Constants.NormalizedStat("Stamina", Owner.Stamina) / Constants.NormalizedStat("Weight", Weight);
+		x = Constants.NormalizedStat("Mobility", Values[PSVMobility]) * Constants.NormalizedStat("Jump", Values[PSVJump]) * Constants.NormalizedStat("Health", Owner.FHealth) *
+			Constants.NormalizedStat("Stamina", Owner.Stamina) / Constants.NormalizedStat("Weight", Values[PSVWeight]);
 		
 		if (Owner != None)
 		{
@@ -290,22 +340,43 @@ function float GetDamageTaken(float initialDamage, class<DamageType> damageType)
 	if (IsImmune(damageType))
 		return 0;
 	
-	return initialDamage * GlobalDamageReduction * GetTypeDamageResistance(damageType);
+	return initialDamage * Values[PSVGlobalDamageInput] * GetTypeDamageInput(damageType);
 }
 
 function float GetRegenHealthDelay()
 {
-	return RegenHealthDelay;
+	return Values[PSVHealthRegenDelay];
 }
 
 function float GetRegenEnergyDelay()
 {
-	return RegenEnergyDelay;
+	return Values[PSVEnergyRegenDelay];
 }
 
 function float GetRegenStaminaDelay()
 {
-	return RegenStaminaDelay;
+	return Values[PSVStaminaRegenDelay];
+}
+
+function float GetMeleeDamage()
+{
+	return Values[PSVMeleeDamage] * Values[PSVGlobalDamageOutput];
+}
+
+function float GetMeleeRange()
+{
+	return Values[PSVMeleeRange];
+}
+
+/**
+ * Computes the real cooldown time for an ability once the cooldown factor is applied.
+ *
+ * @param time - The original cooldown time.
+ * @returns Returns the resulting cooldown time after a factor has been applied.
+ */
+function float GetCooldownTime(float time)
+{
+	return time * Values[PSVAbilityCooldownFactor];
 }
 
 function AddImmunity(class<DamageType> damageType)
@@ -327,7 +398,7 @@ function AddDamageType(class<DamageType> damageType)
 	{
 		DamageTypeMap.AddItem(damageType);
 		TypeDamageOutput.AddItem(1);
-		TypeDamageResistance.AddItem(1);
+		TypeDamageInput.AddItem(1);
 	}
 }
 
@@ -346,7 +417,7 @@ function SetTypeDamageOutput(class<DamageType> damageType, float factor)
 	TypeDamageOutput[i] = factor;
 }
 
-function SetTypeDamageResistance(class<DamageType> damageType, float factor)
+function SetTypeDamageInput(class<DamageType> damageType, float factor)
 {
 	local int i;
 	
@@ -358,7 +429,7 @@ function SetTypeDamageResistance(class<DamageType> damageType, float factor)
 		i = DamageTypeMap.Length - 1;
 	}
 	
-	TypeDamageResistance[i] = factor;
+	TypeDamageInput[i] = factor;
 }
 
 function float GetTypeDamageOutput(class<DamageType> damageType)
@@ -375,7 +446,7 @@ function float GetTypeDamageOutput(class<DamageType> damageType)
 	return TypeDamageOutput[i];
 }
 
-function float GetTypeDamageResistance(class<DamageType> damageType)
+function float GetTypeDamageInput(class<DamageType> damageType)
 {
 	local int i;
 	
@@ -386,7 +457,7 @@ function float GetTypeDamageResistance(class<DamageType> damageType)
 		return 1;
 	}
 	
-	return TypeDamageResistance[i];
+	return TypeDamageInput[i];
 }
 
 function RemoveDamageType(class<DamageType> damageType)
@@ -399,7 +470,7 @@ function RemoveDamageType(class<DamageType> damageType)
 	{
 		DamageTypeMap.Remove(i, 1);
 		TypeDamageOutput.Remove(i, 1);
-		TypeDamageResistance.Remove(i, 1);
+		TypeDamageInput.Remove(i, 1);
 	}
 }
 
@@ -426,45 +497,44 @@ function RemoveModifier(PlayerStatModifier mod)
 	ComputeStats();
 }
 
-function ResetStats()
+function InitValues()
 {
-	if (Constants != None)
+	local int i;
+	
+	for (i = 0; i < Values.Length; i++)
 	{
-		Immunities.Length = 0;
-		DamageTypeMap.Length = 0;
-		TypeDamageoutput.Length = 0;
-		TypeDamageResistance.Length = 0;
-		
-		DamageReduction[0] *= default.DamageReduction[0];
-		DamageReduction[1] *= default.DamageReduction[1];
-		DamageReduction[2] *= default.DamageReduction[2];
-		DamageReduction[3] *= default.DamageReduction[3];
-		DamageReduction[4] *= default.DamageReduction[4];
-		
-		Accuracy = Constants.GetStatDefault("Accuracy");
-		Stability = Constants.GetStatDefault("Stability");
-		Mobility = Constants.GetStatDefault("Mobility");
-		Weight = Constants.GetStatDefault("Weight");
-		Movement = Constants.GetStatDefault("Movement");
-		Jump = Constants.GetStatDefault("Jump");
-		HealthRegenRate = default.HealthRegenRate;
-		EnergyRegenRate = default.EnergyRegenRate;
-		StaminaRegenRate = default.StaminaRegenRate;
-		GlobalDamageReduction = default.GlobalDamageReduction;
-		RegenHealthDelay = default.RegenHealthDelay;
-		RegenEnergyDelay = default.RegenEnergyDelay;
-		EnergyCostFactor = default.EnergyCostFactor;
-		EnergyDamageFactor = default.EnergyDamageFactor;
-		MeleeDamage = default.MeleeDamage;
-		GlobalDamageOutput = default.GlobalDamageOutput;
+		if (Values[i] == -1 && Constants != None && GetGGC(i) != -1)
+			DefaultValues[i] = GetGGC(i);
+		else
+			DefaultValues[i] = Values[i];
 	}
 }
 
-private function ComputeStats()
+function ResetStats()
+{
+	local int i;
+	
+	Immunities.Length = 0;
+	DamageTypeMap.Length = 0;
+	TypeDamageoutput.Length = 0;
+	TypeDamageInput.Length = 0;
+	
+	DamageInput[0] *= default.DamageInput[0];
+	DamageInput[1] *= default.DamageInput[1];
+	DamageInput[2] *= default.DamageInput[2];
+	DamageInput[3] *= default.DamageInput[3];
+	DamageInput[4] *= default.DamageInput[4];
+		
+	for (i = 0; i < Values.Length; i++)
+	{
+		Values[i] = DefaultValues[i];
+	}
+}
+
+function ComputeStats()
 {
 	local PlayerStatModifier statMod;
-	local int i;
-	local int j;
+	local int i, j;
 	
 	ResetStats();
 	
@@ -485,56 +555,88 @@ private function ComputeStats()
 			}
 			
 			SetTypeDamageOutput(statMod.DamageTypeMap[j], statMod.TypeDamageOutputMods[j]);
-			SetTypeDamageResistance(statMod.DamageTypeMap[j], statMod.TypeDamageResistanceMods[j]);
+			SetTypeDamageInput(statMod.DamageTypeMap[j], statMod.TypeDamageInputMods[j]);
 		}
 		
-		DamageReduction[0] *= statMod.DamageReductionMods[0];
-		DamageReduction[1] *= statMod.DamageReductionMods[1];
-		DamageReduction[2] *= statMod.DamageReductionMods[2];
-		DamageReduction[3] *= statMod.DamageReductionMods[3];
-		DamageReduction[4] *= statMod.DamageReductionMods[4];
+		DamageInput[0] *= statMod.DamageInputMods[0];
+		DamageInput[1] *= statMod.DamageInputMods[1];
+		DamageInput[2] *= statMod.DamageInputMods[2];
+		DamageInput[3] *= statMod.DamageInputMods[3];
+		DamageInput[4] *= statMod.DamageInputMods[4];
 		
-		Accuracy *= statMod.AccuracyMod;
-		Stability *= statMod.StabilityMod;
-		Mobility *= statMod.MobilityMod;
-		Weight *= statMod.WeightMod;
-		Movement *= statMod.MovementMod;
-		Jump *= statMod.JumpMod;
-		HealthRegenRate *= statMod.HealthRegenMod;
-		EnergyRegenRate *= statMod.EnergyRegenMod;
-		StaminaRegenRate *= statMod.StaminaRegenMod;
-		GlobalDamageReduction *= statMod.GlobalDamageReductionMod;
-		RegenHealthDelay *= statMod.HealthRegenDelayMod;
-		RegenEnergyDelay *= statMod.EnergyRegenDelayMod;
-		EnergyCostFactor *= statMod.energyCostFactorMod;
-		EnergyDamageFactor *= statMod.EnergyDamageFactorMod;
-		MeleeDamage *= statMod.MeleeDamageMod;
-		GlobalDamageOutput *= statMod.GlobalDamageOutputMod;
+		for (j = 0; j < Values.Length; j++)
+		{
+			Values[j] *= statMod.ValueMods[j];
+		}
+	}
+}
+
+simulated function float GetGGC(int i)
+{
+	switch (i)
+	{
+	case 0:
+		return Constants.GetStatDefault("Weight");
+		
+	case 1:
+		return Constants.GetStatDefault("Mobility");
+		
+	case 2:
+		return Constants.GetStatDefault("Accuracy");
+		
+	case 3:
+		return Constants.GetStatDefault("Stability");
+		
+	case 4:
+		return Constants.GetStatDefault("Movement");
+		
+	case 5:
+		return Constants.GetStatDefault("Jump");
+		
+	case 6:
+		return Constants.GetStatDefault("Health");
+		
+	case 7:
+		return Constants.GetStatDefault("Energy");
+		
+	case 8:
+		return Constants.GetStatDefault("Stamina");
+		
+	default:
+		return -1;
 	}
 }
 
 defaultproperties
 {
-	DamageReduction[0]=1
-    DamageReduction[1]=1
-    DamageReduction[2]=1
-    DamageReduction[3]=1
-    DamageReduction[4]=1
+	DamageInput[0]=1
+    DamageInput[1]=1
+    DamageInput[2]=1
+    DamageInput[3]=1
+    DamageInput[4]=1
     
-    Accuracy=50
-    Stability=50
-    Mobility=50
-    Weight=75
-    Movement=50
-    Jump=50
-    HealthRegenRate=1
-    EnergyRegenRate=1
-    StaminaRegenRate=1
-    GlobalDamageReduction=1
-    RegenHealthDelay=10
-    RegenEnergyDelay=10
-    EnergyCostFactor=1
-    EnergyDamageFactor=1
-    MeleeDamage=1
-    GlobalDamageOutput=1
+	Values[PSVWeight]=-1
+	Values[PSVMaxHealth]=1000
+	Values[PSVMaxEnergy]=1000
+	Values[PSVMaxStamina]=1000
+	Values[PSVMobility]=-1
+	Values[PSVAccuracy]=-1
+	Values[PSVStability]=-1
+	Values[PSVMovement]=-1
+	Values[PSVJump]=-1
+	Values[PSVObstruction]=0
+	Values[PSVGlobalDamageInput]=1
+	Values[PSVHealthRegenDelay]=1
+	Values[PSVEnergyRegenDelay]=1
+	Values[PSVStaminaRegenDelay]=0
+	Values[PSVHealthRegenRate]=10
+	Values[PSVEnergyRegenRate]=10
+	Values[PSVStaminaRegenRate]=1
+	Values[PSVEnergyCostFactor]=1
+	Values[PSVStaminaCostFactor]=1
+	Values[PSVEnergyDamageFactor]=1
+	Values[PSVMeleeDamage]=1
+	Values[PSVMeleeRange]=5
+	Values[PSVGlobalDamageOutput]=1
+	Values[PSVAbilityCooldownFactor]=1
 }

@@ -33,5 +33,5 @@ defaultproperties
 	
 	Weight=1
 	ComponentName="Cheap Iron Sights"
-	OpticsOffset=(X=0, Y=10, Z=-2);
+	OpticsOffset=(X=0, Y=12, Z=-2);
 }

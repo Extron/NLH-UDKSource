@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx" skinClass="Skins.HUDApplicationSkin">
+
+	<!-- These are all temperary until we have images to use -->
+	<s:Label id="BuildLabel" text="Arena Alpha Build 0.0.0.1" color="black" fontSize="16" top="10" left="10"/>
+	<s:Label id="HealthLabel" text="Health:" color="black" fontSize="24" bottom="100" left="20"/>
+	<s:Label id="HealthValue" text="1000" color="black" fontSize="24" bottom="100" left="100"/>
+	<s:Label id="EnergyLabel" text="Energy:" color="black" fontSize="24" bottom="60" left="20"/>
+	<s:Label id="EnergyValue" text="1000" color="black" fontSize="24" bottom="60" left="110"/>
+	<s:Label id="StaminaLabel" text="Stamina:" color="black" fontSize="24" bottom="20" left="20"/>
+	<s:Label id="StaminaValue" text="1000" color="black" fontSize="24" bottom="20" left="120"/>
+	
+	<s:Label id="WeaponLabel" text="Weapon: DefaultWeaponName" color="black" fontSize="24" bottom="100" right="20"/>
+	<s:Label id="AbilityLabel" text="Ability: No Ability" color="black" fontSize="24" bottom="60" right="20"/>
+</s:Application>

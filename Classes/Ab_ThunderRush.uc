@@ -31,6 +31,16 @@ simulated function ProcessInstantHit(byte mode, ImpactInfo impact, optional int 
 	}
 }
 
+simulated function ProcessHitPawn(ArenaPawn pawn)
+{
+	super.ProcessHitPawn(pawn);
+	
+	if (pawn == Target)
+	{
+		ArenaPawn(Instigator).Melee();
+	}
+}
+
 defaultproperties
 {
 	FireSound=SoundCue'A_Weapon_ShockRifle.Cue.A_Weapon_SR_FireCue'

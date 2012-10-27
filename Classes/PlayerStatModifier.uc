@@ -7,7 +7,8 @@
 *******************************************************************************/
 
 /* Manages player stat modification, and can be attached to any object to allow that object to affect players' stats. */
-class PlayerStatModifier extends Object;
+class PlayerStatModifier extends Object
+	dependson(PlayerStats);
 
 
 /* Any immunities that the player may have. */
@@ -20,61 +21,13 @@ var Array<class<DamageType> > DamageTypeMap;
 var Array<float> TypeDamageOutputMods;
 
 /* A list of factors that modify the damage taken by the player per damage type. */
-var Array<float> TypeDamageResistanceMods;
+var Array<float> TypeDamageInputMods;
 
 /* A list of factors that modify the damage taken by the player per body part (0 = head, 1 = torso, 2 = abdomen, 3 = arms, 4 = legs). */
-var float DamageReductionMods[5];
+var float DamageInputMods[5];
 
-/* A factor that modifies the player's accuracy. */
-var float AccuracyMod;
-
-/* A factor that modifies the player's stability. */
-var float StabilityMod;
-
-/* A factor that modifies the player's mobility. */
-var float MobilityMod;
-
-/* A factor that modifies the player's weight. */
-var float WeightMod;
- 
- /* A factor that modifies the player's movement speed. */
-var float MovementMod;
-
-/* A factor that modifies the player's jump height. */
-var float JumpMod;
-
-/* A factor that modifies the player's health regeneration rate. */
-var float HealthRegenMod;
-
-/* A factor that modifies the player's energy regeneration rate. */
-var float EnergyRegenMod;
-
-/* A factor that modifies the player's stamina regen rate. */
-var float StaminaRegenMod;
-
-/* A factor that modifies all damage taken by the player. */
-var float GlobalDamageReductionMod;
-
-/* A factor that changes how long the player must wait before health begins to regenerate. */
-var float HealthRegenDelayMod;
-
-/* A factor that modifies how long the player must wait before energy begins to regenerate. */
-var float EnergyRegenDelayMod;
-
-/* The multiplicitive factor that modifies ability enegry costs. */
-var float EnergyCostFactorMod;
-
-/* Modifies how much energy damage the player takes. */
-var float EnergyDamageFactorMod;
-
-/* A factor that modifies the player's melee damage. */
-var float MeleeDamageMod;
-
-/* A factor that modifies all damage the player deals to enemies. */
-var float GlobalDamageOutputMod;
-
-/* A factor that modifies how obstructed the player's vision is. */
-var float ObstructionMod;
+/** A list of all mods, indexed by enum, for the player stats. */
+var array<float> ValueMods;
 
 
 simulated function AddImunity(class<DamageType> damageType)
@@ -93,7 +46,7 @@ simulated function AddDamageType(class<DamageType> damageType)
 	{
 		DamageTypeMap.AddItem(damageType);
 		TypeDamageOutputMods.AddItem(1);
-		TypeDamageResistanceMods.AddItem(1);
+		TypeDamageInputMods.AddItem(1);
 	}
 }
 
@@ -112,7 +65,7 @@ simulated function SetTypeDamageOutputMod(class<DamageType> damageType, float fa
 	TypeDamageOutputMods[i] = factor;
 }
 
-simulated function SetTypeDamageResistanceMod(class<DamageType> damageType, float factor)
+simulated function SetTypeDamageInputMod(class<DamageType> damageType, float factor)
 {
 	local int i;
 	
@@ -124,7 +77,7 @@ simulated function SetTypeDamageResistanceMod(class<DamageType> damageType, floa
 		i = DamageTypeMap.Length - 1;
 	}
 	
-	TypeDamageResistanceMods[i] = factor;
+	TypeDamageInputMods[i] = factor;
 }
 
 simulated function RemoveDamageType(class<DamageType> damageType)
@@ -137,31 +90,59 @@ simulated function RemoveDamageType(class<DamageType> damageType)
 	{
 		DamageTypeMap.Remove(i, 1);
 		TypeDamageOutputMods.Remove(i, 1);
-		TypeDamageResistanceMods.Remove(i, 1);
+		TypeDamageInputMods.Remove(i, 1);
 	}
 }
 
-simulated function SetHeadDamageReductionMod(float factor)
+simulated function SetHeadDamageInputMod(float factor)
 {
-	DamageReductionMods[0] = factor;
+	DamageInputMods[0] = factor;
 }
 
-simulated function SetTorsoDamageReductionMod(float factor)
+simulated function SetTorsoDamageInputMod(float factor)
 {
-	DamageReductionMods[1] = factor;
+	DamageInputMods[1] = factor;
 }
 
-simulated function SetAbdominDamageReductionMod(float factor)
+simulated function SetAbdominDamageInputMod(float factor)
 {
-	DamageReductionMods[2] = factor;
+	DamageInputMods[2] = factor;
 }
 
-simulated function SetLegsDamageReductionMod(float factor)
+simulated function SetLegsDamageInputMod(float factor)
 {
-	DamageReductionMods[3] = factor;
+	DamageInputMods[3] = factor;
 }
 
-simulated function SetArmsDamageReductionMod(float factor)
+simulated function SetArmsDamageInputMod(float factor)
 {
-	DamageReductionMods[4] = factor;
+	DamageInputMods[4] = factor;
+}
+
+defaultproperties
+{
+	ValueMods[PSVWeight]=1
+	ValueMods[PSVMobility]=1
+	ValueMods[PSVAccuracy]=1
+	ValueMods[PSVStability]=1
+	ValueMods[PSVMovement]=1
+	ValueMods[PSVJump]=1
+	ValueMods[PSVMaxHealth]=1
+	ValueMods[PSVMaxEnergy]=1
+	ValueMods[PSVMaxStamina]=1
+	ValueMods[PSVObstruction]=1
+	ValueMods[PSVGlobalDamageInput]=1
+	ValueMods[PSVHealthRegenDelay]=1
+	ValueMods[PSVEnergyRegenDelay]=1
+	ValueMods[PSVStaminaRegenDelay]=1
+	ValueMods[PSVHealthRegenRate]=1
+	ValueMods[PSVEnergyRegenRate]=1
+	ValueMods[PSVStaminaRegenRate]=1
+	ValueMods[PSVEnergyCostFactor]=1
+	ValueMods[PSVStaminaCostFactor]=1
+	ValueMods[PSVEnergyDamageFactor]=1
+	ValueMods[PSVMeleeDamage]=1
+	ValueMods[PSVMeleeRange]=1
+	ValueMods[PSVGlobalDamageOutput]=1
+	ValueMods[PSVAbilityCooldownFactor]=1
 }

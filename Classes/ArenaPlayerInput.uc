@@ -15,7 +15,7 @@ simulated exec function StartFireAbility()
 		ArenaPawn(Pawn).StartFireAbility();
 		FiringAbility = true;
 		
-		if (ArenaPawn(Pawn).ActiveAbility != None && !ArenaPawn(Pawn).ActiveAbility.CanHold)
+		if (ArenaPawn(Pawn).ActiveAbility != None && (!ArenaPawn(Pawn).ActiveAbility.CanHold && !ArenaPawn(Pawn).ActiveAbility.CanCharge))
 		{
 			StopFireAbility();
 		}
@@ -45,6 +45,28 @@ simulated exec function StopSprint()
 	if (ArenaPawn(Pawn) != None)
 	{
 		ArenaPawn(Pawn).StopSprint();
+	}
+}
+
+simulated exec function StartDuck()
+{
+	if (ArenaPawn(Pawn) != None)
+	{
+		if (bDuck == 0)
+		{
+			bDuck = 1;
+		}
+	}
+}
+
+simulated exec function StopDuck()
+{
+	if (ArenaPawn(Pawn) != None)
+	{
+		if (bDuck == 1)
+		{
+			bDuck = 0;
+		}
 	}
 }
 

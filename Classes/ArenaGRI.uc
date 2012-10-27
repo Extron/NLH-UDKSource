@@ -8,12 +8,30 @@
 
 class ArenaGRI extends GameReplicationInfo;
 
+
+/** The game's constants. */
 var GlobalGameConstants Constants;
+
+/** The respawn time for all players. */
+var float RespawnTime;
+
+/** Indicates that the player can respawn immidiately after death. */
+var bool AllowFastRespawn;
+
+/** Indicates that the player can respawn. */
+var bool CanRespawn;
+
+/** Force the player to respawn. */
+var bool ForceRespawn;
+
 
 replication
 {
 	if (bNetInitial)
 		Constants;
+		
+	if (bNetDirty)
+		RespawnTime, AllowFastRespawn, CanRespawn;
 }
 
 defaultproperties

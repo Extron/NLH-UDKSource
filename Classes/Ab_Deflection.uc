@@ -8,8 +8,16 @@
 
 class Ab_Deflection extends ArenaAbility;
 
-/** The shield that the ability generates. */
+/** 
+ * The shield that the ability generates. 
+ */
 var Ab_DeflectionShield Shield;
+
+/**
+ * The class of the shield to generate.
+ */
+var class<Ab_DeflectionShield> ShieldClass;
+
 
 simulated function StopFire(byte FireModeNum)
 {
@@ -22,29 +30,25 @@ simulated function StopFire(byte FireModeNum)
 	super.StopFire(FireModeNum);
 }
 
-simulated function FireAmmunition()
+simulated function CustomFire()
 {
 	if (!IsHolding)
 	{
 		`log("Spawning shield");
-		Shield = spawn(class'Ab_DeflectionShield', Owner);
+		Shield = spawn(ShieldClass, Owner);
 	}
-	
-	super.FireAmmunition();
 }
 
 defaultproperties
 {
-	WeaponFireTypes(0)=EWFT_InstantHit
-	InstantHitMomentum(0)=+0.0
+	WeaponFireTypes(0)=EWFT_Custom
 	
 	FireInterval[0]=0
-	InstantHitDamage(0)=0
-	WeaponRange=0
 	CoolDown=0
 	EnergyCost=50
 	AbilityName="Deflection"
 	
+	ShieldClass=class'Ab_DeflectionShield'
 	CanHold=true
 	IsPassive=false
 	CanCharge=false

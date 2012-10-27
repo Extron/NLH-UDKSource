@@ -9,11 +9,12 @@
 /* 
  * This is the environment version of a status effect, and keeps track of elemental effects to environment objects. 
  */
-class EnvironmentEffect extends Actor;
+class EnvironmentEffect extends Actor
+	abstract;
 
 
 /* The environment object that is being affected by the effect. */
-var Actor Affectee;
+var IEnvObj Affectee;
 
 /* The player that gave the effect. */
 var ArenaPlayerController Affector;
@@ -27,41 +28,51 @@ var Array<string> Properties;
 /* The duration of the environment effect. */
 var float Duration;
 
-/* The damage the effect deals to pawns that are affected by it. */
-var float Damage;
-
-/* The amount to scale the effect's damage by. */
-var float DamageFactor;
+/** The name of the effect. */
+var string EffectName;
 
 
 simulated function UpdateEffect(float delta)
 {
 }
 
-simulated function ActivateEffect(Actor envobj, ArenaPlayerController player)
+simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player)
 {
 	Affectee = envobj;
 	Affector = player;
+		
 	SetTimer(Duration, false, 'DeactivateEffect');
 }
 
 simulated function DeactivateEffect()
 {
-	if (EnvironmentObject(Affectee) != None) 
-	{
-		EnvironmentObject(Affectee).ActiveEffects.RemoveItem(Self);
-	}
-	else if (DynamicEnvironmentObject(Affectee) != None) 
-	{
-		DynamicEnvironmentObject(Affectee).ActiveEffects.RemoveItem(Self);
-	}
+	Affectee.RemoveEffect(Self);
+}
+
+simulated function ChangeState(array<EnvironmentEffect> effects)
+{
 }
 
 /* 
  * Causes the effect to target a pawn.
  *
- * pawn - The pawn to target
+ * @param pawn The pawn to target
  */
 simulated function AffectPawn(ArenaPawn pawn)
 {
+	local int i;
+	local class<StatusEffect> sClass;
+	local StatusEffect status;
+	
+	for (i = 0; i < StatusEffects.Length; i++)
+	{
+		sClass = StatusEffects[i];
+		
+		if (!pawn.HasStatus(Affector, sClass.Default.EffectName, status))
+		{
+			status = spawn(sClass, Self);
+			status.Affector = Affector;
+			pawn.AddEffect(status);
+		}
+	}
 }

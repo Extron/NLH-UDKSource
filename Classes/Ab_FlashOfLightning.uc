@@ -1,14 +1,25 @@
 /*******************************************************************************
-	ShockDamage
+	Ab_FlashOfLightning
 
-	Creation date: 24/06/2012 17:50
+	Creation date: 24/09/2012 13:38
 	Copyright (c) 2012, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class ShockDamage extends AbilityDamageType;
+class Ab_FlashOfLightning extends Ab_ShotsOfHaste;
+
+simulated function ProcessHitPawn(ArenaPawn pawn)
+{
+	super.ProcessHitPawn(pawn);
+	
+	if (pawn == Target)
+	{
+		//TODO: Flash the target
+	}
+}
+
 
 defaultproperties
 {
-	EnvironmentEffects(0)=class'Arena.ChargedEffect'
+	AbilityName="Flash of Lightning"
 }

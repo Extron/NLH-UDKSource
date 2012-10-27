@@ -9,7 +9,9 @@
 class ArenaWeapon extends UDKWeapon
 	dependson(WeaponStats);
 
-/* Indicates what type of projectiles a weapon base fires.  This will affect what components cam be used with the base. */
+/**
+ * Indicates what type of projectiles a weapon base fires.  This will affect what components cam be used with the base. 
+ */
 enum WeaponType
 {
 	WTRifle,
@@ -18,7 +20,8 @@ enum WeaponType
 	WTGrenadeLauncher,
 	WTHardLightRifle,
 	WTBeamRifle,
-	WTPlasmaRifle
+	WTPlasmaRifle,
+	WTRailGun
 };
 
 enum WeaponSize
@@ -85,11 +88,37 @@ var string WeaponName;
     weapon is fired, and will only decrease once the weapon is not fired for a short time. */ 
 var float Bloom;
 
+/**
+ * The amount of time needed to pass in between cycling.  For example, semi-auto weapons
+ * can only fire again after this time has passed.
+ */
+var float CycleTime;
+
 /** Indicates that the weapon is reloading. */
 var bool Reloading;
 
 /** Indicates that the weapon is being equipped. */
 var bool Equipping;
+
+/**
+ * Indicates that the weapon is being cycled (only used with bolt action).
+ */
+var bool Cycling;
+
+/**
+ * Indicates that we have ended firing.
+ */
+var bool EndedFire;
+
+/**
+ * The number of bullets to fire for a burst.
+ */
+var int BurstCount;
+
+/**
+ * Helps keep track of the number of bullets that have been fired for burst fire modes.
+ */
+var int BulletsFired;
 
 /** The max amount of ammo the player can carry for this weapon. */
 var int MaxAmmo;
@@ -105,6 +134,7 @@ var int Clip;
 
 /** The amount of ammo that is used in one shot.  This is largely only used if the weapon is a burst fire weapon. */
 var int AmmoPerShot;
+
 
 simulated function PostBeginPlay()
 {
@@ -135,6 +165,8 @@ simulated function Tick(float dt)
 
 simulated function StartFire(byte FireModeNum)
 {
+	`log("Start fire");
+	
 	if (Clip > 0 && !Reloading && !Equipping)
 	{
 		super.StartFire(FireModeNum);
@@ -143,6 +175,21 @@ simulated function StartFire(byte FireModeNum)
 	{
 		GoToState('WeaponReloading');
 	}
+}
+
+simulated function StopFire(byte FireModeNum)
+{
+	`log("Clearing bullets fired");
+	
+	if (!EndedFire)
+	{
+		BulletsFired = 0;
+		EndedFire = True;
+	
+		SetTimer(CycleTime, false, nameof(ReactivateWeapon));
+	}
+	
+	super.StopFire(FireModeNum);
 }
 
 function ConsumeAmmo(byte FireModeNum)
@@ -157,9 +204,18 @@ function ConsumeAmmo(byte FireModeNum)
 
 simulated function FireAmmunition()
 {
-	FireWeapon();
+	`log("Firing weapon" @ BulletsFired);
 	
-	super.FireAmmunition();
+	if (EndedFire)
+		return;
+		
+	if (Mode == FMFullAuto || (Mode == FMSemiAuto && BulletsFired < 1) || (Mode == FMBurst && BulletsFired < BurstCount) || (Mode == FMBoltAction && !Cycling))
+	{
+		FireWeapon();
+	
+		BulletsFired++;
+		super.FireAmmunition();
+	}
 }
 
 /*
@@ -172,6 +228,21 @@ simulated function FireAmmunition()
 simulated function bool HasAmmo(byte FireModeNum, optional int Amount)
 {
 	return Clip > 0;
+}
+
+simulated function bool ShouldRefire()
+{
+	`log("ShouldRefire");
+	
+	if (EndedFire)
+		return false;
+		
+	if (Mode == FMFullAuto)
+		return true;
+	else if (Mode == FMSemiAuto || Mode == FMBoltAction)
+		return false;
+	else if (Mode == FMBurst)
+		return BulletsFired < BurstCount;
 }
 
 /**
@@ -409,6 +480,11 @@ simulated function EquipWeapon()
 	{
 		OnEquippingAnimEnd();
 	}
+}
+
+simulated function ReactivateWeapon()
+{
+	EndedFire = false;
 }
 
 simulated function rotator GetRecoilRotation(Pawn holder)

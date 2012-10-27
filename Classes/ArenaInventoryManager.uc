@@ -8,7 +8,13 @@
 
 class ArenaInventoryManager extends InventoryManager;
 
+
+/** The ability we are trying to switch to. */
 var ArenaAbility PendingAbility;
+
+/** A cached list of abilities in the inventory manager for easy ability processing. */
+var array<ArenaAbility> Abilities;
+
 
 /**
  * Switches to Previous weapon
@@ -73,7 +79,7 @@ simulated function NextAbility()
 
 	ForEach InventoryActors(class'ArenaAbility', iter)
 	{
-		if (bBreakNext || (start == None))
+		if (bBreakNext || (start == None) && !iter.IsPassive)
 		{
 			candidate = iter;
 			break;
@@ -88,7 +94,9 @@ simulated function NextAbility()
 	{
 		ForEach InventoryActors(class'ArenaAbility', iter)
 		{
-			candidate = iter;
+			if (!iter.IsPassive)
+				candidate = iter;
+				
 			break;
 		}
 	}
@@ -296,6 +304,18 @@ simulated function ChangedAbility()
 	{
 		//Instigator.Controller.NotifyChangedWeapon(old, Instigator.Weapon);
 	}
+}
+
+simulated function Inventory CreateInventory(class<Inventory> newInvClass, optional bool bDoNotActivate)
+{
+	local Inventory inv;
+	
+	inv = super.CreateInventory(newInvClass, bDoNotActivate);
+	
+	if (ArenaAbility(inv) != None)
+		Abilities.AddItem(ArenaAbility(inv));
+		
+	return inv;
 }
 
 /*

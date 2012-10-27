@@ -11,6 +11,9 @@ class ArenaAbility extends UDKWeapon;
 /** The firing animation of the ability. */
 var array<name> FireAnims;
 
+/** The target of the ability. */
+var ArenaPawn Target;
+
 /** The sound of the ability firing. */
 var SoundCue FireSound;
 
@@ -26,16 +29,36 @@ var float CoolDown;
 /** The amount of time that the ability has been held. */
 var float HeldTime;
 
+/**
+ * The amount of time that the ability has been changed.
+ */
+var float ChargeTime;
+
+/**
+ * Indicates the maximum allowed charging time.
+ */
+var float MaxCharge;
+
+/**
+ * Indicates the minimum allowed charging time.
+ */
+var float MinCharge;
+
 /** The last cached dt. */
 var float DeltaTime;
 
 /** Indicates that the ability is being sustained. */
 var bool IsHolding;
 
+/**
+ * Indicates that the ability is being charged.
+ */
+var bool IsCharging;
+
 /* Indicates if the player can use the ability right now. */
 var bool CanFire;
 
-/* Indicates that the player can hold down the fire ability button to use the ability. */
+/* Indicates that the player can hold down the fire ability button to sustain the ability. */
 var bool CanHold;
 
 /* Indicates that the player can charge the ability. */
@@ -44,6 +67,8 @@ var bool CanCharge;
 /* Indicates that the ability is passive, and non-equippable. */
 var bool IsPassive;
 
+
+
 simulated function Tick(float dt)
 {
 	if (IsHolding)
@@ -51,10 +76,28 @@ simulated function Tick(float dt)
 		HeldTime += dt;
 		DeltaTime = dt;
 	}
+	else if (IsCharging)
+	{
+		ChargeTime += dt;
+		
+		if (ChargeTime >= MaxCharge)
+		{
+			`log("Charging maxed");
+			StopFire(0);
+		}
+	}
 }
 
 simulated function StartFire(byte FireModeNum)
 {
+	if (CanCharge && !IsCharging && CanFire)
+	{
+		`log("Beginning charge");
+		CanFire = false;
+		IsCharging = true;
+		SetPendingFire(0);
+	}
+	
 	if (CanFire && !IsPassive && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy >= EnergyCost)
 	{
 		super.StartFire(FireModeNum);
@@ -68,7 +111,23 @@ simulated function StopFire(byte FireModeNum)
 		IsHolding = false;
 		HeldTime = 0;
 	}
-		
+	else if (IsCharging && ChargeTime >= MinCharge)
+	{
+		`log("Charging complete");
+		CanFire = true;
+		StartFire(0);
+		IsCharging = false;
+		ChargeTime = 0;
+		return;
+	}
+	else if (IsCharging && !CanFire)
+	{
+		`log("Charging aborted");
+		IsCharging = false;
+		CanFire = true;
+		ChargeTime = 0;
+	}
+	
 	super.StopFire(FireModeNum);
 }
 
@@ -82,11 +141,10 @@ simulated function FireAmmunition()
 		AbilityPlaySound(FireSound);
 		CanFire = false;
 		ClearPendingFire(0);
-		SetTimer(CoolDown, false, 'ReactivateAbility');
+		SetTimer(ArenaPawn(Instigator).Stats.GetCooldownTime(CoolDown), false, 'ReactivateAbility');
 	}
 	else if (CanHold)
 	{
-		`log("Firing ability");
 		if (IsHolding && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy <= 0)
 		{
 			ClearPendingFire(0);
@@ -106,7 +164,7 @@ function ConsumeAmmo(byte FireModeNum)
 	{
 		if (IsHolding)
 		{
-			if (ArenaPawn(Instigator).Energy >= EnergyCost * DeltaTime)
+			if (ArenaPawn(Instigator).CanSpendEnergy(EnergyCost * DeltaTime))
 				ArenaPawn(Instigator).SpendEnergy(EnergyCost * DeltaTime);
 			else
 				ArenaPawn(Instigator).SpendEnergy(ArenaPawn(Instigator).Energy);
@@ -127,7 +185,7 @@ simulated function bool HasAmmo( byte FireModeNum, optional int Amount )
 {
 	if (ArenaPawn(Instigator) != None)
 	{
-		return ArenaPawn(Instigator).Energy >= EnergyCost;
+		return ArenaPawn(Instigator).CanSpendEnergy(EnergyCost);
 	}
 	else
 	{
@@ -170,6 +228,15 @@ simulated function ReactivateAbility()
 simulated function float GetRemainingCoolDownTime()
 {
 	return GetRemainingTimeForTimer('ReactivateAbility');
+}
+
+/**
+ * Allows the ability to react when the player's pawn physically hits another pawn.
+ *
+ * @param pawn - The pawn that was touched.
+ */
+simulated function ProcessHitPawn(ArenaPawn pawn)
+{
 }
 
 defaultproperties
