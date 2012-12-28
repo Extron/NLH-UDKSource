@@ -109,6 +109,14 @@ simulated function float GetBloomCost()
 	return ArenaPawn(Weapon.Instigator).Stats.GetBloomFactor() * (Constants.GetFactorMin("Bloom Cost") * x + Constants.GetFactorMax("Bloom Cost") * (1 - x));
 }
 
+/**
+ * Gets the damage modifer of the weapon, which is based on all of its stats.
+ */
+simulated function float GetDamageModifier()
+{
+	return 1;
+}
+
 simulated function AddModifier(WeaponStatModifier mod)
 {
 	Modifiers.AddItem(mod);

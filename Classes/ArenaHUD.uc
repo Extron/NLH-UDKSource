@@ -35,16 +35,16 @@ event DrawHUD()
 		
 		}
 		
-		if (WeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon) != None)
+		if (ArenaWeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon) != None)
 		{
 			Canvas.SetPos(Canvas.ClipX * 0.05, Canvas.ClipY * 0.75);
-			Canvas.DrawText("Weapon:" @ WeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon).WeaponName);
+			Canvas.DrawText("Weapon:" @ ArenaWeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon).WeaponName);
 		
 			Canvas.SetPos(Canvas.ClipX * 0.05, Canvas.ClipY * 0.80);
-			Canvas.DrawText("Clip:" @ WeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon).Clip);
+			Canvas.DrawText("Clip:" @ ArenaWeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon).Clip);
 			
 			Canvas.SetPos(Canvas.ClipX * 0.05, Canvas.ClipY * 0.85);
-			Canvas.DrawText("Bloom:" @ WeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon).Bloom);
+			Canvas.DrawText("Bloom:" @ ArenaWeaponBase(ArenaPawn(PlayerOwner.Pawn).Weapon).Bloom);
 		}
 		
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.8);

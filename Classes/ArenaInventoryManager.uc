@@ -325,10 +325,10 @@ simulated function Inventory CreateInventory(class<Inventory> newInvClass, optio
  */
 function float GetInventoryWeight()
 {
-	local WeaponBase iter;
+	local ArenaWeaponBase iter;
 	local float weight;
 	
-	foreach InventoryActors(class'WeaponBase', iter)
+	foreach InventoryActors(class'ArenaWeaponBase', iter)
 	{
 		weight += iter.GetWeight();
 	}

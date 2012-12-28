@@ -9,7 +9,7 @@
 class WeaponSchematic extends Object;
 
 /* The base of the weapon. */
-var class<WeaponBase> WeaponBase;
+var class<ArenaWeaponBase> ArenaWeaponBase;
 
 /* The stock of the weapon. */
 var class<Wp_Stock> WeaponStock;

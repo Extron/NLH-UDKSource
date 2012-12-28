@@ -1,1 +1,1 @@
-C:\UDK\UDK-2012-05\Binaries\Win32\UDK.exe AlphaTesting?listen?GoalScore=0?TimeLimit=0?Game=Arena.ArenaGameInfo -log
+C:\UDK\UDK-2012-05\Binaries\Win32\UDK.exe AlphaTesting?listen?GoalScore=0?TimeLimit=0?Game=Arena.GI_BotBattle -log

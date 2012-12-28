@@ -44,11 +44,11 @@ simulated function Emit()
 	local vector l;
 	local rotator r;
 	
-	if (WorldInfo.NetMode != NM_DedicatedServer && ProjTemplate != None && WeaponBase(Owner) != None)
+	if (WorldInfo.NetMode != NM_DedicatedServer && ProjTemplate != None && ArenaWeaponBase(Owner) != None)
 	{
-		if (SkeletalMeshComponent(WeaponBase(Owner).Barrel.Mesh).GetSocketByName('MuzzleSocket') != None)
+		if (SkeletalMeshComponent(ArenaWeaponBase(Owner).Barrel.Mesh).GetSocketByName('MuzzleSocket') != None)
 		{
-			SkeletalMeshComponent(WeaponBase(Owner).Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
+			SkeletalMeshComponent(ArenaWeaponBase(Owner).Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
 			SetLocation(l);
 		}
 		

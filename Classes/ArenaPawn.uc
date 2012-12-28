@@ -68,7 +68,22 @@ replication
 		Stats, initInv;
 }
 
+function PossessedBy(Controller C, bool bVehicleTransition)
+{
+	super.PossessedBy(C, bVehicleTransition);
+	
+	if (PlayerController(C) != None)
+		PlayerController(C).ResetCameraMode();
+	
+	if (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer)
+	{
+		`log("We are on a listen server.");
 
+		InitInventory();
+		initInv = False;
+	}
+}
+	
 /**
  * Calculates the player's camera location based on the location of the pawn.
  *
@@ -191,6 +206,8 @@ function bool DoJump(bool bUpdating)
 
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
+	`log("Damage after stat" @ Stats.GetDamageTaken(DamageAmount, DamageType));
+	
 	super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
 }
 
@@ -351,15 +368,11 @@ simulated function ReplicatedEvent(name property)
 function InitInventory()
 {
 	local ArenaWeapon newWeapon;
-	`log("Creating default inventory");
 	
 	if (ArenaPlayerController(Owner) != None && ArenaPlayerController(Owner).Loadout != None && ArenaPlayerController(Owner).Loadout.Weapon != None)
 	{
-		`log("Creating new weapon.");
 		newWeapon = CreateWeapon(ArenaPlayerController(Owner).Loadout.Weapon);
 	}
-
-	`log("InvMan" @ ArenaInventoryManager(InvManager));
 	
 	if (ArenaInventoryManager(InvManager) != None)
 	{	
@@ -376,7 +389,7 @@ function InitInventory()
 
 function ArenaWeapon CreateWeapon(WeaponSchematic schematic)
 {
-	local WeaponBase weaponBase;
+	local ArenaWeaponBase ArenaWeaponBase;
 	local Wp_Stock stock;
 	local Wp_Barrel barrel;
 	local Wp_Muzzle muzzle;
@@ -384,24 +397,24 @@ function ArenaWeapon CreateWeapon(WeaponSchematic schematic)
 	local Wp_SideAttachment side;
 	local Wp_UnderAttachment under;
 	
-	weaponBase = spawn(schematic.WeaponBase, Self, , Location, Rotation);
-	weaponBase.WeaponName = schematic.WeaponName;
+	ArenaWeaponBase = spawn(schematic.ArenaWeaponBase, Self, , Location, Rotation);
+	ArenaWeaponBase.WeaponName = schematic.WeaponName;
 	
-	stock = spawn(schematic.WeaponStock, weaponBase, , weaponBase.Location, weaponBase.Rotation);
-	barrel = spawn(schematic.WeaponBarrel, weaponBase, , weaponBase.Location, weaponBase.Rotation);
-	muzzle = spawn(schematic.WeaponMuzzle, weaponBase, , weaponBase.Location, weaponBase.Rotation);
-	optics = spawn(schematic.WeaponOptics, weaponBase, , weaponBase.Location, weaponBase.Rotation);
-	side = spawn(schematic.WeaponSideAttachment, weaponBase, , weaponBase.Location, weaponBase.Rotation);
-	under = spawn(schematic.WeaponUnderAttachment, weaponBase, , weaponBase.Location, weaponBase.Rotation);
+	stock = spawn(schematic.WeaponStock, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	barrel = spawn(schematic.WeaponBarrel, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	muzzle = spawn(schematic.WeaponMuzzle, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	optics = spawn(schematic.WeaponOptics, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	side = spawn(schematic.WeaponSideAttachment, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	under = spawn(schematic.WeaponUnderAttachment, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
 	
-	weaponBase.AttachStock(stock);
-	weaponBase.AttachBarrel(barrel);
-	weaponBase.AttachMuzzle(muzzle);
-	weaponBase.AttachOptics(optics);
-	weaponBase.AttachSide(side);
-	weaponBase.AttachUnder(under);
+	ArenaWeaponBase.AttachStock(stock);
+	ArenaWeaponBase.AttachBarrel(barrel);
+	ArenaWeaponBase.AttachMuzzle(muzzle);
+	ArenaWeaponBase.AttachOptics(optics);
+	ArenaWeaponBase.AttachSide(side);
+	ArenaWeaponBase.AttachUnder(under);
 	
-	return weaponBase;
+	return ArenaWeaponBase;
 }
 
 simulated function SpendEnergy(float EnergyAmount)
@@ -605,6 +618,7 @@ defaultproperties
 	Components.Add(WPawnSkeletalMeshComponent)
 	
 	Begin Object Class=PlayerStats Name=NewStats
+		Values[PSVHealthRegenDelay]=10
 	End Object
 	Stats=NewStats
 	
@@ -613,6 +627,7 @@ defaultproperties
 	ADS=false
 	bDirectHitWall=true
 	InventoryManagerClass=class'Arena.ArenaInventoryManager'
+	HealthMax=1000
 	Health=1000
 	FHealth=1000
 	EnergyMax=1000

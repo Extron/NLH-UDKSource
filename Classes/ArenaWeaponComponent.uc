@@ -46,8 +46,10 @@ var name AttachSock;
  * @param weap - The weapon base to attach to.
  * @param socket - The socket on the base to attach to.
  */
-simulated function AttachToBase(WeaponBase weap, name socket)
+simulated function AttachToBase(ArenaWeaponBase weap, name socket)
 {
+	`log("Weap Mesh Owner" @ weap.Mesh.Owner);
+	
 	if (SkeletalMeshComponent(weap.Mesh).GetSocketByName(socket) != None)
 	{		
 		SetBase(weap, , SkeletalMeshComponent(weap.Mesh), socket);
@@ -143,7 +145,7 @@ simulated function AnimNodeSequence GetAnimNodeSeq()
 	return None;
 }
 
-simulated function bool CanAttachToBase(WeaponBase weap)
+simulated function bool CanAttachToBase(ArenaWeaponBase weap)
 {
 	return CompatibleTypes.Find(weap.Type) > -1 && CompatibleSizes.Find(weap.Size) > -1 && EnergyCost <= weap.Energy;
 }

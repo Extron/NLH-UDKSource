@@ -244,9 +244,9 @@ function float GetADSSpeed()
 	
 	if (Constants != None)
 	{
-		x = Constants.NormalizedStat("WeaponWeight", WeaponBase(Owner.Weapon).GetWeight()) / (fmax(Constants.NormalizedStat("Mobility", Values[PSVMobility]), 0.2));
+		x = Constants.NormalizedStat("WeaponWeight", ArenaWeaponBase(Owner.Weapon).GetWeight()) / (fmax(Constants.NormalizedStat("Mobility", Values[PSVMobility]), 0.2));
 
-		if (Owner != None && WeaponBase(Owner.Weapon) != None)
+		if (Owner != None && ArenaWeaponBase(Owner.Weapon) != None)
 		{		
 			return Constants.GetFactorMax("ADS Speed") * Constants.GetFactorConstant("ADS Speed") * x + Constants.GetFactorMin("ADS Speed") * (1 - Constants.GetFactorConstant("ADS Speed") * x);
 		}
@@ -303,7 +303,8 @@ function float GetLookFactor()
 {
 	if (Constants != None)
 	{
-		return Constants.GetFactorMin("Look Factor") * (1 - Constants.GetFactorConstant("Look Factor") * Values[PSVMobility]) + Constants.GetFactorMax("Look Factor") * Constants.GetFactorConstant("Look Factor") * Values[PSVMobility];
+		return Constants.GetFactorMin("Look Factor") * (1 - Constants.GetFactorConstant("Look Factor") * Values[PSVMobility]) + 
+			   Constants.GetFactorMax("Look Factor") * Constants.GetFactorConstant("Look Factor") * Values[PSVMobility];
 	}
 	else
 	{
@@ -338,8 +339,12 @@ function float GetJumpZ()
 function float GetDamageTaken(float initialDamage, class<DamageType> damageType)
 {
 	if (IsImmune(damageType))
+	{
+		`log("Is immune.");
 		return 0;
+	}
 	
+	`log("Damages" @ initialDamage @ Values[PSVGlobalDamageInput] @ GetTypeDamageInput(damageType));
 	return initialDamage * Values[PSVGlobalDamageInput] * GetTypeDamageInput(damageType);
 }
 
@@ -482,7 +487,7 @@ function RemoveDamageType(class<DamageType> damageType)
  */
 function bool IsImmune(class<DamageType> damageType)
 {
-	return Immunities.Find(damageType) == -1;
+	return Immunities.Find(damageType) != -1;
 }
 
 function AddModifier(PlayerStatModifier mod)

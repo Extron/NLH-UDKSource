@@ -15,6 +15,18 @@ var GlobalGameConstants Constants;
 /** The respawn time for all players. */
 var float RespawnTime;
 
+/** The current time of day, measured from 0 (midnight) to 2 pi. */
+var float TimeOfDay; 
+
+/** Keeps track of how fast the time of day changes. */
+var float DayRate;
+
+/** The percent of cloud coverage in the sky. */
+var float CloudCoverage;
+
+/** The sharpness of the clouds. */
+var float CloudSharpness;
+
 /** Indicates that the player can respawn immidiately after death. */
 var bool AllowFastRespawn;
 
@@ -31,7 +43,19 @@ replication
 		Constants;
 		
 	if (bNetDirty)
-		RespawnTime, AllowFastRespawn, CanRespawn;
+		RespawnTime, AllowFastRespawn, CanRespawn, TimeOfDay, CloudCoverage, CloudSharpness;
+}
+
+simulated function Tick(float dt)
+{
+	super.Tick(dt);
+	
+	TimeOfDay += dt * DayRate;
+	
+	CloudCoverage = Cos(TimeOfDay * 0.25) * Cos(TimeOfDay * 0.25);
+	
+	if (TimeOfDay > 2 * Pi)
+		TimeOfDay = 0;
 }
 
 defaultproperties
@@ -39,4 +63,9 @@ defaultproperties
 	Begin Object Class=GlobalGameConstants Name=NewConstants
 	End Object
 	Constants=NewConstants
+	
+	TimeOfDay=0
+	DayRate=0.25
+	CloudCoverage=0
+	CloudSharpness=0.001
 }

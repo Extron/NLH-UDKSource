@@ -41,8 +41,6 @@ var bool FiringAbility;
 /* Indicates that the pawn will be accelerated on the next player tick. */
 var bool AccelPawn;
 
-
-
 simulated function ReceivedGameClass(class<GameInfo> GameClass)
 {
 	super.ReceivedGameClass(GameClass);
@@ -57,6 +55,13 @@ simulated function ReceivedGameClass(class<GameInfo> GameClass)
 
 function Possess(Pawn newPawn, bool bVehicleTransition)
 {
+	if (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer)
+	{
+		ArenaPawn(newPawn).Stats.SetInitialStats(ArenaPawn(newPawn), ArenaGRI(WorldInfo.GRI).Constants);
+				
+		Loadout.InitializeLoadout(self);
+	}
+	
 	super.Possess(newPawn, bVehicleTransition);
 
 	newPawn.GoToState('Idle');
@@ -83,7 +88,7 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 	
 	DefaultLoc = loc;
 	
-	if (ArenaPawn(Pawn) != None && Role < Role_Authority)
+	if (ArenaPawn(Pawn) != None && (Role < Role_Authority || WorldInfo.NetMode == NM_ListenServer))
 	{
 		//rot += ArenaPawn(Pawn).GetRecoil();
 	
@@ -107,8 +112,8 @@ function CheckJumpOrDuck()
 exec function ADS()
 {
 	local float rem;
-	
-	DesiredADSOffset = WeaponBase(Pawn.Weapon).GetOpticsOffset();
+
+	DesiredADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset();
 	ADSDirection *= -1;
 	Aiming = true;
 	
@@ -129,6 +134,7 @@ simulated function PlayerTick(float DeltaTime)
 	
 	if (Aiming)
 	{
+		`log("Aiming" @ ADSOffset);
 		t = 1 - GetRemainingTimeForTimer('AimingComplete') / ArenaPawn(Pawn).Stats.GetADSSpeed();
 		ADSOffset = DesiredADSOffset * t;
 	}
@@ -244,7 +250,7 @@ defaultproperties
 	
 	Begin Object Class=PlayerLoadout Name=DefaultLoadout
 		Begin Object Class=WeaponSchematic Name=DefaultSchematic
-			WeaponBase=class'Wp_BasicRifleBase';
+			ArenaWeaponBase=class'Wp_PhotonEmitterBase';
 			WeaponStock=class'Wp_S_CheapStock';
 			WeaponBarrel=class'Wp_B_BasicRifleBarrel';
 			WeaponMuzzle=class'Wp_M_BasicRifleMuzzle';

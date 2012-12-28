@@ -69,6 +69,16 @@ var WeaponStats Stats;
 /** The sound of the ability firing. */
 var SoundCue FireSound;
 
+/**
+ * The particle system template to use when drawing the beam for an instant hit shot.
+ */
+var ParticleSystem IHBeamTemplate;
+
+/**
+ * The instance of the IH Beam particle system.
+ */
+Var ParticleSystemComponent IHBeam;
+
 /** The weapon's offset on the screen. */
 var vector ViewOffset;
 
@@ -83,6 +93,12 @@ var vector RecoilPos;
 
 /** The name of the weapon. */
 var string WeaponName;
+
+/**
+ * The base damage that the weapon deals.  This will be modified by player and weapon stats before 
+ * the final damage is set.
+ */
+var float BaseDamage;
 
 /** This keeps track of the inaccuracy of the weapon caused by firing it.  It will increase the more the 
     weapon is fired, and will only decrease once the weapon is not fired for a short time. */ 
@@ -165,10 +181,10 @@ simulated function Tick(float dt)
 
 simulated function StartFire(byte FireModeNum)
 {
-	`log("Start fire");
-	
 	if (Clip > 0 && !Reloading && !Equipping)
 	{
+		`log("Start Fire");
+		
 		super.StartFire(FireModeNum);
 	}
 	else if (Clip == 0 && Ammo > 0)
@@ -179,8 +195,6 @@ simulated function StartFire(byte FireModeNum)
 
 simulated function StopFire(byte FireModeNum)
 {
-	`log("Clearing bullets fired");
-	
 	if (!EndedFire)
 	{
 		BulletsFired = 0;
@@ -204,8 +218,6 @@ function ConsumeAmmo(byte FireModeNum)
 
 simulated function FireAmmunition()
 {
-	`log("Firing weapon" @ BulletsFired);
-	
 	if (EndedFire)
 		return;
 		
@@ -232,8 +244,6 @@ simulated function bool HasAmmo(byte FireModeNum, optional int Amount)
 
 simulated function bool ShouldRefire()
 {
-	`log("ShouldRefire");
-	
 	if (EndedFire)
 		return false;
 		
@@ -265,20 +275,35 @@ simulated function InstantFire()
 
 	// define range to use for CalcWeaponFire()
 	StartTrace = Instigator.GetWeaponStartTraceLocation();
-	EndTrace = (StartTrace + vector(GetAdjustedAim(StartTrace)) * GetTraceRange()) << Stats.GetInaccuracyShift();
+	EndTrace = (StartTrace + vector(GetAdjustedAim(StartTrace)) * GetTraceRange()); //<< Stats.GetInaccuracyShift();
 
 	// Perform shot
 	RealImpact = CalcWeaponFire(StartTrace, EndTrace, ImpactList);
 
 	if (Role == ROLE_Authority)
 	{
-		SetFlashLocation(RealImpact.HitLocation);
+		SetFlashLocation(RealImpact.HitLocation);	
 	}
 
+	EmitIHBeam(RealImpact.HitLocation);
+	
+	InstantHitDamage[0] = BaseDamage * Stats.GetDamageModifier();
+	
 	for (Idx = 0; Idx < ImpactList.Length; Idx++)
 	{
 		ProcessInstantHit(CurrentFireMode, ImpactList[Idx]);
 	}
+}
+
+simulated function Projectile ProjectileFire()
+{
+	local Projectile projectile;
+	projectile = super.ProjectileFire();
+	
+	if (projectile != None)
+		projectile.Damage = BaseDamage * Stats.GetDamageModifier();
+	
+	return projectile;
 }
 
 simulated function rotator AddSpread(rotator BaseAim)
@@ -327,8 +352,9 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 		if (pawn != None)
 		{
 			Mesh.SetLightEnvironment(pawn.LightEnvironment);
-			pawn.ArmsMesh[0].SetHidden(true);
-			pawn.ArmsMesh[1].SetHidden(true);
+			AttachComponent(Mesh);
+			//pawn.ArmsMesh[0].SetHidden(true);
+			//pawn.ArmsMesh[1].SetHidden(true);
 		}
 	}
 
@@ -357,8 +383,8 @@ simulated event SetPosition(UDKPawn Holder)
 	local vector T;
 	local rotator R;
 	
-	if (!Holder.IsFirstPerson())
-		return;
+	//if (!Holder.IsFirstPerson())
+		//return;
 	
 	T.Z = Holder.EyeHeight;
 	T = T + (ViewOffset >> Holder.Controller.Rotation);
@@ -391,6 +417,41 @@ simulated function WeaponPlaySound(SoundCue Sound)
 	{
 		Instigator.PlaySound(Sound, false, true);
 	}
+}
+
+/**
+ * Emits the particle system used fot the instant hit projectile beam.
+ *
+ * @param hitLocation - The location where the shot hit.
+ */
+simulated function EmitIHBeam(vector hitLocation)
+{
+	local vector l;
+	local rotator r;
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && IHBeamTemplate != None)
+	{
+		GetMuzzleSocketLocRot(l, r);		
+		
+		`log("Hit lotation:" @ hitLocation);
+		
+		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
+		IHBeam.SetAbsolute(false, false, false);
+		IHBeam.SetVectorParameter('HitLocation', hitLocation);
+		IHBeam.SetVectorParameter('SourceLocation', l);
+		IHBeam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		IHBeam.bUpdateComponentInTick = true;
+		//AttachComponent(IHBeam);
+	}
+}
+
+/**
+ * Computes the location of the muzzle socket for the weapon.  Is designed to be overridden in subclasses.
+ */
+simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
+{
+	l = vect(0, 0, 0);
+	r = rot(0, 0, 0);
 }
 
 simulated function FireWeapon()
@@ -578,5 +639,6 @@ defaultproperties
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
 	
+	BaseDamage=100
 	AmmoPerShot=1
 }

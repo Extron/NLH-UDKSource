@@ -23,6 +23,7 @@ defaultproperties
 	
 	CompatibleTypes[0]=WTRifle
 	CompatibleTypes[1]=WTShotgun
+	CompatibleTypes[2]=WTHardLightRifle
 	
 	CompatibleSizes[0]=WSSmall
 	CompatibleSizes[1]=WSRegular
