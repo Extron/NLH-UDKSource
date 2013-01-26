@@ -50,7 +50,7 @@ simulated function Tick(float dt)
 {
 	super.Tick(dt);
 	
-	TimeOfDay += dt * DayRate;
+	//TimeOfDay += dt * DayRate;
 	
 	CloudCoverage = Cos(TimeOfDay * 0.25) * Cos(TimeOfDay * 0.25);
 	
@@ -64,8 +64,8 @@ defaultproperties
 	End Object
 	Constants=NewConstants
 	
-	TimeOfDay=0
-	DayRate=0.25
+	TimeOfDay=1
+	DayRate=0.1
 	CloudCoverage=0
 	CloudSharpness=0.001
 }

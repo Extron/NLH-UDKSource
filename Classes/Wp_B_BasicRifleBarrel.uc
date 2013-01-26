@@ -11,8 +11,7 @@ class Wp_B_BasicRifleBarrel extends Wp_Barrel;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'BasicRifleBarrel.Mesh.BasicRifleBarrelMesh_1P'
-		Rotation=(Yaw=-16384)
+		SkeletalMesh=SkeletalMesh'BasicRifleBarrel.Meshes.BasicBarrelMesh'
 		FOV=85.0
 	End Object
 	

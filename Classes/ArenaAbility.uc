@@ -17,6 +17,22 @@ var ArenaPawn Target;
 /** The sound of the ability firing. */
 var SoundCue FireSound;
 
+/**
+ * The template to use for instant hits for the ability.
+ */
+var ParticleSystem IHBeamTemplate;
+
+/**
+ * The instance of the IH Beam particle system.
+ */
+var ParticleSystemComponent IHBeam;
+
+/**
+ * The ability-specific offset of the source location of the ability.
+ * This can be thought as the displacement from the player's firing hand.
+ */
+var vector SourceOffset;
+
 /** The name of the ability. */
 var string AbilityName;
 
@@ -100,6 +116,7 @@ simulated function StartFire(byte FireModeNum)
 	
 	if (CanFire && !IsPassive && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy >= EnergyCost)
 	{
+		PlayArmAnimation('PlayerArmsAbilityOffHand', 0.0);
 		super.StartFire(FireModeNum);
 	}
 }
@@ -193,6 +210,81 @@ simulated function bool HasAmmo( byte FireModeNum, optional int Amount )
 	}
 }
 
+simulated function InstantFire()
+{
+	local vector			StartTrace, EndTrace;
+	local Array<ImpactInfo>	ImpactList;
+	local int				Idx;
+	local ImpactInfo		RealImpact;
+
+	// define range to use for CalcWeaponFire()
+	StartTrace = Instigator.GetWeaponStartTraceLocation();
+	EndTrace = (StartTrace + vector(GetAdjustedAim(StartTrace)) * GetTraceRange()); //<< Stats.GetInaccuracyShift();
+
+	// Perform shot
+	RealImpact = CalcWeaponFire(StartTrace, EndTrace, ImpactList);
+
+	if (Role == ROLE_Authority)
+	{
+		SetFlashLocation(RealImpact.HitLocation);	
+	}
+
+	EmitIHBeam(RealImpact.HitLocation);
+	
+	//InstantHitDamage[0] = BaseDamage * Stats.GetDamageModifier();
+	
+	for (Idx = 0; Idx < ImpactList.Length; Idx++)
+	{
+		ProcessInstantHit(CurrentFireMode, ImpactList[Idx]);
+	}
+}
+
+simulated function PlayArmAnimation(name sequence, float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
+{
+	local AP_Player player;
+	local AnimNodePlayCustomAnim node;
+
+	if( WorldInfo.NetMode == NM_DedicatedServer || Instigator == None || !Instigator.IsFirstPerson())
+		return;
+	
+	player = AP_Player(Instigator);
+
+	if (player != None)
+	{
+		node = GetArmAnimNode();
+		
+		`log("Node" @ node);
+		
+		if (player.Arms == None || node == None)
+			return;
+
+		node.PlayCustomAnim(sequence, 1.0);
+		
+		//if (duration > 0.0)
+		//{
+		//}
+		//else
+		//{
+			//node = AnimNodeSequence(player.Arms.Animations);
+			//node.SetAnim(sequence);
+			//node.PlayAnim(loop, DefaultAnimSpeed);
+		//}
+	}
+}
+
+simulated function AnimNodePlayCustomAnim GetArmAnimNode()
+{
+	local SkeletalMeshComponent skelMesh;
+
+	if (AP_Player(Instigator) != None)
+		skelMesh = AP_Player(Instigator).Arms;
+
+	if (skelMesh != None)
+		return AnimNodePlayCustomAnim(AnimTree(skelMesh.Animations).Children[0].Anim);
+
+	return None;
+}
+
 /**
  * This function handles playing sounds for weapons.  How it plays the sound depends on the following:
  *
@@ -209,6 +301,33 @@ simulated function AbilityPlaySound(SoundCue Sound)
 	if (Sound != None && Instigator != None)
 	{
 		Instigator.PlaySound(Sound, false, true);
+	}
+}
+
+/**
+ * Emits the particle system used fot the instant hit projectile beam.
+ *
+ * @param hitLocation - The location where the shot hit.
+ */
+simulated function EmitIHBeam(vector hitLocation)
+{
+	local vector l;
+	local rotator r;
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && IHBeamTemplate != None)
+	{
+		if (ArenaPawn(Instigator) != None)
+			ArenaPawn(Instigator).GetAbilitySourceOffset(l, r);// + SourceOffset) >> );r
+		
+		r = Instigator.Controller.Rotation;
+		l = l + (SourceOffset >> r);
+		
+		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
+		IHBeam.SetAbsolute(false, false, false);
+		IHBeam.SetVectorParameter('HitLocation', hitLocation);
+		IHBeam.SetVectorParameter('SourceLocation', l);
+		IHBeam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		IHBeam.bUpdateComponentInTick = true;
 	}
 }
 

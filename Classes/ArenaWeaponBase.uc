@@ -46,7 +46,7 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 		SkeletalMeshComponent(Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
 	}
 }
-		
+	
 /*
  * Gets the total weight of the weapon.
  *

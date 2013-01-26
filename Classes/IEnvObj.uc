@@ -44,7 +44,7 @@ simulated function bool HasEffect(string effectName);
  *
  * @param effect The effect to add to the object.
  */
-simulated function AddEffect(EnvironmentEffect effect);
+simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController controller);
 
 /**
  * Removes an effect from the environment object. 

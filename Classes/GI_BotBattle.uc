@@ -8,41 +8,71 @@
 
 class GI_BotBattle extends ArenaGameInfo;
 
+/** The game's wave manager, which provides what bots should show up in what waves, and how long each wave is. */
+var BBWaveManager WaveManager;
+
+
 function PostBeginPlay()
 {
+	local BBWaveManager iter;
+	local int i;
+	
 	super.PostBeginPlay();
 	
-	Teams[0] = Spawn(class'TI_BotWave');
+	foreach AllActors (class'Arena.BBWaveManager', iter)
+	{
+		if (iter != None)
+		{
+			WaveManager = iter;
+			break;
+		}
+	}
 	
-	SpawnOrb();
-}
-
-/**
- * Spawns a new bot.
- *
- * @param botClass - The bot class to spawn.
- * @param pawnClass - The pawn class to use for the bot.
- * @param wave - The wave to add this bot to.
- */
-simulated event SpawnBot(class<ArenaBot> botClass, class<ArenaPawn> pawnClass, ArenaTeamInfo wave)
-{
-	local ArenaBot bot;
-	local ArenaPawn botPawn;
-	local NavigationPoint spawnPoint;
+	Teams[0] = Spawn(class'TI_BBPlayers');
+	Teams[0].TeamIndex = 0;
 	
-	bot = Spawn(botClass);
-	spawnPoint = FindPlayerStart(bot, 1);
-	
-	botPawn = Spawn(pawnClass, , , spawnPoint.Location);
-	
-	if (botPawn == None)
-		`log("Pawn None!");
+	if (WaveManager != None)
+	{		
+		`log("Initializing waves.");
 		
-	bot.Possess(botPawn, false);
-	wave.AddToTeam(bot);
+		WaveManager.Initialize(self);
+		
+		for (i = 0; i < WaveManager.Waves.Length; i++)
+		{
+			WaveManager.Waves[i].WaveTI = Spawn(class'TI_BotWave');
+			WaveManager.Waves[i].WaveTI.Parent = WaveManager.Waves[i];
+			WaveManager.Waves[i].WaveTI.TeamIndex = i + 1;
+			
+			Teams[i + 1] = WaveManager.Waves[i].WaveTI;
+		}
+		
+		if (WaveManager.AutoBegin)
+		{
+			`log("Beginning the first wave in" @ WaveManager.IntermissionTime @ "seconds.");
+			
+			SetTimer(WaveManager.IntermissionTime, false, 'SpawnWave');
+		}
+	}
 }
 
-function SpawnOrb()
+function PlayerController SpawnPlayerController(vector SpawnLocation, rotator SpawnRotation)
 {
-	SpawnBot(class'ArenaBot', class'AP_OrbBot', Teams[0]);
+	local PlayerController player;
+	
+	player = super.SpawnPlayerController(SpawnLocation, SpawnRotation);
+	
+	if (player != None)
+		Teams[0].AddToTeam(player);
+	
+	return player;
+}
+
+simulated function SpawnWave()
+{
+	`log("Wave timer completed.");
+	
+	`log("Waves complete?" @ WaveManager.AllWavesComplete());
+	
+	if (WaveManager != None && !WaveManager.AllWavesComplete())
+		WaveManager.SpawnNextWave();
 }

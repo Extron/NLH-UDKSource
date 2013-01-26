@@ -250,7 +250,7 @@ defaultproperties
 	
 	Begin Object Class=PlayerLoadout Name=DefaultLoadout
 		Begin Object Class=WeaponSchematic Name=DefaultSchematic
-			ArenaWeaponBase=class'Wp_PhotonEmitterBase';
+			ArenaWeaponBase=class'Wp_BasicRifleBase';
 			WeaponStock=class'Wp_S_CheapStock';
 			WeaponBarrel=class'Wp_B_BasicRifleBarrel';
 			WeaponMuzzle=class'Wp_M_BasicRifleMuzzle';

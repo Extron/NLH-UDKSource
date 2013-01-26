@@ -70,6 +70,11 @@ var WeaponStats Stats;
 var SoundCue FireSound;
 
 /**
+ * The animation set for the first person player when this weapon is equipped.
+ */
+var AnimSet PlayerAnimSet;
+ 
+/**
  * The particle system template to use when drawing the beam for an instant hit shot.
  */
 var ParticleSystem IHBeamTemplate;
@@ -183,8 +188,6 @@ simulated function StartFire(byte FireModeNum)
 {
 	if (Clip > 0 && !Reloading && !Equipping)
 	{
-		`log("Start Fire");
-		
 		super.StartFire(FireModeNum);
 	}
 	else if (Clip == 0 && Ammo > 0)
@@ -317,8 +320,10 @@ simulated function rotator AddSpread(rotator BaseAim)
  */
 simulated function TimeWeaponEquipping()
 {
-	AttachWeaponTo(Instigator.Mesh);
-	EquipWeapon();
+	if (AP_Player(Instigator) != None)
+		AttachWeaponTo(AP_Player(Instigator).Arms, AP_Player(Instigator).GetWeaponHandSocket());
+		
+	EquipWeapon(ArenaPawn(Instigator));
 }
 
 /**
@@ -339,12 +344,8 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 		EnsureWeaponOverlayComponentLast();
 		SetHidden(false);
 		Mesh.SetLightEnvironment(pawn.LightEnvironment);
-		
-		//if (GetHand() == HAND_Hidden)
-		//{
-			//pawn.ArmsMesh[0].SetHidden(true);
-			//pawn.ArmsMesh[1].SetHidden(true);
-		//}
+		SetBase(pawn, , MeshCpnt, SocketName);
+		MeshCpnt.AttachComponentToSocket(Mesh, SocketName);
 	}
 	else
 	{
@@ -353,8 +354,6 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 		{
 			Mesh.SetLightEnvironment(pawn.LightEnvironment);
 			AttachComponent(Mesh);
-			//pawn.ArmsMesh[0].SetHidden(true);
-			//pawn.ArmsMesh[1].SetHidden(true);
 		}
 	}
 
@@ -371,8 +370,6 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 	}
 
 	//SetSkin(ArenaPawn(Instigator).ReplicatedBodyMaterial);
-	
-	`log("Equipping weapon.");
 }
 
 /**
@@ -395,9 +392,55 @@ simulated event SetPosition(UDKPawn Holder)
 		R = Holder.Controller.Rotation;
 	}
 	
-	SetLocation(T);
-	SetRotation(R);
-	SetBase(Holder);
+	ArenaPawn(Holder).PositionArms();
+	
+	//SetLocation(T);
+	//SetRotation(R);
+	//SetBase(Holder);
+}
+
+simulated function PlayArmAnimation(name sequence, float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
+{
+	local AP_Player player;
+	local AnimNodeSequence node;
+	
+	if( WorldInfo.NetMode == NM_DedicatedServer || Instigator == None || !Instigator.IsFirstPerson())
+		return;
+	
+	player = AP_Player(Instigator);
+
+	if (player != None)
+	{
+		
+		// Check we have access to mesh and animations
+		if (player.Arms == None || PlayerAnimSet == none || GetArmAnimNodeSeq() == None)
+			return;
+
+		// If we are not specifying a duration, use the default play rate.
+		if (duration > 0.0)
+		{
+			// @todo - this should call GetWeaponAnimNodeSeq, move 'duration' code into AnimNodeSequence and use that.
+			player.Arms.PlayAnim(sequence, duration, loop);
+		}
+		else
+		{
+			node = AnimNodeSequence(player.Arms.Animations);
+			node.SetAnim(sequence);
+			node.PlayAnim(loop, DefaultAnimSpeed);
+		}
+	}
+}
+
+simulated function AnimNodeSequence GetArmAnimNodeSeq()
+{
+	local AP_Player player;
+
+	player = AP_Player(Instigator);
+	
+	if (player != None && player.Arms != None)
+		return AnimNodeSequence(player.Arms.Animations);
+
+	return None;
 }
 
 /**
@@ -433,15 +476,12 @@ simulated function EmitIHBeam(vector hitLocation)
 	{
 		GetMuzzleSocketLocRot(l, r);		
 		
-		`log("Hit lotation:" @ hitLocation);
-		
 		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
 		IHBeam.SetAbsolute(false, false, false);
 		IHBeam.SetVectorParameter('HitLocation', hitLocation);
 		IHBeam.SetVectorParameter('SourceLocation', l);
 		IHBeam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		IHBeam.bUpdateComponentInTick = true;
-		//AttachComponent(IHBeam);
 	}
 }
 
@@ -515,13 +555,16 @@ simulated function ReloadWeapon()
 	}
 }
 
-simulated function EquipWeapon()
+simulated function EquipWeapon(ArenaPawn pawn)
 {
 	local float normDuration;
 	local float actualDuration;
 	local SkeletalMeshComponent skelMesh;
 	local int anim;
 	
+	if (PlayerAnimSet != None)
+		pawn.Mesh.AnimSets[0] = PlayerAnimSet;
+		
 	if (EquipAnims.Length > 0)
 	{
 		Equipping = true;

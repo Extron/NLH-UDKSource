@@ -104,8 +104,9 @@ simulated function bool HasEffect(string effectName)
  *
  * @param effect The effect to add to the object.
  */
-simulated function AddEffect(EnvironmentEffect effect)
+simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController controller)
 {
+	effect.ActivateEffect(Self, controller);
 	effect.ChangeState(ActiveEffects);
 	
 	ActiveEffects.AddItem(effect);

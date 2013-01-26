@@ -30,3 +30,7 @@ function array<ArenaPlayerController> GetTeamMembers()
 	
 	return players;
 }
+
+event TeamMemberKilled(Controller member)
+{
+}

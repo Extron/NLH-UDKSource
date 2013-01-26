@@ -12,7 +12,8 @@ defaultproperties
 {
 	InstantHitDamage(0)=300
 	WeaponRange=2000
-	CoolDown=30
+	CoolDown=10
 	EnergyCost=300
+	SourceOffset=(X=5,Y=5,Z=0)
 	AbilityName="Medium-Range Shock"
 }

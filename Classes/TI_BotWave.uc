@@ -8,3 +8,12 @@
 
 class TI_BotWave extends ArenaTeamInfo;
 
+/** The wave that this team info is part of. */
+var BBWaveComponent Parent;
+
+
+event TeamMemberKilled(Controller member)
+{
+	if (ArenaBot(member) != None)
+		Parent.KillBot(ArenaBot(member));
+}

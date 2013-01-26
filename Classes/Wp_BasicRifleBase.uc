@@ -11,8 +11,7 @@ class Wp_BasicRifleBase extends ArenaWeaponBase;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'BasicRifleBase.Mesh.BasicRifleBaseMesh_1P'
-		Rotation=(Yaw=16384)
+		SkeletalMesh=SkeletalMesh'BasicRifleBase.Meshes.RifleBaseMesh_1P'
 		FOV=85.0
 	End Object
 	
@@ -26,13 +25,15 @@ defaultproperties
 	WeaponFireTypes(0)=EWFT_Projectile
 	InstantHitDamageTypes(0)=None
 	WeaponProjectiles(0)=class'Arena.RifleBullet'
-	Mode=FMSemiAuto
+	Mode=FMFullAuto
 	CycleTime=0.25
 	BurstCount=3
 	
 	FireSound=SoundCue'A_Weapon_Link.Cue.A_Weapon_Link_FireCue'
 	
-	ViewOffset=(X=45, Y=10, Z=-22);
+	PlayerAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
+	
+	ViewOffset=(X=45, Y=5, Z=-22);
 	ArenaWeaponBaseName="Basic Rifle Base"
 	Energy=0
 	Type=WTRifle

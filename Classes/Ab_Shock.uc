@@ -15,6 +15,8 @@ defaultproperties
 	InstantHitDamageTypes(0)=class'Arena.Dmg_Shock'
 	InstantHitMomentum(0)=+0.0
 	
+	IHBeamTemplate=ParticleSystem'ArenaParticles.Particles.ShockBeam'
+	
 	CanHold=false
 	IsPassive=false
 	CanCharge=false

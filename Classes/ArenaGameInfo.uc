@@ -74,7 +74,7 @@ function CreateTeam(string tName)
 defaultproperties
 {
 	PlayerControllerClass=class'Arena.ArenaPlayerController'
-	DefaultPawnClass=class'Arena.ArenaPawn'
+	DefaultPawnClass=class'Arena.AP_Player'
 	HUDType=class'Arena.ArenaHUD'
 	GameReplicationInfoClass=class'Arena.ArenaGRI'
 	

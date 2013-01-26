@@ -16,16 +16,12 @@ var float Counter;
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
 	super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-	
-	`log("Bot took damage." @ DamageAmount @ DamageType @ Health);
 }
 
 function SetMovementPhysics()
 {
 	if (Physics != PHYS_Flying)
-	{
 		SetPhysics(PHYS_Flying);
-	}
 }
 
 function SetDyingPhysics()
@@ -34,9 +30,19 @@ function SetDyingPhysics()
 		SetPhysics(PHYS_RigidBody);
 }
 
+simulated function RebootElectronics(ArenaPawn pawn)
+{
+	`log("Rebooting");
+	
+	if (ArenaBot(Owner) != None)
+		ArenaBot(Owner).Stun(5);
+}
+
 function InitInventory()
 {
 	local Wp_OrbGun newWeapon;
+
+	super.InitInventory();
 	
 	if (ArenaBot(Owner) != None)
 	{
@@ -47,7 +53,6 @@ function InitInventory()
 	{	
 		if (newWeapon != None)
 		{
-			`log("Adding Orb's weapon.");
 			InvManager.AddInventory(newWeapon);
 			InvManager.NextWeapon();
 		}
@@ -64,7 +69,7 @@ auto state Idle
 		
 		Counter += dt;
 
-		offset.Z = Cos(Counter);
+		offset.Z = 0.25 * Cos(Counter);
 		SetLocation(Location + offset);
 	}
 }
@@ -73,12 +78,19 @@ state MoveToTarget
 {
 }
 
+state Stunned
+{
+Begin:
+	//SetDyingPhysics();
+}
+
 defaultproperties
 {
 	Begin Object Name=WPawnSkeletalMeshComponent
 		SkeletalMesh=SkeletalMesh'AC_Orb.Meshes.OrbMesh'
 		PhysicsAsset=PhysicsAsset'AC_Orb.Meshes.OrbMesh_Physics'
 		Rotation=(Yaw=-16384)
+		MinDistFactorForKinematicUpdate=0.0
 	End Object
 	
 	Begin Object Name=NewStats

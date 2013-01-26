@@ -23,7 +23,6 @@ var bool CanSpread;
 simulated function UpdateEffect(float dt)
 {
 	local Actor obj;
-	local EnvironmentEffect newEffect;
 	
 	if (CanSpread)
 	{
@@ -34,11 +33,8 @@ simulated function UpdateEffect(float dt)
 				if (IEnvObj(obj) != None)
 				{
 					if (IEnvObj(obj).HasProperties(Properties) && !IEnvObj(obj).HasEffect(EffectName))
-					{
-						newEffect = Spawn(class'EE_Charged', obj);
-						newEffect.ActivateEffect(obj, Affector);
-						
-						IEnvObj(obj).AddEffect(newEffect);
+					{						
+						IEnvObj(obj).AddEffect(Spawn(class'EE_Charged', obj), Affector);
 					}
 				}
 			}

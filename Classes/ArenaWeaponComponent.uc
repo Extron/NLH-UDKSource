@@ -48,11 +48,13 @@ var name AttachSock;
  */
 simulated function AttachToBase(ArenaWeaponBase weap, name socket)
 {
-	`log("Weap Mesh Owner" @ weap.Mesh.Owner);
+	local ArenaPawn pawn;
+	
+	pawn = ArenaPawn(weap.Instigator);
 	
 	if (SkeletalMeshComponent(weap.Mesh).GetSocketByName(socket) != None)
 	{		
-		SetBase(weap, , SkeletalMeshComponent(weap.Mesh), socket);
+		SetBase(pawn, , SkeletalMeshComponent(weap.Mesh), socket);
 	}
 	
 	AttachComponent(Mesh);

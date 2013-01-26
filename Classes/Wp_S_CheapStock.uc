@@ -11,9 +11,7 @@ class Wp_S_CheapStock extends Wp_Stock;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'CheapStock.Meshes.CheapStockMesh_1P'
-		//Translation=(X=15, Y=-20)
-		Rotation=(Roll=16384,Pitch=16384)
+		SkeletalMesh=SkeletalMesh'CheapStock.Meshes.CheapStockMesh'
 		FOV=85.0
 	End Object
 	

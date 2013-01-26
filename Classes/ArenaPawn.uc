@@ -27,6 +27,11 @@ var CameraAnim IdleCamAnim;
 /* The camera animation to play when the pawn is walking. */
 var CameraAnim WalkCamAnim;
 
+/** 
+ * The default anim set to use for the pawn's mesh.
+ */
+var AnimSet DefaultAnimSet;
+
 /* Stores the amount of energy the player currently has. */
 var float Energy;
 
@@ -77,8 +82,6 @@ function PossessedBy(Controller C, bool bVehicleTransition)
 	
 	if (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer)
 	{
-		`log("We are on a listen server.");
-
 		InitInventory();
 		initInv = False;
 	}
@@ -98,6 +101,14 @@ simulated function bool CalcCamera( float fDeltaTime, out vector out_CamLoc, out
 	GetActorEyesViewPoint(out_CamLoc, out_CamRot);
 	return true;
 }
+
+simulated function PostBeginPlay()
+{
+	super.PostBeginPlay();
+	
+	Mesh.AnimSets[0] = DefaultAnimSet;
+}
+
 
 /** 
  * Ticks the pawn.
@@ -162,12 +173,12 @@ simulated function Tick(float dt)
 		if (Stamina <= 0)
 		{
 			StopSprint();
-		}
 	}
+		}
 	
 	if (ArenaWeapon(Weapon) != None)
 	{
-		ArenaWeapon(Weapon).SetPosition(Self);
+		PositionArms();
 	}
 	
 	for (i = 0; i < ActiveEffects.Length; i++)
@@ -206,8 +217,6 @@ function bool DoJump(bool bUpdating)
 
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
-	`log("Damage after stat" @ Stats.GetDamageTaken(DamageAmount, DamageType));
-	
 	super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
 }
 
@@ -330,7 +339,7 @@ simulated function AimDownSights()
 
 simulated function Melee()
 {
-	local vector x, y, z, hitloc, momentum;
+	local vector x, y, z, hitloc;
 	local ArenaPawn target;
 
 	GetAxes(GetViewRotation(), x, y, z);
@@ -351,12 +360,14 @@ simulated function RebootElectronics(ArenaPawn pawn)
 	//TODO: Reboot electronics of the player here.
 }
 
+simulated function PositionArms()
+{
+}
+
 simulated function ReplicatedEvent(name property)
 {
 	if (property == nameof(InvManager))
 	{
-		`log("Replicated InvManager" @ ArenaInventoryManager(InvManager));
-		
 		if (initInv)
 		{
 			InitInventory();
@@ -367,24 +378,6 @@ simulated function ReplicatedEvent(name property)
 
 function InitInventory()
 {
-	local ArenaWeapon newWeapon;
-	
-	if (ArenaPlayerController(Owner) != None && ArenaPlayerController(Owner).Loadout != None && ArenaPlayerController(Owner).Loadout.Weapon != None)
-	{
-		newWeapon = CreateWeapon(ArenaPlayerController(Owner).Loadout.Weapon);
-	}
-	
-	if (ArenaInventoryManager(InvManager) != None)
-	{	
-		if (newWeapon != None)
-		{
-			InvManager.AddInventory(newWeapon);
-			InvManager.NextWeapon();
-		}
-		
-		CreateInventory(class'Arena.Ab_ChargedShock', true);
-		ArenaInventoryManager(InvManager).NextAbility();
-	}
 }
 
 function ArenaWeapon CreateWeapon(WeaponSchematic schematic)
@@ -505,6 +498,27 @@ function bool HasStatus(ArenaPlayerController player, string effectName, out Sta
 	return false;
 }
 
+/**
+ * Gets the location that abilities will fire from.  Preferrably, this will be the location of the
+ * player's right or left hand (as per player handedness).
+ */
+function GetAbilitySourceOffset(out vector l, out rotator r)
+{	
+	l = vect(0, 0, 0);
+	r = rot(0, 0 , 0);
+}
+
+function GetWeaponSourceOffset(out vector l, out rotator r)
+{	
+	l = vect(0, 0, 0);
+	r = rot(0, 0 , 0);
+}
+
+function name GetWeaponHandSocket()
+{
+	return 'RightHandSocket';
+}
+
 exec function KillMe()
 {
 	TakeDamage(Health, ArenaPlayerController(Owner), Location, vect(0, 0, 0), None);
@@ -513,6 +527,11 @@ exec function KillMe()
 exec function CurrentState()
 {
 	`log("My current state is:" @ GetStateName());
+}
+
+exec function SetCoolDownMod(float mod)
+{
+	Stats.Values[PSVAbilityCooldownFactor] = mod;
 }
 
 state Idle
@@ -559,7 +578,6 @@ state Running
 	{
 		if (ArenaPlayerController(Controller) != None)
 		{
-			`log("Sprint State");
 			ArenaPlayerController(Controller).ClientPlayCameraAnim(WalkCamAnim, 3, 1.2, 0.35, 0.35, true, false);
 		}
 	}
@@ -568,7 +586,6 @@ state Running
 	{
 		if (ArenaPlayerController(Controller) != None)
 		{
-			`log("End Sprint State");
 			ArenaPlayerController(Controller).ClientStopCameraAnim(WalkCamAnim);
 		}
 	}
@@ -584,33 +601,36 @@ defaultproperties
 	Components.Add(MyLightEnvironment)
 	LightEnvironment=MyLightEnvironment
 	
+	DefaultAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
+	
 	// TODO: This is just a temp mesh so that Unreal doesn't freak out that we don't have one.
 	Begin Object Class=SkeletalMeshComponent Name=WPawnSkeletalMeshComponent
+		//SkeletalMesh=SkeletalMesh'AC_Player.Meshes.PlayerMesh'
+		PhysicsAsset=PhysicsAsset'AC_Player.Physics.PlayerMeshPhysics'
+		Translation=(X=-10,Y=0,Z=0)
+		Scale=0.95
 		bCacheAnimSequenceNodes=FALSE
 		AlwaysLoadOnClient=true
 		AlwaysLoadOnServer=true
-		bOwnerNoSee=true
+		bOwnerNoSee=false
 		CastShadow=true
 		BlockRigidBody=TRUE
 		bUpdateSkelWhenNotRendered=false
 		bIgnoreControllersWhenNotRendered=TRUE
 		bUpdateKinematicBonesFromAnimation=true
 		bCastDynamicShadow=true
-		Translation=(Z=8.0)
 		RBChannel=RBCC_Untitled3
 		RBCollideWithChannels=(Untitled3=true)
 		LightEnvironment=MyLightEnvironment
 		bOverrideAttachmentOwnerVisibility=true
 		bAcceptsDynamicDecals=FALSE
-		AnimTreeTemplate=AnimTree'CH_AnimHuman_Tree.AT_CH_Human'
+		AnimTreeTemplate=AnimTree'AC_Player.Animations.PlayerAnimTree'
+		AnimSets[0]=AnimSet'AC_Player.Animations.PlayerAnim'
 		bHasPhysicsAssetInstance=true
 		TickGroup=TG_PreAsyncWork
 		bChartDistanceFactor=true
 		MinDistFactorForKinematicUpdate=0.2
-		//bSkipAllUpdateWhenPhysicsAsleep=TRUE
 		RBDominanceGroup=20
-		Scale=1.075
-		// Nice lighting for hair
 		bUseOnePassLightingOnTranslucency=TRUE
 		bPerBoneMotionBlur=true
 	End Object

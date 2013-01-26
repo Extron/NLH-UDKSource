@@ -34,6 +34,11 @@ var float FireIntervalMax;
 var float LastShotAtDuration;
 
 /**
+ * The amount of time the bot is being stunned for.
+ */
+var float StunTime;
+
+/**
  * Indicates that we have come into desirable range of our target after moving toward it.
  */
 var bool ApproachedTarget;
@@ -65,6 +70,14 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	WhatToDoNext();
 }
 
+function NotifyKilled(Controller killer, Controller killed, Pawn killedPawn, class<DamageType> damageType)
+{
+	super.NotifyKilled(killer, killed, killedPawn, damageType);
+	
+	if (ArenaTeamInfo(PlayerReplicationInfo.Team) != None)
+		ArenaTeamInfo(PlayerReplicationInfo.Team).TeamMemberKilled(self);
+}
+
 event WhatToDoNext()
 {
 	if (Pawn == None)
@@ -82,10 +95,11 @@ protected function ExecuteWhatToDoNext()
 		GoToState('Idle');
 		return;
 	}
-		
+	
+	
 	nearestPawn = FindNearestTarget();
 		
-	if (nearestPawn != None && Pawn != None)
+	if (nearestPawn != None && Pawn != None && CanSee(nearestPawn))
 	{
 		if (VSize(Pawn.Location - nearestPawn.Location) < BotFireRange)
 		{
@@ -119,15 +133,18 @@ function ArenaPawn FindNearestTarget()
 	foreach WorldInfo.AllPawns(class'ArenaPawn', p)
 	{
 		if (p != Pawn)
-		{
-			if (nearest != None)
+		{			
+			if (p.PlayerReplicationInfo.Team != None && p.PlayerReplicationInfo.Team.TeamIndex != PlayerReplicationInfo.Team.TeamIndex)
 			{
-				if (VSize(Pawn.Location - p.Location) < VSize(Pawn.Location - nearest.Location))
+				if (nearest != None)
+				{
+					if (VSize(Pawn.Location - p.Location) < VSize(Pawn.Location - nearest.Location))
+						nearest = p;
+				}
+				else
+				{
 					nearest = p;
-			}
-			else
-			{
-				nearest = p;
+				}
 			}
 		}
 	}
@@ -151,6 +168,16 @@ function ShootAt(Actor actor)
 		SetTimer(FireIntervalMin * (1 - a) + FireIntervalMax * a, false, 'ReactivateFire');
 	}
 }
+
+/**
+ * Sets the bot to be stunned, meaning that it cannot move.
+ */
+function Stun(float time)
+{
+	StunTime = time;
+	GoToState('Stunned');
+}
+
 
 /**
  * This function determines if the bot should be cautious about attacking the current target.  This is dependant on the bot's
@@ -205,6 +232,34 @@ function bool IsAggressive()
 }
 
 /**
+ * This function determines if the bot should be retreating to cover.  This is dependant on the bot's
+ * and player's health, the target's and bot's currently equipped weapon, the number of friendly and enemy actors in the vicinity,
+ * and how long ago the player took a shot at the bot.
+ *
+ * @returns Returns true if the bot should be cautious, false if not.
+ */
+function bool IsRetreating()
+{
+	local float retreatMeasure;
+	
+	retreatMeasure = 0;
+	
+	if (ArenaPawn(Focus) != None)
+	{
+		retreatMeasure += 0.75 * Pawn.HealthMax / float(Pawn.Health);
+		
+		retreatMeasure -= 0.75 * ArenaPawn(Focus).HealthMax / float(ArenaPawn(Focus).Health);
+		
+		//Reduce the need for caution for every near friendly bot within 50 units.
+		retreatMeasure -= BotsNear(50) * 0.25;
+		
+		retreatMeasure -= LastShotAtDuration * 0.05;
+	}
+	
+	return retreatMeasure > 0.0;
+}
+
+/**
  * Counts the amount of (friendly) bots that are near this bot.
  *
  * @param radius - The radius in which to search.
@@ -251,6 +306,14 @@ simulated state MoveToTarget
 			StopLatentExecution();
 			Pawn.ZeroMovementVariables();
 		}
+		else if (Pawn(MoveTarget) != None && !CanSee(Pawn(MoveTarget)))
+		{
+			MoveTarget = None;
+			
+			//TODO: This needs to be a better algorithm, to do a search or something.
+			StopLatentExecution();
+			Pawn.ZeroMovementVariables();
+		}
 	}
 	
 Begin:
@@ -277,6 +340,16 @@ Begin:
 		FinishRotation();
 			
 	ShootAt(None);
+	LatentWhatToDoNext();
+}
+
+simulated state Stunned
+{
+Begin:
+	if (Pawn != None)
+		Pawn.GoToState('Stunned');
+		
+	Sleep(StunTime);
 	LatentWhatToDoNext();
 }
 

@@ -11,7 +11,7 @@ class Wp_O_CheapIronSights extends Wp_Optics;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'CheapIronSights.Mesh.CheapIronSightsMesh_1P'
+		SkeletalMesh=SkeletalMesh'CheapIronSights.Meshes.IronSightsMesh'
 		FOV=85.0
 	End Object
 	
@@ -33,5 +33,5 @@ defaultproperties
 	
 	Weight=1
 	ComponentName="Cheap Iron Sights"
-	OpticsOffset=(X=0, Y=12, Z=-2);
+	OpticsOffset=(X=0, Y=10.5, Z=-2);
 }
