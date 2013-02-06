@@ -64,7 +64,7 @@ function vector GetOpticsOffset()
 
 function AttachStock(Wp_Stock s)
 {
-	if (s.CanAttachToBase(self))
+	if (s.CanAttachToBase(Self))
 	{
 		Stock = s;
 		Energy -= s.EnergyCost;
@@ -73,7 +73,7 @@ function AttachStock(Wp_Stock s)
 
 function AttachBarrel(Wp_Barrel b)
 {
-	if (b.CanAttachToBase(self))
+	if (b.CanAttachToBase(Self))
 	{
 		Barrel = b;
 		Energy -= b.EnergyCost;
@@ -82,7 +82,7 @@ function AttachBarrel(Wp_Barrel b)
 
 function AttachMuzzle(Wp_Muzzle m)
 {
-	if (m.CanAttachToBase(self))
+	if (m.CanAttachToBase(Self))
 	{
 		Muzzle = m;
 		Energy -= m.EnergyCost;
@@ -91,7 +91,7 @@ function AttachMuzzle(Wp_Muzzle m)
 
 function AttachOptics(Wp_Optics o)
 {
-	if (o.CanAttachToBase(self))
+	if (o.CanAttachToBase(Self))
 	{
 		Optics = o;
 		Energy -= o.EnergyCost;
@@ -100,7 +100,7 @@ function AttachOptics(Wp_Optics o)
 
 function AttachSide(Wp_SideAttachment s)
 {
-	if (s.CanAttachToBase(self))
+	if (s.CanAttachToBase(Self))
 	{
 		Side = s;
 		Energy -= s.EnergyCost;
@@ -109,7 +109,7 @@ function AttachSide(Wp_SideAttachment s)
 
 function AttachUnder(Wp_UnderAttachment u)
 {
-	if (u.CanAttachToBase(self))
+	if (u.CanAttachToBase(Self))
 	{
 		Under = u;
 		Energy -= u.EnergyCost;

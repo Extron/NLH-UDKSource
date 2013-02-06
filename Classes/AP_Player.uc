@@ -39,7 +39,8 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		CreateInventory(class'Arena.Ab_Repulsion', true);
+		// This sets the defualt class
+		CreateInventory(class'Arena.Ab_Bubble', true);
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
 }
@@ -84,7 +85,7 @@ defaultproperties
 		AlwaysLoadOnClient=true
 		AlwaysLoadOnServer=true
 		bOwnerNoSee=false
-		CastShadow=true
+		CastShadow=FALSE
 		BlockRigidBody=TRUE
 		bUpdateSkelWhenNotRendered=false
 		bIgnoreControllersWhenNotRendered=TRUE

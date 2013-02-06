@@ -614,6 +614,12 @@ simulated function float GetGGC(int i)
 
 defaultproperties
 {
+	/*DamageInput[0]=10
+    DamageInput[1]=.5
+    DamageInput[2]=.1
+    DamageInput[3]=2
+    DamageInput[4]=5*/
+
 	DamageInput[0]=1
     DamageInput[1]=1
     DamageInput[2]=1

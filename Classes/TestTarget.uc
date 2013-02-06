@@ -8,18 +8,18 @@
 
 class TestTarget extends ArenaPawn placeable;
 
-var Ab_DeflectionShield Shield;
+var Ab_BubbleShield Shield;
 
 simulated event TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
 	super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-	`log("I have taken damage.  Health" @ Health @ "Damage" @ DamageAmount);
+	`log("I have taken damage.  Health" @ Health @ "Damage" @ DamageAmount @ "Damage Type" @ DamageType);
 }
 
 simulated function PostBeginPlay()
 {
 	`log("spawning shield");
-	Shield = spawn(class'Ab_DeflectionShield', self);
+	Shield = spawn(class'Ab_BubbleShield', self);
 }
 
 defaultproperties

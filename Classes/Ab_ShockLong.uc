@@ -12,7 +12,7 @@ defaultproperties
 {
 	InstantHitDamage(0)=200
 	WeaponRange=3500
-	CoolDown=30
+	CoolDown=20
 	EnergyCost=300
 	AbilityName="Long-Range Shock"
 }

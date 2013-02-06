@@ -216,6 +216,7 @@ function ConsumeAmmo(byte FireModeNum)
 	if (Clip < 0)
 	{
 		Clip = 0;
+		StopFire(Mode);
 	}
 }
 
@@ -682,6 +683,6 @@ defaultproperties
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
 	
-	BaseDamage=100
+	BaseDamage=300
 	AmmoPerShot=1
 }
