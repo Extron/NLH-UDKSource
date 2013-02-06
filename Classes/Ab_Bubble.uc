@@ -18,6 +18,7 @@ var Ab_BubbleShield Shield;
  */
 var class<Ab_BubbleShield> ShieldClass;
 
+
 simulated function CustomFire()
 {
 	if (!IsHolding)
@@ -35,6 +36,10 @@ defaultproperties
 	CoolDown=20
 	EnergyCost=200
 	AbilityName="Bubble"
+	
+	CanHold=false
+	IsPassive=false
+	CanCharge=false
 	
 	ShieldClass=class'Ab_BubbleShield'
 }

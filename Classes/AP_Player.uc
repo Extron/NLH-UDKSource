@@ -79,6 +79,7 @@ function InitInventory()
 		CreateInventory(class'Arena.Ab_Deflection', true);
 		CreateInventory(class'Arena.Ab_EMP', true);
 		CreateInventory(class'Arena.Ab_Bubble', true);
+		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		
 		ArenaInventoryManager(InvManager).NextAbility();
 	}

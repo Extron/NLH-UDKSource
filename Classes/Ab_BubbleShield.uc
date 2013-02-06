@@ -55,6 +55,8 @@ simulated function PostBeginPlay()
 		// ERROR: Makes the player invicible
 		ArenaPawn(Instigator).Stats.AddModifier(PlayerStatMod);
 	}
+	
+	SetTimer(ShieldTimer, false, 'DestroyShield');
 }
 
 simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vector HitNormal)
@@ -75,8 +77,8 @@ simulated function Tick(float dt)
 	{
 		SetLocation(Instigator.Location);
 	}
-	
-	ShieldTimer = ShieldTimer - dt;
+
+	//ShieldTimer = ShieldTimer - dt;
 	
 	if (ShieldTimer <= 0) {
 		self.Destroy();
@@ -91,6 +93,19 @@ simulated function Tick(float dt)
 simulated function bool StopsProjectile(Projectile P)
 {
 	return false;
+}
+
+simulated function DestroyShield()
+{
+	`log("Bubble shield expired");
+	
+	if (ArenaPawn(Instigator) != None)
+	{
+		// ERROR: Makes the player invicible
+		ArenaPawn(Instigator).Stats.RemoveModifier(PlayerStatMod);
+	}
+	
+	self.Destroy();	
 }
 
 /**
@@ -122,6 +137,10 @@ defaultproperties
 		Scale=3
 	End Object
 	Mesh=ShieldMesh
+	
+	Begin Object Class=PlayerStatModifier Name=NewMod
+	End Object
+	playerStatMod=NewMod
 	
 	ShieldTimer=15.0
 	DamageReduction=0.85
