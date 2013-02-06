@@ -45,7 +45,7 @@ defaultproperties
 	
 	FireInterval[0]=0
 	CoolDown=0
-	EnergyCost=50
+	EnergyCost=78
 	AbilityName="Deflection"
 	
 	ShieldClass=class'Ab_DeflectionShield'

@@ -75,9 +75,11 @@ function InitInventory()
 			InvManager.AddInventory(newWeapon);
 			InvManager.NextWeapon();
 		}
-		
+
 		CreateInventory(class'Arena.Ab_Deflection', true);
 		CreateInventory(class'Arena.Ab_EMP', true);
+		CreateInventory(class'Arena.Ab_Bubble', true);
+		
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
 }
@@ -135,7 +137,7 @@ defaultproperties
 		AlwaysLoadOnClient=true
 		AlwaysLoadOnServer=true
 		bOwnerNoSee=false
-		CastShadow=true
+		CastShadow=FALSE
 		BlockRigidBody=TRUE
 		bUpdateSkelWhenNotRendered=false
 		bIgnoreControllersWhenNotRendered=TRUE

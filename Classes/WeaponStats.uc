@@ -81,8 +81,10 @@ simulated function rotator GetInaccuracyShift()
 	//that the bullet is traveling, and the y and z axes form the plane orthogonal to that trajectory.
 	//We will only ever modify y and z, since that is the only direction it makes sense to shift in.
 	
-	yShift = FRand() - 0.5;
-	zShift = FRand() - 0.5;
+	//yShift = FRand() - 0.5;
+	//zShift = FRand() - 0.5; It was waaaaaay too inaccurate
+	yShift = (FRand() - 0.5) * 0.02;
+	zShift = (FRand() - 0.5) * 0.02;
 	
 	factor = Constants.GetFactorMin("Accuracy Shift") * (1 - 1 / fmax(Constants.NormalizedStat("Accuracy", Values[WSVAccuracy]), 0.01)) + 
 			 Constants.GetFactorMax("Accuracy Shift") * (1 / fmax(Constants.NormalizedStat("Accuracy", Values[WSVAccuracy]), 0.01));
