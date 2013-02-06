@@ -40,7 +40,9 @@ function InitInventory()
 		}
 		
 		// This sets the defualt class
+		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		CreateInventory(class'Arena.Ab_Bubble', true);
+		CreateInventory(class'Arena.Ab_EMP', true);
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
 }
