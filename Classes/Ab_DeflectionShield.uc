@@ -88,6 +88,7 @@ simulated function Tick(float dt)
 	if (ArenaPawn(Instigator) != None)
 	{
 		SetLocation(Instigator.Location);
+		SetRotation(Instigator.Controller.Rotation);
 	}
 	
 	super.Tick(dt);
@@ -120,6 +121,7 @@ defaultproperties
 	
 	Begin Object Class=StaticMeshComponent Name=ShieldMesh
 		StaticMesh=StaticMesh'ArenaAbilities.Meshes.DeflectionShieldMesh'
+		Rotation=(Yaw=-16384,Pitch=16384)
 		DepthPriorityGroup=SDPG_PostProcess
 		bOnlyOwnerSee=false
 		bCastDynamicShadow=false

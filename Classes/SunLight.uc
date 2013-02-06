@@ -34,11 +34,11 @@ simulated function Tick(float dt)
 	
 	if (ArenaGRI(WorldInfo.GRI) != None)
 	{
-		r.Pitch = (2 * ArenaGRI(WorldInfo.GRI).TimeOfDay + Pi / 2) * RadToUnrRot;
+		r.Pitch = (2 * ArenaGRI(WorldInfo.GRI).WeatherMgr.TimeOfDay + Pi / 2) * RadToUnrRot;
 		r.Yaw = RadToUnrRot * Pi / 2;
 		SetRotation(r);
 		
-		alpha = Clamp(ArenaGRI(WorldInfo.GRI).CloudCoverage * 5.0, 0.0, 1.0);
+		alpha = Clamp(ArenaGRI(WorldInfo.GRI).WeatherMgr.CloudCoverage * 5.0, 0.0, 1.0);
 		sunColor.r = Lerp(MinSunColor.r, MaxSunColor.r, alpha);
 		sunColor.g = Lerp(MinSunColor.g, MaxSunColor.g, alpha);
 		sunColor.b = Lerp(MinSunColor.b, MaxSunColor.b, alpha);
