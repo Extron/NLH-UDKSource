@@ -137,6 +137,7 @@ var bool Thawing;
  */
 var bool Raining;
 
+
 simulated function PostBeginPlay()
 {
 	local int i;

@@ -41,18 +41,11 @@ simulated function PostBeginPlay()
 	
 	EmitShield();
 	
-	/* if (ArenaPawn(Instigator) != None)
-	{
-		// ERROR: Makes the player invicible
-		ArenaPawn(Instigator).Stats.SetTypeDamageInput(class 'Arena.Dmg_LightBeam', DamageReduction);
-	} */
-	
 	// Makes it so the player takes less damage from light beams
 	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_LightBeam', DamageReduction);
 	
 	if (ArenaPawn(Instigator) != None)
 	{
-		// ERROR: Makes the player invicible
 		ArenaPawn(Instigator).Stats.AddModifier(PlayerStatMod);
 	}
 	
@@ -80,12 +73,12 @@ simulated function Tick(float dt)
 
 	//ShieldTimer = ShieldTimer - dt;
 	
-	if (ShieldTimer <= 0) {
-		self.Destroy();
+	//if (ShieldTimer <= 0) {
+		//self.Destroy();
 		// Undo the damage mod
 		//ArenaPawn(Instigator).Stats.SetTypeDamageInput(class 'Arena.Dmg_LightBeam', 1.0);
-		`log("Bubble shield expired");
-	}
+		//`log("Bubble shield expired");
+	//}
 	
 	super.Tick(dt);
 }
@@ -101,7 +94,6 @@ simulated function DestroyShield()
 	
 	if (ArenaPawn(Instigator) != None)
 	{
-		// ERROR: Makes the player invicible
 		ArenaPawn(Instigator).Stats.RemoveModifier(PlayerStatMod);
 	}
 	

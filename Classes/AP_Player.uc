@@ -41,7 +41,6 @@ simulated event TickSpecial(float dt)
 		ArenaWeapon(Weapon).GetGripSocketLocRot(gripLoc, gripRot);
 		LeftArmControl.EffectorLocation = gripLoc;
 	}
-	
 }
 
 simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
@@ -75,12 +74,12 @@ function InitInventory()
 			InvManager.AddInventory(newWeapon);
 			InvManager.NextWeapon();
 		}
-
-		CreateInventory(class'Arena.Ab_Deflection', true);
-		CreateInventory(class'Arena.Ab_EMP', true);
-		CreateInventory(class'Arena.Ab_Bubble', true);
-		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		
+		CreateInventory(class'Arena.Ab_Bubble', true);
+		CreateInventory(class'Arena.Ab_Pedestal', true);
+		CreateInventory(class'Arena.Ab_Deflection', true);
+		CreateInventory(class'Arena.Ab_RockWall', true);
+
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
 }
