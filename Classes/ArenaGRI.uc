@@ -15,17 +15,10 @@ var GlobalGameConstants Constants;
 /** The respawn time for all players. */
 var float RespawnTime;
 
-/** The current time of day, measured from 0 (midnight) to 2 pi. */
-var float TimeOfDay; 
-
-/** Keeps track of how fast the time of day changes. */
-var float DayRate;
-
-/** The percent of cloud coverage in the sky. */
-var float CloudCoverage;
-
-/** The sharpness of the clouds. */
-var float CloudSharpness;
+/**
+ * The game's weather manager.
+ */
+var WeatherManager WeatherMgr;
 
 /** Indicates that the player can respawn immidiately after death. */
 var bool AllowFastRespawn;
@@ -43,19 +36,12 @@ replication
 		Constants;
 		
 	if (bNetDirty)
-		RespawnTime, AllowFastRespawn, CanRespawn, TimeOfDay, CloudCoverage, CloudSharpness;
+		RespawnTime, AllowFastRespawn, CanRespawn, WeatherMgr;
 }
 
-simulated function Tick(float dt)
+simulated function PostBeginPlay()
 {
-	super.Tick(dt);
-	
-	//TimeOfDay += dt * DayRate;
-	
-	CloudCoverage = Cos(TimeOfDay * 0.25) * Cos(TimeOfDay * 0.25);
-	
-	if (TimeOfDay > 2 * Pi)
-		TimeOfDay = 0;
+	WeatherMgr = Spawn(class'Arena.WeatherManager', self);
 }
 
 defaultproperties
@@ -63,9 +49,4 @@ defaultproperties
 	Begin Object Class=GlobalGameConstants Name=NewConstants
 	End Object
 	Constants=NewConstants
-	
-	TimeOfDay=1
-	DayRate=0.1
-	CloudCoverage=0
-	CloudSharpness=0.001
 }

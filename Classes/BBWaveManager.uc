@@ -25,6 +25,15 @@ var int CurrentWave;
 /** The parent game info that owns this wave manager. */
 var GI_BotBattle Parent;
 
+simulated function Tick(float dt)
+{
+	local BBWaveComponent wave;
+	
+	foreach Waves(wave)
+	{
+		wave.CheckDelayQueue();
+	}
+}
 
 simulated function Initialize(GI_BotBattle gameInfo)
 {

@@ -30,6 +30,11 @@ struct WaveBot
 	var int ActiveCount;
 };
 
+/** 
+ * This is a list of bot types that are queued to be spawned.  The index corresponds to the bot type in the Bots list.
+ */
+var array<int> QueuedBots;
+
 /** The bots that are in the wave. */
 var() editinline array<WaveBot> Bots;
 
@@ -50,6 +55,38 @@ simulated function Initialize(BBWaveManager waveManager)
 	Parent = waveManager;
 }
 
+simulated function CheckDelayQueue()
+{
+	local array<int> fails;
+	local int i;
+	local int index;
+	local int maxCount;
+	
+	maxCount = QueuedBots.Length;
+	
+	for (i = 0; i < maxCount; i++)
+	{
+		index = QueuedBots[i];
+		
+		if (SpawnBot(index, Bots[index].BotType, Bots[index].PawnType, WaveTI))
+		{
+			Bots[index].TotalCount++;
+			Bots[index].ActiveCount++;
+		}
+		else
+		{
+			fails.AddItem(index);
+		}
+	}
+	
+	QueuedBots.Length = 0;
+	
+	for (i = 0; i < fails.Length; i++)
+	{
+		QueuedBots.AddItem(fails[i]);
+	}
+}
+
 simulated function SpawnWave()
 {
 	local int i;
@@ -61,11 +98,41 @@ simulated function SpawnWave()
 		{
 			`log("Spawning bot in wave.");
 			
-			SpawnBot(Bots[i].BotType, Bots[i].PawnType, WaveTI);
-			Bots[i].TotalCount++;
-			Bots[i].ActiveCount++;
+			if (SpawnBot(i, Bots[i].BotType, Bots[i].PawnType, WaveTI))
+			{
+				Bots[i].TotalCount++;
+				Bots[i].ActiveCount++;
+			}
 		}
 	}
+}
+
+simulated function bool FindUnusedSpawn(class<ArenaPawn> pawnClass, ArenaTeamInfo wave, out vector spawnLoc)
+{
+	local PlayerStart p, start;
+	local Actor iter, b;
+
+	foreach Parent.WorldInfo.AllNavigationPoints(class'PlayerStart', p)
+	{
+		if (p.TeamIndex == wave.TeamIndex)
+		{
+			foreach Parent.VisibleCollidingActors(class'Actor', iter, pawnClass.Default.CylinderComponent.CollisionRadius, p.Location)
+				b = iter;
+			
+			if (b == None)
+				start = p;
+		}
+	
+	}
+	
+	if (start != None)
+	{
+		spawnLoc = start.Location;
+		return true;
+	}
+	
+	spawnLoc = vect(0, 0, 0);
+	return false;
 }
 
 /**
@@ -75,22 +142,30 @@ simulated function SpawnWave()
  * @param pawnClass - The pawn class to use for the bot.
  * @param wave - The wave to add this bot to.
  */
-simulated event SpawnBot(class<ArenaBot> botClass, class<ArenaPawn> pawnClass, ArenaTeamInfo wave)
+simulated event bool SpawnBot(int botIndex, class<ArenaBot> botClass, class<ArenaPawn> pawnClass, ArenaTeamInfo wave)
 {
 	local ArenaBot bot;
 	local ArenaPawn botPawn;
-	local NavigationPoint spawnPoint;
+	local vector spawnPoint;
 	
-	bot = Parent.Spawn(botClass);
-	spawnPoint = Parent.Parent.FindPlayerStart(bot, 1);
-	
-	botPawn = Parent.Spawn(pawnClass, , , spawnPoint.Location);
-	
-	if (botPawn == None)
-		`warn("Pawn None!");
+	if (FindUnusedSpawn(pawnClass, wave, spawnPoint))
+	{
+		bot = Parent.Spawn(botClass);
 		
-	bot.Possess(botPawn, false);
-	wave.AddToTeam(bot);
+		botPawn = Parent.Spawn(pawnClass, , , spawnPoint);
+		
+		if (botPawn == None)
+			`warn("Pawn None!");
+			
+		bot.Possess(botPawn, false);
+		wave.AddToTeam(bot);
+		return true;
+	}
+	else
+	{
+		QueuedBots.AddItem(botIndex);
+		return false;
+	}
 }
 
 simulated event KillBot(ArenaBot bot)
@@ -105,8 +180,10 @@ simulated event KillBot(ArenaBot bot)
 			{				
 				`log("Spawning new bot.");
 				
-				SpawnBot(Bots[i].BotType, Bots[i].PawnType, WaveTI);
-				Bots[i].TotalCount++;
+				if (SpawnBot(i, Bots[i].BotType, Bots[i].PawnType, WaveTI))
+					Bots[i].TotalCount++;
+				else
+					Bots[i].ActiveCount--;
 			}			
 		}
 	}

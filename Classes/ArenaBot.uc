@@ -8,6 +8,12 @@
 
 class ArenaBot extends UDKBot;
 
+
+/**
+ * The last location that the bot was in good condition at.
+ */
+var vector LastStableLocation;
+
 /**
  * The distance away from the player that the bot needs to move to to become idle.
  */
@@ -59,7 +65,7 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 {
 	super.Possess(inPawn, bVehicleTransition);
 
-	PlayerReplicationInfo = spawn(class'PlayerReplicationInfo', self);
+	PlayerReplicationInfo = spawn(class'Arena.ArenaPRI', self);
 	Pawn.PlayerReplicationInfo = PlayerReplicationInfo;
 	Pawn.SetMovementPhysics();
 	
@@ -68,6 +74,13 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
 	
 	WhatToDoNext();
+}
+
+function CleanupPRI()
+{
+	`log("PRI" @ PlayerReplicationInfo);
+	
+	super.CleanupPRI();
 }
 
 function NotifyKilled(Controller killer, Controller killed, Pawn killedPawn, class<DamageType> damageType)
@@ -134,16 +147,19 @@ function ArenaPawn FindNearestTarget()
 	{
 		if (p != Pawn)
 		{			
-			if (p.PlayerReplicationInfo.Team != None && p.PlayerReplicationInfo.Team.TeamIndex != PlayerReplicationInfo.Team.TeamIndex)
+			if (p.PlayerReplicationInfo != None && PlayerReplicationInfo != None)
 			{
-				if (nearest != None)
+				if (p.PlayerReplicationInfo.Team != None && p.PlayerReplicationInfo.Team.TeamIndex != PlayerReplicationInfo.Team.TeamIndex)
 				{
-					if (VSize(Pawn.Location - p.Location) < VSize(Pawn.Location - nearest.Location))
+					if (nearest != None)
+					{
+						if (VSize(Pawn.Location - p.Location) < VSize(Pawn.Location - nearest.Location))
+							nearest = p;
+					}
+					else
+					{
 						nearest = p;
-				}
-				else
-				{
-					nearest = p;
+					}
 				}
 			}
 		}
@@ -349,7 +365,21 @@ Begin:
 	if (Pawn != None)
 		Pawn.GoToState('Stunned');
 		
+	LastStableLocation = Pawn.Location;
+	
 	Sleep(StunTime);
+	GoToState('Recovering');
+}
+
+simulated state Recovering
+{
+Begin:
+	if (Pawn != None)
+		Pawn.GoToState('Recovering');
+		
+	`log("Moving to:" @ LastStableLocation);
+	
+	MoveTo(LastStableLocation);
 	LatentWhatToDoNext();
 }
 

@@ -77,7 +77,7 @@ defaultproperties
 	DefaultPawnClass=class'Arena.AP_Player'
 	HUDType=class'Arena.ArenaHUD'
 	GameReplicationInfoClass=class'Arena.ArenaGRI'
-	
+	PlayerReplicationInfoClass=class'Arena.ArenaPRI'
 	//bDelayedStart=true
 	
 	RespawnTime=3

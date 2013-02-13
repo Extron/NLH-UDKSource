@@ -248,9 +248,9 @@ simulated function bool HasAmmo(byte FireModeNum, optional int Amount)
 
 simulated function bool ShouldRefire()
 {
-	if (EndedFire)
+	if (EndedFire || Clip <= 0)
 		return false;
-		
+	 
 	if (Mode == FMFullAuto)
 		return true;
 	else if (Mode == FMSemiAuto || Mode == FMBoltAction)
@@ -495,6 +495,15 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 	r = rot(0, 0, 0);
 }
 
+/**
+ * Computes the location of the grip socket for the weapon.  Is designed to be overridden in subclasses.
+ */
+simulated function GetGripSocketLocRot(out vector l, out rotator r)
+{
+	l = vect(0, 0, 0);
+	r = rot(0, 0, 0);
+}
+
 simulated function FireWeapon()
 {
 	local float duration;
@@ -515,6 +524,9 @@ simulated function FireWeapon()
 		Bloom = Stats.Constants.GetStatMax("Bloom");
 	}
 
+	if (ArenaPawn(Instigator) != None)
+		ArenaPawn(Instigator).Recoil();
+		
 	RecoilAccel.X = 0;
 	RecoilAccel.Y = FRand() - 0.5;
 	RecoilAccel.Z = FRand();

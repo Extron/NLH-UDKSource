@@ -32,6 +32,16 @@ var CameraAnim WalkCamAnim;
  */
 var AnimSet DefaultAnimSet;
 
+/**
+ * The skeletal control animation node that manages gun recoil.
+ */
+var GameSkelCtrl_Recoil RecoilControl;
+
+/**
+ * The name of the skeletal control animation node that manages gun recoil.
+ */
+var name RecoilControlName;
+
 /* Stores the amount of energy the player currently has. */
 var float Energy;
 
@@ -252,6 +262,108 @@ simulated function Bump(Actor other, PrimitiveComponent otherComp, Vector hitNor
 	}
 }
 
+
+simulated function RagDoll()
+{
+	StartFallImpactTime = WorldInfo.TimeSeconds;
+	bCanPlayFallingImpacts=true;
+	//GotoState('FeigningDeath');
+
+	// if we had some other rigid body thing going on, cancel it
+	if (Physics == PHYS_RigidBody)
+	{
+		//@note: Falling instead of None so Velocity/Acceleration don't get cleared
+		setPhysics(PHYS_Falling);
+	}
+
+	// Ensure we are always updating kinematic
+	Mesh.MinDistFactorForKinematicUpdate = 0.0;
+
+	SetPawnRBChannels(TRUE);
+	Mesh.ForceSkelUpdate();
+
+	// Move into post so that we are hitting physics from last frame, rather than animated from this
+	Mesh.SetTickGroup(TG_PostAsyncWork);
+
+	bBlendOutTakeHitPhysics = false;
+
+	PreRagdollCollisionComponent = CollisionComponent;
+	CollisionComponent = Mesh;
+
+	// Turn collision on for skelmeshcomp and off for cylinder
+	CylinderComponent.SetActorCollision(false, false);
+	Mesh.SetActorCollision(true, true);
+	Mesh.SetTraceBlocking(true, true);
+
+	SetPhysics(PHYS_RigidBody);
+	Mesh.PhysicsWeight = 1.0;
+
+	// If we had stopped updating kinematic bodies on this character due to distance from camera, force an update of bones now.
+	if( Mesh.bNotUpdatingKinematicDueToDistance )
+	{
+		Mesh.UpdateRBBonesFromSpaceBases(TRUE, TRUE);
+	}
+
+	Mesh.PhysicsAssetInstance.SetAllBodiesFixed(FALSE);
+	Mesh.bUpdateKinematicBonesFromAnimation=FALSE;
+
+	// Set all kinematic bodies to the current root velocity, since they may not have been updated during normal animation
+	// and therefore have zero derived velocity (this happens in 1st person camera mode).
+	Mesh.SetRBLinearVelocity(Velocity, false);
+
+	//FeignDeathStartTime = WorldInfo.TimeSeconds;
+	// reset mesh translation since adjustment code isn't executed on the server
+	// but the ragdoll code uses the translation so we need them to match up for the
+	// most accurate simulation
+	Mesh.SetTranslation(vect(0,0,1) * BaseTranslationOffset);
+	// we'll use the rigid body collision to check for falling damage
+	Mesh.ScriptRigidBodyCollisionThreshold = MaxFallSpeed;
+	Mesh.SetNotifyRigidBodyCollision(true);
+	Mesh.WakeRigidBody();
+
+	if (Role == ROLE_Authority)
+	{
+		//SetTimer(0.15, true, 'FeignDeathDelayTimer');
+	}
+}
+
+simulated function Recover()
+{
+	`log("Recovering");
+	
+	RestorePreRagdollCollisionComponent();
+	Mesh.PhysicsWeight = 0.0f;
+	Mesh.PhysicsAssetInstance.SetAllBodiesFixed(TRUE);
+	Mesh.bUpdateKinematicBonesFromAnimation=TRUE;
+	Mesh.MinDistFactorForKinematicUpdate = default.Mesh.MinDistFactorForKinematicUpdate;
+	SetPawnRBChannels(FALSE);
+
+	if (Physics == PHYS_RigidBody)
+		setPhysics(PHYS_Falling);
+}
+
+simulated function SetPawnRBChannels(bool bRagdollMode)
+{
+	if(bRagdollMode)
+	{
+		Mesh.SetRBChannel(RBCC_Pawn);
+		Mesh.SetRBCollidesWithChannel(RBCC_Default,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Pawn,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Vehicle,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Untitled3,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_BlockingVolume,TRUE);
+	}
+	else
+	{
+		Mesh.SetRBChannel(RBCC_Untitled3);
+		Mesh.SetRBCollidesWithChannel(RBCC_Default,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Pawn,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Vehicle,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Untitled3,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_BlockingVolume,FALSE);
+	}
+}
+
 function AddVelocity(vector newVel, vector hitLoc, class<DamageType> damageType, optional TraceHitInfo hitInfo)
 {
 	if (Role < Role_Authority)
@@ -263,6 +375,14 @@ function AddVelocity(vector newVel, vector hitLoc, class<DamageType> damageType,
 reliable server function ServerAddVelocity(vector newVel, vector hitLoc, class<DamageType> damageType, optional TraceHitInfo hitInfo)
 {
 	super.AddVelocity(newVel, hitLoc, damageType, hitInfo);
+}
+
+simulated function Recoil()
+{
+	`log("Recoil" @ RecoilControl);
+	
+	if (RecoilControl != None)
+		RecoilControl.bPlayRecoil = true;
 }
 
 simulated function rotator GetRecoil()
@@ -296,7 +416,7 @@ simulated function StopFireAbility()
 
 simulated function StartSprint()
 {
-	if (!Sprinting && Stamina > 0)
+	if (!Sprinting && Stamina > 0 && VSize(Velocity) > 0)
 	{
 		Sprinting = true;
 		

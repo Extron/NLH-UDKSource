@@ -78,6 +78,22 @@ simulated exec function Reload()
 	}
 }
 
+simulated exec function PrevAbility()
+{
+	if (ArenaPawn(Pawn) != None)
+	{
+		ArenaInventoryManager(ArenaPawn(Pawn).InvManager).PrevAbility();
+	}
+}
+
+simulated exec function NextAbility()
+{
+	if (ArenaPawn(Pawn) != None)
+	{
+		ArenaInventoryManager(ArenaPawn(Pawn).InvManager).NextAbility();
+	}
+}
+
 function AdjustMouseSensitivity(float FOVScale)
 {
 	if (ArenaPawn(Pawn) != None)

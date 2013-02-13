@@ -18,6 +18,23 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
 }
 
+simulated function Recover()
+{
+	super.Recover();
+	SetMovementPhysics();
+}
+
+function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
+{
+	local bool ret;
+	
+	ret = super.Died(Killer, DamageType, HitLocation);
+	
+	`log("Pawn is dying.");
+	Ragdoll();
+	return ret;
+}
+
 function SetMovementPhysics()
 {
 	if (Physics != PHYS_Flying)
@@ -69,7 +86,7 @@ auto state Idle
 		
 		Counter += dt;
 
-		offset.Z = 0.25 * Cos(Counter);
+		offset.Z = 0.5 * Cos(Counter);
 		SetLocation(Location + offset);
 	}
 }
@@ -81,7 +98,13 @@ state MoveToTarget
 state Stunned
 {
 Begin:
-	//SetDyingPhysics();
+	RagDoll();
+}
+
+state Recovering
+{
+Begin:
+	Recover();
 }
 
 defaultproperties
@@ -97,7 +120,7 @@ defaultproperties
 		Values[PSVHealthRegenDelay]=5
 	End Object
 	
-	CollisionComponent=WPawnSkeletalMeshComponent
+	//CollisionComponent=WPawnSkeletalMeshComponent
 	
 	bCanStrafe=true
 	bCanFly=true

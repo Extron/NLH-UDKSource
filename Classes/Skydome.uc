@@ -27,8 +27,8 @@ simulated function Tick(float dt)
 	
 	if (ArenaGRI(WorldInfo.GRI) != None)
 	{
-		Material.SetScalarParameterValue('TimeOfDay', ArenaGRI(WorldInfo.GRI).TimeOfDay);
-		Material.SetScalarParameterValue('CloudCoverage', ArenaGRI(WorldInfo.GRI).CloudCoverage);
-		Material.SetScalarParameterValue('CloudSharpness', ArenaGRI(WorldInfo.GRI).CloudSharpness);
+		Material.SetScalarParameterValue('TimeOfDay', ArenaGRI(WorldInfo.GRI).WeatherMgr.TimeOfDay);
+		Material.SetScalarParameterValue('CloudCoverage', ArenaGRI(WorldInfo.GRI).WeatherMgr.CloudCoverage);
+		Material.SetScalarParameterValue('CloudSharpness', ArenaGRI(WorldInfo.GRI).WeatherMgr.CloudSharpness);
 	}
 }

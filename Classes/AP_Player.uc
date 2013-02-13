@@ -15,10 +15,46 @@ class AP_Player extends ArenaPawn;
 var SkeletalMeshComponent Arms;
 
 /**
+ * The arm control for the left hand, to place on the weapon.
+ */
+var SkelControlLimb LeftArmControl;
+
+/**
+ * The name of the left arm animation control.
+ */
+var name LeftArmControlName;
+
+/**
  * The translation to apply to the arms when drawing them.
  */
 var vector ArmsTranslation;
 
+simulated event TickSpecial(float dt)
+{
+	local vector gripLoc;
+	local rotator gripRot;
+	
+	super.TickSpecial(dt);
+	
+	if (ArenaWeapon(Weapon) != None)
+	{
+		ArenaWeapon(Weapon).GetGripSocketLocRot(gripLoc, gripRot);
+		LeftArmControl.EffectorLocation = gripLoc;
+	}
+}
+
+simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
+{
+	Super.PostInitAnimTree(SkelComp);
+
+	if (SkelComp == Arms)
+	{
+		RecoilControl = GameSkelCtrl_Recoil(Arms.FindSkelControl(RecoilControlName));
+		LeftArmControl = SkelControlLimb(Arms.FindSkelControl(LeftArmControlName));
+		
+		EnableLeftHandPositioning(true);
+	}
+}
 
 function InitInventory()
 {
@@ -39,10 +75,11 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		// This sets the defualt class
-		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		CreateInventory(class'Arena.Ab_Bubble', true);
-		CreateInventory(class'Arena.Ab_EMP', true);
+		CreateInventory(class'Arena.Ab_Pedestal', true);
+		CreateInventory(class'Arena.Ab_Deflection', true);
+		CreateInventory(class'Arena.Ab_RockWall', true);
+
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
 }
@@ -74,7 +111,20 @@ simulated function PositionArms()
 	
 	Arms.SetTranslation(ArmsTranslation);
 	Arms.SetRotation(R);
+	
 	//SetBase(Holder);
+}
+
+simulated function EnableLeftHandPositioning(bool enable)
+{
+	if (LeftArmControl != None)
+	{
+		if (enable)
+			LeftArmControl.ControlStrength = 1.0;
+		else
+			LeftArmControl.ControlStrength = 0.0;
+	}
+		
 }
 
 defaultproperties
@@ -111,5 +161,8 @@ defaultproperties
 	Arms=ArmsMesh
 	Components.Add(ArmsMesh)
 	
+	bScriptTickSpecial=true
+	RecoilControlName=RecoilNode
+	LeftArmControlName=LeftArmNode
 	ArmsTranslation=(X=-5,Y=-2,Z=45)
 }

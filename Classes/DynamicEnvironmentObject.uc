@@ -16,6 +16,23 @@ var(Porperties) Array<string> ObjectProperties;
 
 var Array<EnvironmentEffect> ActiveEffects;
 
+/** A reference to the material that the actor uses. */
+var MaterialInstanceConstant Material;
+
+/**
+ * Stores the level of the snow on the object, which increases when it snows and decreases when it is hot.
+ */
+var float SnowLevel;
+
+simulated function PostBeginPlay()
+{
+	super.PostBeginPlay();
+	
+	Material = new class'MaterialInstanceConstant';
+	Material.SetParent(StaticMeshComponent.GetMaterial(0));
+	StaticMeshComponent.SetMaterial(0, Material);
+}
+
 simulated function Tick(float delta)
 {
 	local int i;
@@ -23,6 +40,19 @@ simulated function Tick(float delta)
 	for (i = 0; i < ActiveEffects.Length; i++)
 	{
 		ActiveEffects[i].UpdateEffect(i);
+	}
+	
+	if (ArenaGRI(WorldInfo.GRI) != None)
+	{
+		if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
+			SnowLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+		else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Thawing)
+			SnowLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.Temperature * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+		
+		SnowLevel = FClamp(SnowLevel, 0.0, 1.0);
+		
+		Material.SetScalarParameterValue('WeatherLevel', SnowLevel);
+		Material.SetScalarParameterValue('Snow', SnowLevel > 0 ? 1 : 0);
 	}
 	
 	super.Tick(delta);	
