@@ -72,6 +72,11 @@ var bool ADS;
 /* Indicates that the pawn is sprinting. */
 var bool Sprinting;
 
+/**
+ * Indicates that this pawn is invisible.  This mainly deals with whether or not bots can see the pawn.
+ */
+var bool Invisible;
+
 var bool initInv;
 
 replication 
@@ -645,6 +650,11 @@ exec function KillMe()
 	TakeDamage(Health, ArenaPlayerController(Owner), Location, vect(0, 0, 0), None);
 }
 
+exec function SetInvisible(bool value)
+{
+	Invisible = value;
+}
+
 exec function CurrentState()
 {
 	`log("My current state is:" @ GetStateName());
@@ -782,5 +792,6 @@ defaultproperties
 	CrouchRadius=21.0
 	bCanCrouch=true
 	
+	Invisible=false
 	initInv=True
 }

@@ -15,6 +15,16 @@ class ArenaBot extends UDKBot;
 var vector LastStableLocation;
 
 /**
+ * The location that the bot last saw its target.
+ */
+var vector LastSeenLocation;
+
+/**
+ * The last navigation point that the AI is or was wandering to.
+ */
+var NavigationPoint WanderTarget;
+
+/**
  * The distance away from the player that the bot needs to move to to become idle.
  */
 var float BotRange;
@@ -44,6 +54,21 @@ var float LastShotAtDuration;
  */
 var float StunTime;
 
+/** 
+ * Keeps track of how long the bot has been idle.
+ */
+var float IdleCounter;
+
+/**
+ * The amount of time the bot has been searching for the target.
+ */
+var float SearchCounter;
+
+/**
+ * The maximum allowed time the bot can search for his target.
+ */
+var float SearchMax;
+
 /**
  * Indicates that we have come into desirable range of our target after moving toward it.
  */
@@ -53,6 +78,12 @@ var bool ApproachedTarget;
  * Indicates that the bot can shoot.
  */
 var bool CanFire;
+
+/**
+ * Indicates that the bot should be searching for its target.
+ */
+var bool Searching;
+
 
 event Tick(float dt)
 {
@@ -109,7 +140,6 @@ protected function ExecuteWhatToDoNext()
 		return;
 	}
 	
-	
 	nearestPawn = FindNearestTarget();
 		
 	if (nearestPawn != None && Pawn != None && CanSee(nearestPawn))
@@ -118,7 +148,7 @@ protected function ExecuteWhatToDoNext()
 		{
 			Focus = nearestPawn;
 
-			GoToState('FireWeapon');
+			GoToState('Focusing');
 		}
 		else if (Pawn.ReachedDestination(nearestPawn) || VSize(Pawn.Location - nearestPawn.Location) < BotRange)
 		{
@@ -134,7 +164,19 @@ protected function ExecuteWhatToDoNext()
 	}
 	else
 	{
-		GoToState('Idle');
+		if (Searching)
+		{
+			GoToState('SearchingForTarget');
+		}
+		else if (IdleCounter > 4)
+		{
+			IdleCounter = 0;
+			GoToState('Wandering');
+		}
+		else
+		{
+			GoToState('Idle');
+		}
 	}
 }
 
@@ -145,7 +187,7 @@ function ArenaPawn FindNearestTarget()
 	
 	foreach WorldInfo.AllPawns(class'ArenaPawn', p)
 	{
-		if (p != Pawn)
+		if (p != Pawn && !p.Invisible)
 		{			
 			if (p.PlayerReplicationInfo != None && PlayerReplicationInfo != None)
 			{
@@ -166,6 +208,11 @@ function ArenaPawn FindNearestTarget()
 	}
 	
 	return nearest;
+}
+
+function name GetAttack(Actor actor)
+{
+	return 'FireWeapon';
 }
 
 function ShootAt(Actor actor)
@@ -302,6 +349,13 @@ function ReactivateFire()
 
 auto state Idle
 {
+	event Tick(float dt)
+	{
+		global.Tick(dt);
+		
+		IdleCounter += dt;
+	}
+	
 Begin:	
 	if (Pawn != None)
 		Pawn.GoToState('Idle');
@@ -324,15 +378,22 @@ simulated state MoveToTarget
 		}
 		else if (Pawn(MoveTarget) != None && !CanSee(Pawn(MoveTarget)))
 		{
+			LastSeenLocation = MoveTarget.Location;
 			MoveTarget = None;
+			Searching = true;
 			
-			//TODO: This needs to be a better algorithm, to do a search or something.
+			`log("I should search for my target.");
 			StopLatentExecution();
 			Pawn.ZeroMovementVariables();
+			
+			GoToState('MovingToSearch');
 		}
 	}
 	
 Begin:
+	if (Pawn != None)
+		Pawn.GoToState('MoveToTarget');
+		
 	if (ApproachedTarget)
 	{	
 		LatentWhatToDoNext();
@@ -346,6 +407,22 @@ Begin:
 	{
 		GoToState('Idle');
 	}
+}
+
+/**
+ * This state is for bots when they are actively engaging an emeny.  It forms a hub of sorts
+ * from which attacks will originate.
+ */
+simulated state Focusing
+{
+Begin:
+	if (Pawn != None)
+		Pawn.GoToState('Focusing');
+		
+	if (Pawn.NeedToTurn(GetFocalPoint()))
+		FinishRotation();
+
+	GoToState(GetAttack(Focus));
 }
 
 simulated state FireWeapon
@@ -376,10 +453,92 @@ simulated state Recovering
 Begin:
 	if (Pawn != None)
 		Pawn.GoToState('Recovering');
-		
-	`log("Moving to:" @ LastStableLocation);
 	
 	MoveTo(LastStableLocation);
+	Pawn.ZeroMovementVariables();
+	LatentWhatToDoNext();
+}
+
+simulated state Wandering
+{
+	event Tick(float dt)
+	{
+		local ArenaPawn target;
+		
+		global.Tick(dt);
+		
+		target = FindNearestTarget();
+		
+		if (target != None && CanSee(target))
+		{
+			MoveTarget = target;
+			
+			StopLatentExecution();
+			Pawn.ZeroMovementVariables();
+		}
+	}
+	
+Begin:
+	if (Pawn != None)
+		Pawn.GoToState('Wandering');
+		
+	WanderTarget = FindRandomDest();
+		
+	MoveTo(WanderTarget.Location);
+	Pawn.ZeroMovementVariables();
+	LatentWhatToDoNext();
+}
+
+simulated state MovingToSearch
+{
+	event Tick(float dt)
+	{
+		local ArenaPawn target;
+		
+		global.Tick(dt);
+		
+		target = FindNearestTarget();
+		
+		if (target != None && CanSee(target))
+		{
+			MoveTarget = target;
+			
+			StopLatentExecution();
+			Pawn.ZeroMovementVariables();
+		}
+	}
+	
+Begin:
+	`log("Moving to search location.");
+	MoveTo(LastSeenLocation);
+	Pawn.ZeroMovementVariables();
+	Searching = true;
+	LatentWhatToDoNext();
+}
+
+simulated state SearchingForTarget
+{
+	event Tick(float dt)
+	{
+		local ArenaPawn target;
+		
+		global.Tick(dt);
+		
+		SearchCounter += dt;
+		
+		target = FindNearestTarget();
+		
+		if (target != None && CanSee(target))
+		{
+			MoveTarget = target;
+			
+			StopLatentExecution();
+			Pawn.ZeroMovementVariables();
+		}
+	}
+	
+Begin:
+	Sleep(SearchMax);
 	LatentWhatToDoNext();
 }
 

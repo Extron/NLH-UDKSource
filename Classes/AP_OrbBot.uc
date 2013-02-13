@@ -16,6 +16,8 @@ var float Counter;
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
 	super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+	
+	`log("Bot Taking damage" @ self);
 }
 
 simulated function Recover()
@@ -95,6 +97,23 @@ state MoveToTarget
 {
 }
 
+state Focusing
+{
+	simulated function Tick(float dt)
+	{
+		local vector r, v;
+		
+		global.Tick(dt);
+		
+		r = Normal(Controller.Focus.Location - Location);
+		
+		v = r cross vect(0, 0, 1);
+		
+		AddVelocity(-Velocity, vect(0, 0, 0), None);
+		AddVelocity(v * 100, vect(0, 0, 0), None);
+	}
+}
+
 state Stunned
 {
 Begin:
@@ -105,6 +124,16 @@ state Recovering
 {
 Begin:
 	Recover();
+}
+
+state Wandering
+{
+	simulated event Tick(float dt)
+	{
+		global.Tick(dt);
+		
+		MovementSpeedModifier *= 0.5;
+	}
 }
 
 defaultproperties
@@ -126,6 +155,7 @@ defaultproperties
 	bCanFly=true
 	
 	AirSpeed=200
+	MovementSpeedModifier = 0.5;
 	
 	ControllerClass=class'Arena.ArenaBot'
 	

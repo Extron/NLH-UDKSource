@@ -20,12 +20,17 @@ const ArraySize = 100;
 /**
  * The amount of weather planes to add to the map.
  */
-const WeatherPlaneCount = 50;
+const WeatherPlaneCount = 35;
 
 /**
  * The basic white noise used to generate a unique Perlin noise function each time.
  */
 var array<float> WhiteNoise;
+
+/**
+ * A list of references to the weather planes on the level.
+ */
+var array<WeatherPlane> Planes;
 
 /**
  * The wind vector;
@@ -83,14 +88,29 @@ var float WeatherCloudThreshold;
 var float SnowTempThreshold;
 
 /**
- * The value that the tempelature needs to be greater than to start thawing.
+ * The value that the temperature needs to be greater than to start thawing.
  */
 var float ThawTempThreshold;
+
+/**
+ * The value that the temperature needs to be greater than to start raining.
+ */
+var float RainTempThresholdMin;
+
+/**
+ * The value that the temperature needs to be lower than to start raining.
+ */
+var float RainTempThresholdMax;
 
 /** 
  * The rate of snow buildup on the environment.
  */
 var float SnowBuildupRate;
+
+/** 
+ * The rate of rain water buildup on the environment.
+ */
+var float RainBuildupRate;
 
 /**
  * Indicates that we should advance the time of day.
@@ -112,28 +132,39 @@ var bool Snowing;
  */
 var bool Thawing;
 
+/**
+ * Indicates that it is raining.
+ */
+var bool Raining;
 
 simulated function PostBeginPlay()
 {
 	local int i;
-	local float x, z;
+	local float x, y;
+	local int th;
 	local vector v;
+	local rotator r;
+	local WeatherPlane p;
 	
 	for (i = 0; i < ArraySize; i++)
 	{
 		WhiteNoise[i] = FRand();
 	}
-	
+
 	//Spawn the weather planes to use.
 	for (i = 0; i < WeatherPlaneCount; i++)
 	{
-		x = FRand() * 100 * (FRand() > 0.5 ? 1 : -1);
-		z = FRand() * 100 * (FRand() > 0.5 ? 1 : -1);
+		x = FRand() * 1000 * (FRand() > 0.5 ? 1 : -1);
+		y = FRand() * 1000 * (FRand() > 0.5 ? 1 : -1);
+
+		th = Rand(65536);
 		
 		v.x = x;
-		v.z = z;
+		v.y = y;
+		r.Yaw = th;
 		
-		Spawn(class'Arena.WeatherPlane', Self, , v);
+		p = Spawn(class'Arena.WeatherPlane', Self, , v, r);
+		Planes.AddItem(p);
 	}
 }
 
@@ -152,8 +183,8 @@ simulated function Tick(float dt)
 		CloudCoverage = GetNoise(WeatherCounter * 1.5, 0, 0.5) + GetNoise(WeatherCounter * 1.5, 1, 0.5) + GetNoise(WeatherCounter * 1.5, 2, 0.5) + GetNoise(WeatherCounter * 1.5, 3, 0.5);
 		CloudCoverage = (CloudCoverage - 0.5) * 1.5;
 
-		CloudCoverage = 0.1;
-		Temperature = 0.1;
+		CloudCoverage = 0.0;
+		Temperature = 0.7;
 		
 		if (CloudCoverage < WeatherCloudThreshold)
 		{
@@ -162,9 +193,14 @@ simulated function Tick(float dt)
 				Snowing = true;
 				WeatherIntensity = 0.0;
 			}
+			else if (Temperature > RainTempThresholdMin && Temperature < RainTempThresholdMax)
+			{
+				Raining = true;
+			}
 			else
 			{
 				Snowing = false;
+				Raining = false;
 			}
 		}
 		
@@ -173,11 +209,16 @@ simulated function Tick(float dt)
 			Snowing = false;
 			Thawing = true;
 		}
-		
 		if (Snowing)
 		{
 			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
 			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		}
+		else if (Raining)
+		{
+			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
+			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+			//WeatherIntensity = 1;
 		}
 	}
 }
@@ -243,5 +284,8 @@ defaultproperties
 	WeatherCloudThreshold=0.5
 	SnowTempThreshold=0.5
 	ThawTempThreshold=0.65
+	RainTempThresholdMin=0.66
+	RainTempThresholdMax=0.75
 	SnowBuildupRate=1.5
+	RainBuildupRate=1.5
 }
