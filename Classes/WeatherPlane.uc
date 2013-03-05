@@ -18,11 +18,21 @@ var ParticleSystem SnowflakesTemplate;
 /** The particle system of the activated effect. */
 var ParticleSystemComponent Snowflakes;
 
+/** The particle template to use when this effect is active. */
+var ParticleSystem RainSplashTemplate;
+
+/** The particle system of the activated effect. */
+var ParticleSystemComponent RainSplash;
+
+
 /** A reference to the material that the actor uses. */
 var MaterialInstanceConstant Material;
 
+
 simulated function Tick(float dt)
-{
+{	
+	local rotator r;
+	
 	if (Material == None)
 	{
 		Material = new class'MaterialInstanceConstant';
@@ -30,7 +40,7 @@ simulated function Tick(float dt)
 		StaticMeshComponent.SetMaterial(0, Material);
 	}
 	
-	if (ArenaGRI(WorldInfo.GRI) != None)
+	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
 	{
 		if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
 		{
@@ -39,12 +49,19 @@ simulated function Tick(float dt)
 			if (Snowflakes == None)
 				EmitSnow();
 			
+			if (RainSplash != None)
+			{
+				if (RainSplash.bIsActive)
+					RainSplash.DeactivateSystem();
+			}
+				
 			if (Snowflakes != None)
 			{
 				if (!Snowflakes.bIsActive)
 					Snowflakes.ActivateSystem();
 				
 				Snowflakes.SetFloatParameter('WeatherIntensity', ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity);
+				Snowflakes.SetVectorParameter('Wind', ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
 			}
 		}
 		else
@@ -56,7 +73,24 @@ simulated function Tick(float dt)
 			}
 				
 			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
+			{
+				//if (RainSplash == None)
+					//EmitRainSplash();
+				
+				if (RainSplash != None)
+				{
+					if (!RainSplash.bIsActive)
+						RainSplash.ActivateSystem();
+				}
+			
 				Material.SetScalarParameterValue('WeatherIntensity', ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity);
+				
+				r = rotator(ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
+
+				r.Pitch = 1000 * VSize(ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
+				
+				StaticMeshComponent.SetRotation(r);
+			}
 			else
 				Material.SetScalarParameterValue('WeatherIntensity', 0);
 		}
@@ -75,17 +109,34 @@ function EmitSnow()
 	}
 }
 
+function EmitRainSplash()
+{
+	if (WorldInfo.NetMode != NM_DedicatedServer && RainSplashTemplate != None)
+	{		
+		`log("Emitting splashes.");
+		
+		RainSplash = WorldInfo.MyEmitterPool.SpawnEmitter(RainSplashTemplate, vect(0, 0, 0));
+		RainSplash.SetAbsolute(false, false, false);
+		RainSplash.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		RainSplash.bUpdateComponentInTick = true;
+		RainSplash.SetActorParameter('WeatherPlane', self);
+	}
+}
+
 defaultproperties
 {
 	Begin Object Name=StaticMeshComponent0
-        StaticMesh = StaticMesh'ArenaWeather.Meshes.WeatherPlaneMesh'
-		Scale=10
+        StaticMesh = StaticMesh'ArenaWeather.Meshes.WeatherCylinderMesh'
+		//Scale=10
+		Scale3D=(X=5,Y=5,Z=5)
 		bCastDynamicShadow=false
 		CastShadow=false
+		MaxDrawDistance=128
     End Object
 	
 	bStatic=false
 	bCollideActors=false
 	bBlockActors=false
 	SnowflakesTemplate=ParticleSystem'ArenaWeather.Particles.SnowParticles'
+	RainSplashTemplate=ParticleSystem'ArenaParticles.Particles.RainDropSplashes'
 }

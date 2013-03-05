@@ -53,21 +53,27 @@ simulated function Tick(float delta)
 		ActiveEffects[i].UpdateEffect(i);
 	}
 	
-	if (ArenaGRI(WorldInfo.GRI) != None)
+	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
 	{
-		if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
-			SnowLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
-		else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Thawing)
-			SnowLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.Temperature * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
-		else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
-			RainLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
-		
-		SnowLevel = FClamp(SnowLevel, 0.0, 1.0);
-		RainLevel = FClamp(RainLevel, 0.0, 1.0);
-		
-		Material.SetScalarParameterValue('WeatherLevel', SnowLevel > 0 ? SnowLevel : RainLevel);
-		Material.SetScalarParameterValue('Snow', SnowLevel > 0 ? 1 : 0);
-		Material.SetScalarParameterValue('Rain', (RainLevel > 0 && !Frozen) ? 1 : 0);
+		if (FastTrace(Location + vect(0, 0, 1000)))
+		{
+			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
+				SnowLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+			else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Thawing)
+				SnowLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.Temperature * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+			else
+				SnowLevel = 0.0;
+				
+			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
+				RainLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.RainBuildupRate;
+			
+			SnowLevel = FClamp(SnowLevel, 0.0, 1.0);
+			RainLevel = FClamp(RainLevel, 0.0, 1.0);
+			
+			Material.SetScalarParameterValue('WeatherLevel', SnowLevel > 0 ? SnowLevel : RainLevel);
+			Material.SetScalarParameterValue('Snow', SnowLevel > 0 ? 1 : 0);
+			Material.SetScalarParameterValue('Rain', (RainLevel > 0 && !Frozen) ? 1 : 0);
+		}
 	}
 	
 	super.Tick(delta);	

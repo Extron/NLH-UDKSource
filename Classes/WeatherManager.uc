@@ -10,7 +10,8 @@
  * This class manages a map's weather, using a noise function to alter
  * temperature, wind, and cloud coverage to simulate weather effects.
  */
-class WeatherManager extends Actor;
+class WeatherManager extends Actor
+	placeable;
 
 /**
  * The size of the noise array.
@@ -20,7 +21,24 @@ const ArraySize = 100;
 /**
  * The amount of weather planes to add to the map.
  */
-const WeatherPlaneCount = 35;
+const WeatherPlaneCount = 20;
+
+/**
+ * The amount of snow mounds to add to the map.
+ */
+const SnowMoundCount = 100;
+
+/**
+ * The number of splash emitters that we can have on a level.
+ */
+const SplashEmitterCount = 50;
+
+/**
+ * The range that splash emitters will be spawned.
+ */
+const SplashEmitterRange = 1000;
+
+
 
 /**
  * The basic white noise used to generate a unique Perlin noise function each time.
@@ -33,9 +51,49 @@ var array<float> WhiteNoise;
 var array<WeatherPlane> Planes;
 
 /**
+ * A list of all dynamic snow mounds on the level.
+ */
+var array<SnowMound> SnowMounds;
+
+/**
+ * The rain splash emitters.
+ */
+var array<ParticleSystemComponent> SplashEmitters;
+
+/**
+ * The template to use for instant hits for the ability.
+ */
+var ParticleSystem LightningBoltTemplate;
+
+/**
+ * The template for rain splashes.
+ */
+var ParticleSystem RainSplashTemplate;
+
+/**
+ * The light used for the lightning.
+ */
+var LightningLight Light;
+
+/**
+ * The level's landscape.
+ */
+var LandscapeManager Landscape;
+
+/**
+ * The ambient sound to play during a thunderstorm.
+ */
+var SoundCue ThunderstormSound;
+
+/**
  * The wind vector;
  */
 var vector Wind;
+
+/**
+ * The wind in the sky.
+ */
+var vector SkyWind;
 
 /**
  * The time of day.
@@ -102,6 +160,16 @@ var float RainTempThresholdMin;
  */
 var float RainTempThresholdMax;
 
+/**
+ * The value that the cloud coverage needs to be near to start a thunder storm.
+ */
+var float LightningCloudThreshold;
+
+/**
+ * The value that the weather intensity needs to be above when it is raining to start a thunder storm.
+ */
+var float LightningIntensityThreshold;
+
 /** 
  * The rate of snow buildup on the environment.
  */
@@ -111,6 +179,26 @@ var float SnowBuildupRate;
  * The rate of rain water buildup on the environment.
  */
 var float RainBuildupRate;
+
+/**
+ * The minimum amount of time between lightning strikes.
+ */
+var float LightningRateMin;
+
+/**
+ * The maximum amount of time between lightning strikes.
+ */
+var float LightningRateMax;
+
+/**
+ * The minimum distance that lighting can be from the origin.
+ */
+var float LightningRangeMin;
+
+/**
+ * The maximum distance that lightning can be from the origin.
+ */
+var float LightningRangeMax;
 
 /**
  * Indicates that we should advance the time of day.
@@ -137,6 +225,11 @@ var bool Thawing;
  */
 var bool Raining;
 
+/**
+ * Indicates that it is thunder storming.
+ */
+var bool ThunderStorm;
+
 
 simulated function PostBeginPlay()
 {
@@ -146,6 +239,8 @@ simulated function PostBeginPlay()
 	local vector v;
 	local rotator r;
 	local WeatherPlane p;
+	local SnowMound s;
+	local Landscape iter;
 	
 	for (i = 0; i < ArraySize; i++)
 	{
@@ -157,6 +252,18 @@ simulated function PostBeginPlay()
 	{
 		x = FRand() * 1000 * (FRand() > 0.5 ? 1 : -1);
 		y = FRand() * 1000 * (FRand() > 0.5 ? 1 : -1);
+		
+		v.x = x;
+		v.y = y;
+		
+		p = Spawn(class'Arena.WeatherPlane', Self, , v);
+		Planes.AddItem(p);
+	}
+	
+	for (i = 0; i < SnowMoundCount; i++)
+	{
+		x = FRand() * 2000 * (FRand() > 0.5 ? 1 : -1);
+		y = FRand() * 2000 * (FRand() > 0.5 ? 1 : -1);
 
 		th = Rand(65536);
 		
@@ -164,64 +271,164 @@ simulated function PostBeginPlay()
 		v.y = y;
 		r.Yaw = th;
 		
-		p = Spawn(class'Arena.WeatherPlane', Self, , v, r);
-		Planes.AddItem(p);
+		s = Spawn(class'Arena.SnowMound', Self, , v, r);
+		SnowMounds.AddItem(s);
 	}
+	
+	EmitSplashEmitters();
+	
+	foreach AllActors(class'Landscape', iter)
+	{
+		Landscape.Initialize(iter);
+		break;
+	}
+}
+
+function SetWeather(SeqAct_SetWeather action)
+{
+	Wind = action.Wind;
+	CloudCoverage = action.CloudCoverage;
+	Temperature = action.Temperature;
+	WeatherIntensity = action.WeatherIntensity;
+}
+
+function SetTimeOfDay(SeqAct_SetTimeOfDay action)
+{
+	TimeOfDay = action.TimeOfDay;
+}
+
+function SetNaturalWeather(SeqAct_SetNaturalWeather action)
+{
+	TickWeather = action.NaturalWeather;
+}
+
+function SetProgressDay(SeqAct_SetProgressDay action)
+{
+	TickDay = action.ProgressDay;
 }
 
 simulated function Tick(float dt)
 {
+	local float time;
+	local float windSpeed;
+	local float windAngle;
+	local int i;
+	
 	if (TickDay)
 		TimeOfDay += dt * DayRate;
+		
+	if (TimeOfDay > Pi)
+		TimeOfDay = 0;
+
 		
 	if (TickWeather)
 	{
 		WeatherCounter += dt * WeatherRate;
-		
 		Temperature = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
 		Temperature = (Temperature - 0.5) * 1.5;
 		
-		CloudCoverage = GetNoise(WeatherCounter * 1.5, 0, 0.5) + GetNoise(WeatherCounter * 1.5, 1, 0.5) + GetNoise(WeatherCounter * 1.5, 2, 0.5) + GetNoise(WeatherCounter * 1.5, 3, 0.5);
+		CloudCoverage = GetNoise(WeatherCounter * 0.5, 0, 0.5) + GetNoise(WeatherCounter * 0.5, 1, 0.5) + GetNoise(WeatherCounter * 0.5, 2, 0.5) + GetNoise(WeatherCounter * 0.5, 3, 0.5);
 		CloudCoverage = (CloudCoverage - 0.5) * 1.5;
 
-		CloudCoverage = 0.0;
-		Temperature = 0.7;
+		windSpeed = GetNoise(WeatherCounter * 0.673, 0, 0.15) + GetNoise(WeatherCounter * 0.673, 1, 0.15) + GetNoise(WeatherCounter * 0.673, 2, 0.15) + GetNoise(WeatherCounter * 0.673, 3, 0.15);
+		windSpeed = (windSpeed - 0.5) * 1.5;
+		windSpeed *= 5.0;
 		
-		if (CloudCoverage < WeatherCloudThreshold)
+		windAngle = GetNoise(WeatherCounter * 0.0654, 0, 0.3) + GetNoise(WeatherCounter * 0.0654, 1, 0.3) + GetNoise(WeatherCounter * 0.0654, 2, 0.3) + GetNoise(WeatherCounter * 0.0654, 3, 0.3);
+		windAngle = (windAngle - 0.5) * 1.5;
+		windAngle *= 2 * Pi;
+		
+		Wind.x = cos(windAngle) * windSpeed;
+		Wind.y = sin(windAngle) * windSpeed;
+		
+		windSpeed = GetNoise(WeatherCounter * 0.173, 0, 0.15) + GetNoise(WeatherCounter * 0.173, 1, 0.15) + GetNoise(WeatherCounter * 0.173, 2, 0.15) + GetNoise(WeatherCounter * 0.173, 3, 0.15);
+		windSpeed = (windSpeed - 0.5) * 1.5;
+		windSpeed *= 5.0;
+		
+		windAngle = GetNoise(WeatherCounter * 0.0154, 0, 0.3) + GetNoise(WeatherCounter * 0.0154, 1, 0.3) + GetNoise(WeatherCounter * 0.0154, 2, 0.3) + GetNoise(WeatherCounter * 0.0154, 3, 0.3);
+		windAngle = (windAngle - 0.5) * 1.5;
+		windAngle *= 2 * Pi;
+		
+		SkyWind.x = cos(windAngle) * windSpeed;
+		SkyWind.y = sin(windAngle) * windSpeed;
+	}
+	
+	//Temperature = 0.1;//sin(0.25 * WeatherCounter) ** 2;
+	//CloudCoverage = 0.0;//sin(0.1 * WeatherCounter) ** 2;
+	//WeatherIntensity = 1.0;//sin(5 * WeatherCounter) ** 2;
+	
+	//`log(Temperature @ WeatherIntensity @ CloudCoverage);
+	
+	//Temperature = 0.7;
+	//CloudCoverage = 0.0;
+
+	if (CloudCoverage < WeatherCloudThreshold)
+	{
+		if (Temperature < SnowTempThreshold)
 		{
-			if (Temperature < SnowTempThreshold)
+			Snowing = true;
+		}
+		else if (Temperature > RainTempThresholdMin && Temperature < RainTempThresholdMax)
+		{
+			Raining = true;
+			
+			if (CloudCoverage <= LightningCloudThreshold && WeatherIntensity >= LightningIntensityThreshold)
 			{
-				Snowing = true;
-				WeatherIntensity = 0.0;
-			}
-			else if (Temperature > RainTempThresholdMin && Temperature < RainTempThresholdMax)
-			{
-				Raining = true;
+				if (!ThunderStorm)
+				{
+					time = FRand() * (LightningRateMax - LightningRateMin) + LightningRateMin;
+					//PlaySound(ThunderstormSound);
+					SetTimer(time, false, 'LightningStrike');
+				}
+				
+				ThunderStorm = true;
 			}
 			else
 			{
-				Snowing = false;
-				Raining = false;
+				ThunderStorm = false;
+				ClearTimer('LightningStrike');
 			}
 		}
-		
-		if (Temperature > ThawTempThreshold)
+		else
 		{
 			Snowing = false;
-			Thawing = true;
-		}
-		if (Snowing)
-		{
-			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
-		}
-		else if (Raining)
-		{
-			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
-			//WeatherIntensity = 1;
+			Raining = false;
 		}
 	}
+	else
+	{
+		Snowing = false;
+		Raining = false;
+		//WeatherIntensity = 0.0;
+	}
+	
+	if (Temperature > ThawTempThreshold)
+		Thawing = true;
+	
+	for (i = 0; i < SplashEmitterCount; i++)
+	{
+		if (SplashEmitters[i] != None)
+			SplashEmitters[i].DeactivateSystem();
+	}
+			
+	if (Snowing)
+	{
+		//WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
+		//WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+	}
+	else if (Raining)
+	{
+		//WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
+		//WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		
+		if (SplashEmitters[0] == None)
+		{
+			SplashEmitters.Length = 0;
+			EmitSplashEmitters();
+		}
+	}
+	
+	Landscape.Update(self, dt);
 }
 
 function float GetNoise(float value, int octave, float persistance)
@@ -271,22 +478,102 @@ function float Interpolate(float f1, float f2, float a)
 	return  f1 * (1 - x) + f2 * x;
 }
 
+function EmitSplashEmitters()
+{
+	local int i, s;
+	local float x, y;
+	local vector v;
+	local ParticleSystemComponent RainSplash;
+	
+	s = int(Sqrt(SplashEmitterCount));
+	
+	for (i = 0; i < SplashEmitterCount; i++)
+	{
+		x = (i % s) * (2 * SplashEmitterRange / float(s)) - SplashEmitterRange;
+		y = (i / s) * (2 * SplashEmitterRange / float(s)) - SplashEmitterRange;
+		
+		v.x = x;
+		v.y = y;
+		
+		RainSplash = WorldInfo.MyEmitterPool.SpawnEmitter(RainSplashTemplate, v);
+		RainSplash.SetAbsolute(false, false, false);
+		RainSplash.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		RainSplash.bUpdateComponentInTick = true;
+		
+		SplashEmitters.AddItem(RainSplash);
+	}
+}
+
+function LightningStrike()
+{
+	local ParticleSystemComponent lightning;
+	local vector l;
+	local float time;
+	
+	if (LightningBoltTemplate != None)
+	{		
+		l.x = (FRand() * (LightningRangeMax - LightningRangeMin) + LightningRangeMin) * (FRand() > 0.5 ? -1 : 1);
+		l.y = (FRand() * (LightningRangeMax - LightningRangeMin) + LightningRangeMin) * (FRand() > 0.5 ? -1 : 1);
+		l.z = 2500;
+		
+		lightning = WorldInfo.MyEmitterPool.SpawnEmitter(LightningBoltTemplate, l);
+		lightning.SetAbsolute(false, false, false);
+		lightning.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		lightning.bUpdateComponentInTick = true;
+		
+		time = FRand() * (LightningRateMax - LightningRateMin) + LightningRateMin;
+		
+		if (Light == None)
+		{
+			Light = Spawn(class'Arena.LightningLight', self, , l);
+			SetTimer(0.5, false, 'DisableLight');
+		}
+		
+		if (ThunderStorm)
+			SetTimer(time, false, 'LightningStrike');
+	}
+}
+
+function DisableLight()
+{
+	if (Light != None)
+	{
+		Light.Destroy();
+		Light = None;
+	}
+}
+
 defaultproperties
 {
-	TimeOfDay=1
-	DayRate=0.1
-	WeatherRate=0.5
+	Begin Object Class=Arena.LandscapeManager Name=Lscp
+	End Object
+	Landscape=Lscp
+	
+	LightningBoltTemplate=ParticleSystem'ArenaParticles.Particles.Lightning'
+	RainSplashTemplate=ParticleSystem'ArenaParticles.Particles.RainDropSplashes'
+	
+	ThunderstormSound=SoundCue'ArenaWeather.Audio.ThunderstormLoop'
+	
+	TimeOfDay=0
+	DayRate=0.01
+	WeatherRate=0.1
 	CloudCoverage=0
 	CloudSharpness=0.001
 	
 	TickDay=true
 	TickWeather=true
 	
-	WeatherCloudThreshold=0.5
+	WeatherCloudThreshold=0.25
 	SnowTempThreshold=0.5
 	ThawTempThreshold=0.65
 	RainTempThresholdMin=0.66
 	RainTempThresholdMax=0.75
-	SnowBuildupRate=1.5
-	RainBuildupRate=1.5
+	LightningCloudThreshold=0.1
+	LightningIntensityThreshold=0.95
+	SnowBuildupRate=0.05
+	RainBuildupRate=0.05
+	LightningRateMax=15
+	LightningRateMin=5
+	LightningRangeMax=15000
+	LightningRangeMin=5000
 }

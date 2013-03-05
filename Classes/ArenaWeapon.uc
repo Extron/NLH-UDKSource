@@ -682,6 +682,7 @@ defaultproperties
 		bOverrideAttachmentOwnerVisibility=true
 		bCastDynamicShadow=false
 		CastShadow=false
+		bOwnerNoSee=false
 	End Object
 	Mesh=FirstPersonMesh
 	
@@ -694,7 +695,6 @@ defaultproperties
 	Spread(0)=1
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
-	
-	BaseDamage=300
+
 	AmmoPerShot=1
 }

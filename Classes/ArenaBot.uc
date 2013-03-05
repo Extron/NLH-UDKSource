@@ -10,6 +10,11 @@ class ArenaBot extends UDKBot;
 
 
 /**
+ * The bot's personality, which governs much of how the bot responds to events in a level.
+ */
+var BotPersonality Personality;
+
+/**
  * The last location that the bot was in good condition at.
  */
 var vector LastStableLocation;
@@ -267,6 +272,9 @@ function bool IsCautious()
 		cautionMeasure -= LastShotAtDuration * 0.15;
 	}
 	
+	if (cautionMeasure > 0.0)
+		`log("Bot" @ self @ "is cautious.");
+		
 	return cautionMeasure > 0.0;
 }
 
@@ -291,6 +299,9 @@ function bool IsAggressive()
 		aggresionMeasure += BotsNear(50) * 0.5;
 	}
 	
+	if (aggresionMeasure > 0.0)
+		`log("Bot" @ self @ "is aggresive.");
+		
 	return aggresionMeasure > 0.0;
 }
 
@@ -429,10 +440,14 @@ simulated state FireWeapon
 {
 Begin:
 
+	while(!AP_Bot(Pawn).CanShoot())
+		Sleep(0.0);
+		
 	if (Pawn.NeedToTurn(GetFocalPoint()))
 		FinishRotation();
 			
 	ShootAt(None);
+	
 	LatentWhatToDoNext();
 }
 
@@ -544,8 +559,8 @@ Begin:
 
 defaultproperties
 {
-	BotRange=750
-	BotFireRange=500
+	BotRange=1000
+	BotFireRange=1000
 	FireIntervalMax=2.5
 	FireIntervalMin=0.25
 	CanFire=true

@@ -160,6 +160,7 @@ defaultproperties
 		bOverrideAttachmentOwnerVisibility=true
 		bCastDynamicShadow=false
 		CastShadow=false
+		bOwnerNoSee=false
 	End Object
 	Mesh=FirstPersonMesh
 	

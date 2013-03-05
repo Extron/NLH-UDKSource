@@ -8,6 +8,22 @@
 
 class RifleBullet extends ArenaProjectile;
 
+simulated function Emit()
+{
+	local vector l;
+	local rotator r;
+	
+	super.Emit();
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && ProjTemplate != None && ArenaWeaponBase(Owner) != None)
+	{
+		if (SkeletalMeshComponent(ArenaWeaponBase(Owner).Barrel.Mesh).GetSocketByName('MuzzleSocket') != None)
+			SkeletalMeshComponent(ArenaWeaponBase(Owner).Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
+	}
+	
+	//Projectile.SetVectorParameter('TracerOrigin', l);
+}
+
 defaultproperties
 {
 	ProjTemplate=ParticleSystem'ArenaParticles.Particles.RifleBulletTest'

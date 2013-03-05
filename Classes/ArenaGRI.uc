@@ -41,7 +41,17 @@ replication
 
 simulated function PostBeginPlay()
 {
-	WeatherMgr = Spawn(class'Arena.WeatherManager', self);
+	local WeatherManager iter;
+	
+	foreach AllActors (class'Arena.WeatherManager', iter)
+	{
+		if (iter != None)
+		{
+			WeatherMgr = iter;
+			break;
+		}
+	}
+	//WeatherMgr = Spawn(class'Arena.WeatherManager', self);
 }
 
 defaultproperties
