@@ -112,7 +112,7 @@ defaultproperties
 	bBlockActors=true
 	
 	Begin Object Class=StaticMeshComponent Name=ShieldMesh
-		StaticMesh=StaticMesh'ArenaAbilities.Meshes.DeflectionShieldMesh'
+		StaticMesh=StaticMesh'ArenaAbilities.Meshes.BubbleShieldMesh'
 		DepthPriorityGroup=SDPG_PostProcess
 		bOnlyOwnerSee=false
 		bCastDynamicShadow=false

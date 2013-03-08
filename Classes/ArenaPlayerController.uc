@@ -113,10 +113,16 @@ exec function ADS()
 {
 	local float rem;
 
-	DesiredADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset();
+	DesiredADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
+	ADSOffset = DesiredADSOffset;
 	ADSDirection *= -1;
 	Aiming = true;
 	
+	if (ADSDirection > 0)
+		DesiredFOV = FOVAngle / ArenaWeaponBase(Pawn.Weapon).GetZoomLevel();
+	else
+		DesiredFOV = DefaultFOV;
+		
 	rem = GetRemainingTimeForTimer('AimingComplete');
 	
 	if (rem == -1)
@@ -136,7 +142,7 @@ simulated function PlayerTick(float DeltaTime)
 	{
 		`log("Aiming" @ ADSOffset);
 		t = 1 - GetRemainingTimeForTimer('AimingComplete') / ArenaPawn(Pawn).Stats.GetADSSpeed();
-		ADSOffset = DesiredADSOffset * t;
+		//ADSOffset = DesiredADSOffset * t;
 	}
 }
 

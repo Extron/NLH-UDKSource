@@ -72,6 +72,16 @@ var bool ADS;
 /* Indicates that the pawn is sprinting. */
 var bool Sprinting;
 
+/**
+ * Indicates that this pawn is invisible.  This mainly deals with whether or not bots can see the pawn.
+ */
+var bool Invisible;
+
+/**
+ * Indicates that this pawn should not take any damage.
+ */
+var bool Invincible;
+
 var bool initInv;
 
 replication 
@@ -227,8 +237,11 @@ function bool DoJump(bool bUpdating)
 
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
-	super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-	`log("Damage Type" @ DamageType @ "Amount" @ DamageAmount);
+	if (!Invincible)
+	{
+		super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+		`log("Damage Type" @ DamageType @ "Amount" @ DamageAmount);
+	}
 }
 
 simulated function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, class<DamageType> DamageType, vector Momentum,  Actor DamageCauser)
@@ -663,6 +676,16 @@ exec function KillMe()
 	TakeDamage(Health, ArenaPlayerController(Owner), Location, vect(0, 0, 0), None);
 }
 
+exec function SetInvisible(bool value)
+{
+	Invisible = value;
+}
+
+exec function SetInvincible(bool value)
+{
+	Invincible = value;
+}
+
 exec function CurrentState()
 {
 	`log("My current state is:" @ GetStateName());
@@ -800,5 +823,6 @@ defaultproperties
 	CrouchRadius=21.0
 	bCanCrouch=true
 	
+	Invisible=false
 	initInv=True
 }

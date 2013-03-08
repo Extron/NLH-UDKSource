@@ -67,9 +67,19 @@ function float GetWeight()
 	return Stats.Values[WSVWeight];
 }
 
-function vector GetOpticsOffset()
+function vector GetOpticsOffset(ArenaPawn holder)
+{	
+	local vector t;
+	
+	t.Z = holder.EyeHeight;
+	t = t + holder.Location;
+	
+	return Optics.GetOpticsOffset(t, Rotation);
+}
+
+function float GetZoomLevel()
 {
-	return Optics.OpticsOffset;
+	return Optics.ZoomLevel;
 }
 
 function AttachStock(Wp_Stock s)

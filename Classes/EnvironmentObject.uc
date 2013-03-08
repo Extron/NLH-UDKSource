@@ -22,6 +22,16 @@ var MaterialInstanceConstant Material;
  */
 var float SnowLevel;
 
+/**
+ * Stores the level of rain water on the object, which increases when it rains, decreases when it is hot, 
+ * and becomes ice when it is cold.
+ */
+var float RainLevel;
+
+/**
+ * Indicates that the object should be frozen.
+ */
+var bool Frozen;
 
 simulated function Tick(float delta)
 {
@@ -39,17 +49,27 @@ simulated function Tick(float delta)
 		StaticMeshComponent.SetMaterial(0, Material);
 	}
 	
-	if (ArenaGRI(WorldInfo.GRI) != None)
+	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
 	{
-		if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
-			SnowLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
-		else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Thawing)
-			SnowLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.Temperature * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
-		
-		SnowLevel = FClamp(SnowLevel, 0.0, 1.0);
-		
-		Material.SetScalarParameterValue('WeatherLevel', SnowLevel);
-		Material.SetScalarParameterValue('Snow', SnowLevel > 0 ? 1 : 0);
+		if (FastTrace(Location + vect(0, 0, 1000)))
+		{
+			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
+				SnowLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+			else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Thawing)
+				SnowLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.Temperature * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+			
+			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
+				RainLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.RainBuildupRate;
+			else
+				RainLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.RainBuildupRate;
+			
+			SnowLevel = FClamp(SnowLevel, 0.0, 1.0);
+			RainLevel = FClamp(RainLevel, 0.0, 1.0);
+			
+			Material.SetScalarParameterValue('WeatherLevel', SnowLevel > 0 ? SnowLevel : RainLevel);
+			Material.SetScalarParameterValue('Snow', SnowLevel > 0 ? 1 : 0);
+			Material.SetScalarParameterValue('Rain', (!Frozen && RainLevel > 0) ? 1 : 0);
+		}
 	}
 	
 	super.Tick(delta);	
@@ -167,4 +187,5 @@ simulated function TouchPawn(ArenaPawn pawn)
 defaultproperties
 {
 	bStatic=false
+	bMovable=false
 }

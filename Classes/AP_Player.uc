@@ -29,6 +29,8 @@ var name LeftArmControlName;
  */
 var vector ArmsTranslation;
 
+var RainCylinder RainCylinder;
+
 simulated event TickSpecial(float dt)
 {/*
 	local vector gripLoc;
@@ -75,12 +77,10 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		CreateInventory(class'Arena.Ab_Bubble', true);
-		CreateInventory(class'Arena.Ab_Pedestal', true);
-		CreateInventory(class'Arena.Ab_Deflection', true);
 		CreateInventory(class'Arena.Ab_RockWall', true);
 		CreateInventory(class'Arena.Ab_ShockShort', true);
 		CreateInventory(class'Arena.Ab_StoneFlesh', true);
+		CreateInventory(class'Arena.Ab_EMP', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
@@ -139,6 +139,7 @@ defaultproperties
 		AlwaysLoadOnClient=true
 		AlwaysLoadOnServer=true
 		bOwnerNoSee=false
+		bOnlyOwnerSee=true
 		CastShadow=FALSE
 		BlockRigidBody=TRUE
 		bUpdateSkelWhenNotRendered=false
@@ -162,6 +163,11 @@ defaultproperties
 	End Object 
 	Arms=ArmsMesh
 	Components.Add(ArmsMesh)
+	
+	Begin Object Class=RainCylinder Name=RC
+	End Object
+	//RainCylinder=RC
+	//Components.Add(RC)
 	
 	bScriptTickSpecial=true
 	RecoilControlName=RecoilNode

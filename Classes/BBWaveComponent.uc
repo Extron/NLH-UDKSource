@@ -163,6 +163,7 @@ simulated event bool SpawnBot(int botIndex, class<ArenaBot> botClass, class<Aren
 	}
 	else
 	{
+		`log("Could not spawn bot.");
 		QueuedBots.AddItem(botIndex);
 		return false;
 	}
