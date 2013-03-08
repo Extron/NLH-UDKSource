@@ -240,7 +240,7 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	if (!Invincible)
 	{
 		super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-		`log("Damage Type" @ DamageType @ "Amount" @ DamageAmount);
+		//`log("Damage Type" @ DamageType @ "Amount" @ DamageAmount);
 	}
 }
 
@@ -275,6 +275,13 @@ simulated function Bump(Actor other, PrimitiveComponent otherComp, Vector hitNor
 	}
 }
 
+
+function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
+{	
+	ClearAllTimers();
+	
+	return super.Died(Killer, DamageType, HitLocation);
+}
 
 simulated function RagDoll()
 {

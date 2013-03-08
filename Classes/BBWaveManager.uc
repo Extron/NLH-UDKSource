@@ -27,12 +27,8 @@ var GI_BotBattle Parent;
 
 simulated function Tick(float dt)
 {
-	local BBWaveComponent wave;
-	
-	foreach Waves(wave)
-	{
-		wave.CheckDelayQueue();
-	}
+	if (CurrentWave >= 0 && CurrentWave < Waves.Length)
+		Waves[CurrentWave].UpdateWave();
 }
 
 simulated function Initialize(GI_BotBattle gameInfo)

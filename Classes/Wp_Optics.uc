@@ -24,8 +24,6 @@ function vector GetOpticsOffset(vector l, rotator r)
 		if (SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndRotation('SightSocket', socketLoc, socketRot, 0))
 		{
 			v = (socketLoc - l) << r;	
-
-			`log("Optics" @ v);
 			v.x = 0;
 		}
 	}

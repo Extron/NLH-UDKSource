@@ -123,8 +123,11 @@ function NotifyKilled(Controller killer, Controller killed, Pawn killedPawn, cla
 {
 	super.NotifyKilled(killer, killed, killedPawn, damageType);
 	
-	if (ArenaTeamInfo(PlayerReplicationInfo.Team) != None)
-		ArenaTeamInfo(PlayerReplicationInfo.Team).TeamMemberKilled(self);
+	if (killed == self)
+	{
+		if (ArenaTeamInfo(PlayerReplicationInfo.Team) != None)
+			ArenaTeamInfo(PlayerReplicationInfo.Team).TeamMemberKilled(self);
+	}
 }
 
 event WhatToDoNext()
@@ -299,8 +302,8 @@ function bool IsAggressive()
 		aggresionMeasure += BotsNear(50) * 0.5;
 	}
 	
-	if (aggresionMeasure > 0.0)
-		`log("Bot" @ self @ "is aggresive.");
+	//if (aggresionMeasure > 0.0)
+		//`log("Bot" @ self @ "is aggresive.");
 		
 	return aggresionMeasure > 0.0;
 }

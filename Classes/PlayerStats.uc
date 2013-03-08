@@ -144,7 +144,15 @@ function float GetSprintSpeed()
  */
 function float GetHealingRate()
 {
-	return ((2 ** (float(Owner.Health) / float(Owner.HealthMax))) - 1) * Values[PSVHealthRegenRate];
+	if (Owner != None)
+	{
+		if (Owner.HealthMax == 0)
+			return 0;
+		else
+			return ((2 ** (float(Owner.Health) / float(Owner.HealthMax))) - 1) * Values[PSVHealthRegenRate];
+	}
+	
+	return 0;
 }
 
 /**

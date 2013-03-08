@@ -55,35 +55,26 @@ simulated function Initialize(BBWaveManager waveManager)
 	Parent = waveManager;
 }
 
-simulated function CheckDelayQueue()
+simulated function UpdateWave()
 {
-	local array<int> fails;
-	local int i;
-	local int index;
-	local int maxCount;
-	
-	maxCount = QueuedBots.Length;
-	
-	for (i = 0; i < maxCount; i++)
+	local int i, j;
+	local int spawnCount;
+
+	for (i = 0; i < Bots.Length; i++)
 	{
-		index = QueuedBots[i];
-		
-		if (SpawnBot(index, Bots[index].BotType, Bots[index].PawnType, WaveTI))
-		{
-			Bots[index].TotalCount++;
-			Bots[index].ActiveCount++;
+		if (Bots[i].ActiveCount < Bots[i].WaveActive && Bots[i].TotalCount < Bots[i].WaveTotal)
+		{	
+			spawnCount = Min(Bots[i].WaveActive - Bots[i].ActiveCount, Bots[i].WaveTotal - Bots[i].TotalCount);
+			
+			for (j = 0;  j < spawnCount; j++)
+			{
+				if (SpawnBot(i, Bots[i].BotType, Bots[i].PawnType, WaveTI))
+				{
+					Bots[i].ActiveCount++;
+					Bots[i].TotalCount++;
+				}
+			}
 		}
-		else
-		{
-			fails.AddItem(index);
-		}
-	}
-	
-	QueuedBots.Length = 0;
-	
-	for (i = 0; i < fails.Length; i++)
-	{
-		QueuedBots.AddItem(fails[i]);
 	}
 }
 
@@ -177,15 +168,8 @@ simulated event KillBot(ArenaBot bot)
 	{
 		if (bot.IsA(Bots[i].BotType.Name) && bot.Pawn.IsA(Bots[i].PawnType.Name))
 		{
-			if (Bots[i].TotalCount < Bots[i].WaveTotal)
-			{				
-				`log("Spawning new bot.");
-				
-				if (SpawnBot(i, Bots[i].BotType, Bots[i].PawnType, WaveTI))
-					Bots[i].TotalCount++;
-				else
-					Bots[i].ActiveCount--;
-			}			
+			Bots[i].ActiveCount--;	
+			break;
 		}
 	}
 }

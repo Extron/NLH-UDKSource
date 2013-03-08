@@ -6,7 +6,7 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 ******************************************************************************/
 
-class Ab_PedestalBoulder extends Actor;
+class Ab_PedestalBoulder extends InterpActor;
 
 /**
  * The float that determines how far in the ground the pedestal starts
@@ -26,10 +26,22 @@ var float PedestalTimer;
 /** The mesh used to draw the component. */
 var() editinline MeshComponent Mesh;
 
+simulated function Initialize()
+{
+	SetDrawScale( default.DrawScale );
+
+	ClearTimer('Recycle');
+	SetHidden(FALSE);
+	StaticMeshComponent.SetHidden(FALSE);
+	SetTickIsDisabled(false); 
+	SetPhysics(PHYS_RigidBody);
+	SetCollision(true, true, true);
+}
+
 simulated function PostBeginPlay()
 {
-	local Rotator newRot;   // This will be our new Rotation
-
+	local Rotator newRot;
+	
 	`log("Rock spawned");
 	super.PostBeginPlay();
 	
@@ -42,100 +54,90 @@ simulated function PostBeginPlay()
 	
 	if (ArenaPawn(Instigator).Controller != None) {
 		// Change to (vect(0, 0, -1)) later
-		SetLocation(Instigator.Location + (vect(0, -1.5, -1) * StartDepth));
+		SetPhysics(PHYS_RigidBody);
+		CollisionComponent.SetRBPosition(Instigator.Location + vect(0, 0, 1) * -StartDepth);
+		CollisionComponent.SetRBCollidesWithChannel(RBCC_Default, false);
 		`log(Instigator.Rotation.Yaw);
 		}
 	
 	RiseAmount = Rising;
 	
 	SetTimer(PedestalTimer, false, 'FallDown');
-	
-	// Non of this works...
-	//OnSetVelocity(vect(0.0, 10.0, 0.0));
-	Velocity = vect(0.0, 10.0, 0.0);
-	Mesh.AddForce(vect(0.0, 1000.0, 0.0));
 }
 
 // Have the pedestal Fall until it reaches its correct height
 simulated function Tick(float dt)
-{
-	if ((RiseAmount > 0.0) && (!Fall)) {
-	//	`log("Rising");
-		SetLocation(Location + (vect(0, 0, 1) * RiseAmount));
-		RiseAmount = RiseAmount - 0.6;
-	}
-	
-	//Velocity = vect(0.0, 10.0, 0.0);
+{	
+	local int direction;
 	
 	super.Tick(dt);
 	
-	//`log(Location);
+	direction = Fall ? -1 : ((RiseAmount > 0.0) ? 1 : 0);
 	
-	if (Fall) {
-		RiseAmount = RiseAmount + 0.6;
-		SetLocation(Location + (vect(0, 0, -1) * RiseAmount));
-		if (RiseAmount > Rising) {
-			`log("Pedestal deleted");
+	RiseAmount = RiseAmount - direction * 0.6;
+	
+	if (RiseAmount <= 0.0)
+		SetPhysics(PHYS_None);
+
+	CollisionComponent.SetRBPosition(Location + (vect(0, 0, 1) * RiseAmount * direction));
+
+	if (Fall && RiseAmount > Rising) 
 			self.Destroy();
-		}
-	}
 }
 
 simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vector HitNormal)
 {
 	super.Touch(Other, OtherComp, HitLocation, HitNormal);
-	`log("THE PEDESTAL HAS BEEN TOUCHED");
-	`log(Other);
 }
 
 // When actors that both have
 simulated function Bump(Actor Other, PrimitiveComponent OtherComp, Vector HitNormal)
 {
 	super.Bump(Other, OtherComp, HitNormal);
-	`log("THE PEDESTAL HAS BEEN BUMPED");
-	`log(Other);
+	
+	if (RiseAmount > 0.0 && !Fall && Normal(HitNormal) dot vect(0, 0, 1) > 0.5)
+	{
+		if (ArenaPawn(Other) != None)
+		{
+			`log("Hit pawn" @ Other);
+		}
+	}
 }
 
+event bool EncroachingOn(Actor Other)
+{
+	`log("Encroaching on" @ Other);
+	return EncroachingOn(Other);
+}
 
-simulated function FallDown() {
-	`log("Pedestal is falling");
+simulated function FallDown() 
+{
 	Fall = true;
+	
+	SetPhysics(PHYS_RigidBody);
+}
+
+simulated event FellOutOfWorld(class<DamageType> dmgType)
+{
+	//Super.FellOutOfWorld(dmgType);
 }
 
 defaultproperties
 {
 	bCollideActors=true
 	bBlockActors=true
-
+	bCollideWorld=false
+	bNoDelete=false
+	//bWorldGeometry=true
+	
 	Begin Object Class=StaticMeshComponent Name=CubeObject
-		//SkeletalMesh=SkeletalMesh'AC_Orb.Meshes.OrbMesh'
-		//PhysicsAsset=PhysicsAsset'AC_Orb.Meshes.OrbMesh_Physics'
-		//Rotation=(Yaw=-16384)
-		//MinDistFactorForKinematicUpdate=0.0
-		//StaticMesh=StaticMesh'ArenaTestObjects.Meshes.Cube'
-		//SkeletalMesh=SkeletalMesh'AC_Player.Meshes.PlayerMesh'
 		StaticMesh=StaticMesh'ArenaTestObjects.Meshes.Cube'
-		//SkeletalMesh=SkeletalMesh'ArenaTestObjects.Meshes.Cube'
-		//PhysicsAsset=PhysicsAsset'ArenaTestObjects.Meshes.Cube'
-		//PhysicsAsset=PhysicsAsset'ArenaTestObjects.Meshes.Cube'
-		//StaticMesh=StaticMesh'ArenaAbilities.Meshes.DeflectionShieldMesh'
-		//StaticMesh=StaticMesh'EngineMeshes.Cube'
-		RBCollideWithChannels=(Untitled3=true,Pawn=true)
-		//PhysicsAsset=PhysicsAsset'AC_Player.Physics.PlayerMeshPhysics'
-		//BlockRigidBody=TRUE
-		//RBCollideWithChannels=(Untitled3=true)
-		//PhysicsAsset=PhysicsAsset'AC_Orb.Meshes.OrbMesh_Physics'
-		//PhysicsAsset=PhysicsAsset'AC_Orb.Meshes.OrbMesh_Physics'
-		//Rotation=(Yaw=-16384,Pitch=16384)
-		//DepthPriorityGroup=SDPG_PostProcess
-		CollisionType=COLLIDE_BlockAll
 		Scale3D=(X=0.7,Y=0.7,Z=1.4)
 	End Object
 	Mesh=CubeObject
+	Components.Add(CubeObject)
 	
-	// WHY U NO WORK?
-	CollisionType=COLLIDE_BlockAll
-	//Components.Add(Mesh)
+	CollisionComponent=CubeObject
 	
 	Rising = 19.9
 	RiseAmount = 0

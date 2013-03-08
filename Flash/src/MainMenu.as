@@ -1,25 +1,17 @@
 package 
 {	
-	import flash.display.MovieClip;
-	import flash.ui.Mouse;
+	import flash.display.Sprite;
+    import flash.events.Event;
+    import mx.core.BitmapAsset;
+	import scaleform.clik.controls.Label;
 	
 	/**
 	 * ...
 	 * @author Trystan Binkley-Jones
 	 */
-	public class MainMenu
-	{		
-		static var mainMenu:MainMenu;
+	public class MainMenu extends Sprite
+	{
 		
-		static function main(mc:MovieClip):void
-		{
-			mainMenu = new MainMenu();
-		}
-		
-		public function MainMenu()
-		{
-			Mouse.hide();
-		}		
 	}
 	
 }

@@ -88,6 +88,11 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 	
 	DefaultLoc = loc;
 	
+	if (ArenaPawn(Pawn).ADS)
+		ADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
+	else
+		ADSOffset = vect(0, 0, 0);
+	 
 	if (ArenaPawn(Pawn) != None && (Role < Role_Authority || WorldInfo.NetMode == NM_ListenServer))
 	{
 		//rot += ArenaPawn(Pawn).GetRecoil();

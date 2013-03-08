@@ -18,7 +18,7 @@ simulated function CustomFire()
 	if (!IsHolding)
 	{
 		`log("Spawning rock pedestal");
-		Pedestal = Spawn(class 'Arena.Ab_PedestalBoulder', Owner);
+		Pedestal = Spawn(class 'Arena.Ab_PedestalBoulder', None, , vect(500, 500, 65));
 	}
 }
 
@@ -33,5 +33,4 @@ defaultproperties
 	CanHold=false
 	IsPassive=false
 	CanCharge=false
-	CollideActors=true
 }

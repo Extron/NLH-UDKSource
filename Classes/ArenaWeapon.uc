@@ -21,7 +21,7 @@ enum WeaponType
 	WTHardLightRifle,
 	WTBeamRifle,
 	WTPlasmaRifle,
-	WTRailGun
+	WTRailGunk
 };
 
 enum WeaponSize
@@ -96,6 +96,11 @@ var vector RecoilVel;
 /** The recoil position. */
 var vector RecoilPos;
 
+/**
+ * The deviation from the bullet path in which any bots inside are alerted of a near hit.
+ */
+var vector SweepExtent;
+
 /** The name of the weapon. */
 var string WeaponName;
 
@@ -114,6 +119,11 @@ var float Bloom;
  * can only fire again after this time has passed.
  */
 var float CycleTime;
+
+/**
+ * The range at which we check for bots that were near the path of the bullet.
+ */
+var float SweepRange;
 
 /** Indicates that the weapon is reloading. */
 var bool Reloading;
@@ -284,6 +294,8 @@ simulated function InstantFire()
 	// Perform shot
 	RealImpact = CalcWeaponFire(StartTrace, EndTrace, ImpactList);
 
+	SweepBullet(StartTrace, Normal(EndTrace - StartTrace), SweepExtent, FMin(SweepRange, VSize(RealImpact.HitLocation - StartTrace)));
+	
 	if (Role == ROLE_Authority)
 	{
 		SetFlashLocation(RealImpact.HitLocation);	
@@ -302,10 +314,17 @@ simulated function InstantFire()
 simulated function Projectile ProjectileFire()
 {
 	local Projectile projectile;
+	local vector start, direction;
+	
 	projectile = super.ProjectileFire();
 	
 	if (projectile != None)
 		projectile.Damage = BaseDamage * Stats.GetDamageModifier();
+	
+	start = Instigator.GetWeaponStartTraceLocation();
+	direction = Normal(start + vector(GetAdjustedAim(start)));
+	
+	SweepBullet(start, direction, SweepExtent, SweepRange);
 	
 	return projectile;
 }
@@ -483,6 +502,20 @@ simulated function EmitIHBeam(vector hitLocation)
 		IHBeam.SetVectorParameter('SourceLocation', l);
 		IHBeam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		IHBeam.bUpdateComponentInTick = true;
+	}
+}
+
+/**
+ * To help AI know when they are getting shot at, sweep out a trace to check for bots near the bullet path.
+ */
+simulated function SweepBullet(vector start, vector direction, vector extent, float range)
+{
+	local AP_Bot iter;
+	local vector hitLoc, hitNorm;
+	
+	foreach TraceActors(class'Arena.AP_Bot', iter, hitLoc, hitNorm, Normal(direction) * range, start, extent)
+	{
+		iter.ShotAt(self, Instigator, start, direction);
 	}
 }
 
@@ -695,6 +728,8 @@ defaultproperties
 	Spread(0)=1
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
-
+	SweepRange=1000
+	SweepExtent=(X=100,Y=100,Z=100)
+	
 	AmmoPerShot=1
 }
