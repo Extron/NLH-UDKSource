@@ -30,7 +30,7 @@ var name LeftArmControlName;
 var vector ArmsTranslation;
 
 simulated event TickSpecial(float dt)
-{
+{/*
 	local vector gripLoc;
 	local rotator gripRot;
 	
@@ -40,7 +40,7 @@ simulated event TickSpecial(float dt)
 	{
 		ArenaWeapon(Weapon).GetGripSocketLocRot(gripLoc, gripRot);
 		LeftArmControl.EffectorLocation = gripLoc;
-	}
+	}*/
 }
 
 simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
@@ -79,6 +79,8 @@ function InitInventory()
 		CreateInventory(class'Arena.Ab_Pedestal', true);
 		CreateInventory(class'Arena.Ab_Deflection', true);
 		CreateInventory(class'Arena.Ab_RockWall', true);
+		CreateInventory(class'Arena.Ab_ShockShort', true);
+		CreateInventory(class'Arena.Ab_StoneFlesh', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}

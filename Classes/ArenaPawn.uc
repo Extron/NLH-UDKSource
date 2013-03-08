@@ -545,6 +545,24 @@ simulated function SpendEnergy(float EnergyAmount)
 	}
 }
 
+// Function added by Zack to add/refund Energy
+simulated function AddEnergy(float EnergyAmount)
+{
+	local float cost;
+	
+	cost = Stats.GetEnergyCost(EnergyAmount);
+	
+	`log("Energy Added");
+	
+	if (cost > 0)
+	{
+		Energy += cost;
+		// The below line is removed because it would be called before the
+		// ability would spend energy, defeating the purpose of this function
+		//if (Energy > EnergyMax) Energy = EnergyMax;
+	}
+}
+
 simulated function SpendStamina(float StaminaAmount)
 {
 	local float cost;

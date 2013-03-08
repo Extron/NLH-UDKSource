@@ -40,6 +40,6 @@ defaultproperties
 	Size=WSRegular
 	MaxAmmo=300
 	MaxClip=30
-	Ammo=120
+	Ammo=300
 	Clip=30
 }

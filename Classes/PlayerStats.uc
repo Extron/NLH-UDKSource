@@ -614,12 +614,6 @@ simulated function float GetGGC(int i)
 
 defaultproperties
 {
-	/*DamageInput[0]=10
-    DamageInput[1]=.5
-    DamageInput[2]=.1
-    DamageInput[3]=2
-    DamageInput[4]=5*/
-
 	DamageInput[0]=1
     DamageInput[1]=1
     DamageInput[2]=1
@@ -638,7 +632,7 @@ defaultproperties
 	Values[PSVObstruction]=0
 	Values[PSVGlobalDamageInput]=1
 	Values[PSVHealthRegenDelay]=1
-	Values[PSVEnergyRegenDelay]=1
+	Values[PSVEnergyRegenDelay]=5
 	Values[PSVStaminaRegenDelay]=0
 	Values[PSVHealthRegenRate]=10
 	Values[PSVEnergyRegenRate]=10
