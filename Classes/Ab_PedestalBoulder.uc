@@ -8,11 +8,6 @@
 
 class Ab_PedestalBoulder extends InterpActor;
 
-/**
- * The float that determines how far in the ground the pedestal starts
- */
-var float StartDepth;
-
 /* While rising, the amount it Falls by each step */
 var float RiseAmount;
 
@@ -21,10 +16,8 @@ var float Rising;
 var bool Fall;
 
 /* This is the variable the stores the time before the pedestal disappears */
-var float PedestalTimer;
+var float FallTimer;
 
-/** The mesh used to draw the component. */
-var() editinline MeshComponent Mesh;
 
 simulated function Initialize()
 {
@@ -42,27 +35,24 @@ simulated function PostBeginPlay()
 {
 	local Rotator newRot;
 	
-	`log("Rock spawned");
 	super.PostBeginPlay();
 	
-	AttachComponent(Mesh);
 
 	// The below lines makes the pedestal's rotation random
-	// newRot = Rotation;      	// Set newRot to our current Rotation
-    newRot.Yaw += Rand(65536);	// In the unreal engine, 1 circle = 65536
+	// In the unreal engine, 1 circle = 65536
+    newRot.Yaw += Rand(65536);
     SetRotation(newRot);		
-	
-	if (ArenaPawn(Instigator).Controller != None) {
-		// Change to (vect(0, 0, -1)) later
+
+	if (ArenaPawn(Instigator).Controller != None) 
+	{
 		SetPhysics(PHYS_RigidBody);
-		CollisionComponent.SetRBPosition(Instigator.Location + vect(0, 0, 1) * -StartDepth);
+		CollisionComponent.SetRBPosition(Location);
 		CollisionComponent.SetRBCollidesWithChannel(RBCC_Default, false);
-		`log(Instigator.Rotation.Yaw);
-		}
+	}
 	
 	RiseAmount = Rising;
 	
-	SetTimer(PedestalTimer, false, 'FallDown');
+	SetTimer(FallTimer, false, 'FallDown');
 }
 
 // Have the pedestal Fall until it reaches its correct height
@@ -81,27 +71,8 @@ simulated function Tick(float dt)
 
 	CollisionComponent.SetRBPosition(Location + (vect(0, 0, 1) * RiseAmount * direction));
 
-	if (Fall && RiseAmount > Rising) 
+	if (Fall && RiseAmount > Rising)
 			self.Destroy();
-}
-
-simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vector HitNormal)
-{
-	super.Touch(Other, OtherComp, HitLocation, HitNormal);
-}
-
-// When actors that both have
-simulated function Bump(Actor Other, PrimitiveComponent OtherComp, Vector HitNormal)
-{
-	super.Bump(Other, OtherComp, HitNormal);
-	
-	if (RiseAmount > 0.0 && !Fall && Normal(HitNormal) dot vect(0, 0, 1) > 0.5)
-	{
-		if (ArenaPawn(Other) != None)
-		{
-			`log("Hit pawn" @ Other);
-		}
-	}
 }
 
 event bool EncroachingOn(Actor Other)
@@ -113,12 +84,13 @@ event bool EncroachingOn(Actor Other)
 simulated function FallDown() 
 {
 	Fall = true;
-	
 	SetPhysics(PHYS_RigidBody);
 }
 
 simulated event FellOutOfWorld(class<DamageType> dmgType)
 {
+	//Normally, when a physics actor falls out of the world, it is automatically destroyed.  Here, we override to 
+	//prevent that, as we spawn the actor beneath the world.
 	//Super.FellOutOfWorld(dmgType);
 }
 
@@ -128,20 +100,18 @@ defaultproperties
 	bBlockActors=true
 	bCollideWorld=false
 	bNoDelete=false
-	//bWorldGeometry=true
 	
 	Begin Object Class=StaticMeshComponent Name=CubeObject
 		StaticMesh=StaticMesh'ArenaTestObjects.Meshes.Cube'
 		Scale3D=(X=0.7,Y=0.7,Z=1.4)
 	End Object
-	Mesh=CubeObject
+	StaticMeshComponent=CubeObject
 	Components.Add(CubeObject)
 	
 	CollisionComponent=CubeObject
 	
 	Rising = 19.9
 	RiseAmount = 0
-	StartDepth = 265.0
-	PedestalTimer=8.0
-	Fall = false;
+	FallTimer=8.0
+	Fall = false
 }

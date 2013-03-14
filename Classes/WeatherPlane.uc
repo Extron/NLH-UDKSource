@@ -61,7 +61,7 @@ simulated function Tick(float dt)
 					Snowflakes.ActivateSystem();
 				
 				Snowflakes.SetFloatParameter('WeatherIntensity', ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity);
-				Snowflakes.SetVectorParameter('Wind', ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
+				//Snowflakes.SetVectorParameter('Wind', ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
 			}
 		}
 		else

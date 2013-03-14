@@ -39,7 +39,6 @@ const SplashEmitterCount = 50;
 const SplashEmitterRange = 1000;
 
 
-
 /**
  * The basic white noise used to generate a unique Perlin noise function each time.
  */
@@ -359,9 +358,9 @@ simulated function Tick(float dt)
 	
 	//`log(Temperature @ WeatherIntensity @ CloudCoverage);
 	
-	//Temperature = 0.7;
-	//CloudCoverage = 0.0;
-
+	Temperature = 0.1;
+	CloudCoverage = 0.0;
+	
 	if (CloudCoverage < WeatherCloudThreshold)
 	{
 		if (Temperature < SnowTempThreshold)
@@ -399,7 +398,7 @@ simulated function Tick(float dt)
 	{
 		Snowing = false;
 		Raining = false;
-		//WeatherIntensity = 0.0;
+		WeatherIntensity = 0.0;
 	}
 	
 	if (Temperature > ThawTempThreshold)
@@ -413,13 +412,13 @@ simulated function Tick(float dt)
 			
 	if (Snowing)
 	{
-		//WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-		//WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
+		WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
 	}
 	else if (Raining)
 	{
-		//WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-		//WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
+		WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
 		
 		if (SplashEmitters[0] == None)
 		{

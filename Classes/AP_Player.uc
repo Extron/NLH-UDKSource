@@ -77,9 +77,9 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		CreateInventory(class'Arena.Ab_Bubble', true);
 		CreateInventory(class'Arena.Ab_Pedestal', true);
-		CreateInventory(class'Arena.Ab_Deflection', true);
+		CreateInventory(class'Arena.Ab_ShockShort', true);
+		CreateInventory(class'Arena.Ab_RockWall', true);
 		CreateInventory(class'Arena.Ab_EMP', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();

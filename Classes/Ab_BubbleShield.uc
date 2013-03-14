@@ -70,15 +70,6 @@ simulated function Tick(float dt)
 	{
 		SetLocation(Instigator.Location);
 	}
-
-	//ShieldTimer = ShieldTimer - dt;
-	
-	//if (ShieldTimer <= 0) {
-		//self.Destroy();
-		// Undo the damage mod
-		//ArenaPawn(Instigator).Stats.SetTypeDamageInput(class 'Arena.Dmg_LightBeam', 1.0);
-		//`log("Bubble shield expired");
-	//}
 	
 	super.Tick(dt);
 }

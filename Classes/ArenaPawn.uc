@@ -175,6 +175,8 @@ simulated function Tick(float dt)
 		staminaRate = Stats.GetStaminaRate();
 		Stamina = Stamina + (staminaRate / dt);
 		
+		`log("Stamina" @ Stamina);
+		
 		if (Stamina > StaminaMax)
 		{
 			Stamina = StaminaMax;
@@ -217,15 +219,22 @@ simulated function Tick(float dt)
 
 function bool DoJump(bool bUpdating)
 {
-	if (bJumpCapable && !bIsCrouched && !bWantsToCrouch && Physics == PHYS_Walking)
+	local float nJump;
+	
+	if (bJumpCapable && !bIsCrouched && !bWantsToCrouch && Physics == PHYS_Walking && Stamina > 0)
 	{
 		if (!bIsWalking)
 			Velocity.Z = JumpZ * Stats.GetJumpZ();
 			
+		nJump = Stats.GetJumpZ() / Stats.Constants.GetFactorMax("Jump Z");
+		
 		if (Base != None && !Base.bWorldGeometry && Base.Velocity.Z > 0.f)
 		{
 			Velocity.Z += Base.Velocity.Z;
 		}
+		
+		SpendStamina(350 * nJump);
+		`log("Stamina" @ Stamina);
 		
 		SetPhysics(PHYS_Falling);
 		
@@ -562,6 +571,24 @@ simulated function SpendEnergy(float EnergyAmount)
 		Energy -= cost;
 		CanRegenEnergy = false;
 		SetTimer(Stats.GetRegenEnergyDelay(), false, 'AllowRegenEnergy');
+	}
+}
+
+// Function added by Zack to add/refund Energy
+simulated function AddEnergy(float EnergyAmount)
+{
+	local float cost;
+	
+	cost = Stats.GetEnergyCost(EnergyAmount);
+	
+	`log("Energy Added");
+	
+	if (cost > 0)
+	{
+		Energy += cost;
+		// The below line is removed because it would be called before the
+		// ability would spend energy, defeating the purpose of this function
+		//if (Energy > EnergyMax) Energy = EnergyMax;
 	}
 }
 

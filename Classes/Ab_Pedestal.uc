@@ -8,18 +8,37 @@
 
 class Ab_Pedestal extends ArenaAbility;
 
-/** 
- * The pedestal that the ability generates. 
- */
+/* The pedestal that the ability generates. */
 var Ab_PedestalBoulder Pedestal;
+
+/* The float that determines how far in the ground the pedestal starts */
+var float StartDepth;
+
+/**
+ * The maximum range from above the ground that a character can spawn a pedestal.
+ */
+var float Range;
+
 
 simulated function CustomFire()
 {
+	local vector traceLoc, traceNorm;
+	
 	if (!IsHolding)
 	{
-		`log("Spawning rock pedestal");
-		Pedestal = Spawn(class 'Arena.Ab_PedestalBoulder', None, , vect(500, 500, 65));
+		if (Trace(traceLoc, traceNorm, Instigator.Location + vect(0, 0, -1) * Range, Instigator.Location) != None)
+		{
+			Pedestal = Spawn(class 'Arena.Ab_PedestalBoulder', None, , traceLoc + (vect(0, 0, -1) * StartDepth));
+		}
 	}
+}
+
+simulated function StartFire(byte FireModeNum)
+{
+	local vector traceLoc, traceNorm;
+	
+	if (Trace(traceLoc, traceNorm, Instigator.Location + vect(0, 0, -1) * Range, Instigator.Location) != None)
+		super.StartFire(FireModeNum);
 }
 
 defaultproperties
@@ -33,4 +52,6 @@ defaultproperties
 	CanHold=false
 	IsPassive=false
 	CanCharge=false
+	StartDepth = 265.0
+	Range=150
 }

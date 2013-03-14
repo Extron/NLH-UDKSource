@@ -1,10 +1,10 @@
 /******************************************************************************
 	NewClass
 	
-	Creation date: 06/02/2013 22:56
+	Creation date: 07/03/2013 20:17
 	Copyright (c) 2013, Owner
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 ******************************************************************************/
 
-class NewClass extends Ab_Pedestal;
+class Dmg_Fire extends AbilityDamageType;
 

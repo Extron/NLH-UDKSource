@@ -8,10 +8,55 @@
 
 class ArenaHUD extends UDKHUD;
 
+/**
+ * A reference to the movie to use for the HUD.
+ */
+var GFx_BasicHUD HUDMovie;
+
+/**
+ * The class of the HUD to create.
+ */
+var class<GFx_BasicHUD> HUDClass;
+
+
+singular event Destroyed()
+{
+	if (HUDMovie != None)
+	{
+		HUDMovie.Close(true);
+		HUDMovie = None;
+	}
+
+	Super.Destroyed();
+}
+
+simulated function PostBeginPlay()
+{
+	super.PostBeginPlay();
+
+	HUDMovie = new HUDClass;
+	HUDMovie.SetTimingMode(TM_Real);
+	HUDMovie.Init(class'Engine'.static.GetEngine().GamePlayers[HUDMovie.LocalPlayerOwnerIndex]);
+}
+
+function int GetLocalPlayerOwnerIndex()
+{
+	return HudMovie.LocalPlayerOwnerIndex;
+}
+
+event PostRender()
+{
+	super.PostRender();
+
+	if (HUDMovie != none)
+		HUDMovie.UpdateHUD(0);
+}
+
 event DrawHUD()
 {
 	super.DrawHUD();
 	
+	/*
 	if (ArenaPawn(PlayerOwner.Pawn) != None)
 	{
 		Canvas.DrawColor = WhiteColor;
@@ -53,5 +98,10 @@ event DrawHUD()
 		Canvas.DrawText("Health:" @ PlayerOwner.Pawn.Health);
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.9);
 		Canvas.DrawText("Energy:" @ ArenaPawn(PlayerOwner.Pawn).Energy);
-	}
+	}*/
+}
+
+defaultproperties
+{
+	HUDClass=class'GFx_BasicHUD'
 }
