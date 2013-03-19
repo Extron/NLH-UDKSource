@@ -38,6 +38,11 @@ var AnimSet DefaultAnimSet;
 var GameSkelCtrl_Recoil RecoilControl;
 
 /**
+ * The nearest interactive object to the actor.  Will be none if there aren't any.
+ */
+var InteractiveObject NearestInterObject;
+
+/**
  * The name of the skeletal control animation node that manages gun recoil.
  */
 var name RecoilControlName;
@@ -144,6 +149,9 @@ simulated function Tick(float dt)
 	
 	//super.Tick(dt);
 	
+	if (NearestInterObject != None && !NearestInterObject.WithinRadius(self))
+		NearestInterObject = None;
+		
 	if (CanRegenHealth && Health < HealthMax) 
 	{
 		healthRate = Stats.GetHealingRate();
@@ -408,8 +416,6 @@ reliable server function ServerAddVelocity(vector newVel, vector hitLoc, class<D
 
 simulated function Recoil()
 {
-	`log("Recoil" @ RecoilControl);
-	
 	if (RecoilControl != None)
 		RecoilControl.bPlayRecoil = true;
 }
@@ -512,6 +518,11 @@ simulated function RebootElectronics(ArenaPawn pawn)
 
 simulated function PositionArms()
 {
+}
+
+simulated function SetNearestInterObj(InteractiveObject object)
+{
+	NearestInterObject = object;
 }
 
 simulated function ReplicatedEvent(name property)

@@ -21,6 +21,7 @@ var GFxObject RetTop, RetBot, RetLeft, RetRight;
 var GFxObject HealthStats;
 var GFxObject HeadIcon, BodyIcon, LeftArmIcon, RightArmIcon, LeftLegIcon, RightLegIcon;
 var GFxObject CriticalHealthBackground;
+var GFxObject MainMessage;
 
 /**
  * To help simulate the 3D aspect of the HUD, use 3D rotation to angle the elements of the HUD.  This angle
@@ -86,9 +87,11 @@ function Init(optional LocalPlayer player)
 	LeftLegIcon = GetVariableObject("_root.health_stats.body_stats.left_leg_icon");
 	RightLegIcon = GetVariableObject("_root.health_stats.body_stats.right_leg_icon");
 	CriticalHealthBackground = GetVariableObject("_root.health_stats.critical_background");
+	MainMessage = GetVariableObject("_root.hud_main_message.hud_message");
 	
 	CriticalHealthBackground.SetVisible(false);
-
+	MainMessage.SetText("");
+	
 	AngleComponent(HealthStats);
 	AngleComponent(WeaponStats);
 	AngleComponent(AbilityStats);
@@ -139,6 +142,11 @@ function UpdateHUD(float dt)
 		else
 			CriticalHealthBackground.SetVisible(false);
 			
+		if (Pawn.NearestInterObject != None)
+		{
+			MainMessage.SetText(Pawn.NearestInterObject.GetMessage());
+		}
+		
 		/*
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.8);
 

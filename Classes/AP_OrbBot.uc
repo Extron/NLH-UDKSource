@@ -322,6 +322,78 @@ state Wandering
 	}
 }
 
+state Evading
+{
+	simulated function bool IsEvading()
+	{
+		return Counter < OrbitTimer;
+	}
+	
+	simulated function Tick(float dt)
+	{
+		local vector r, v_az, v_zen, v_rad;
+		local float zenith, radius;
+		local float speed_az, speed_zen, speed_rad;
+		
+		global.Tick(dt);
+	
+		AddVelocity(-Velocity, vect(0, 0, 0), None);
+	
+		Counter += dt;
+		
+		//if (Counter >= OrbitTimer)
+		//{
+			//ZeroMovementVariables();
+			//return;
+		//}
+		
+		r = Normal(Controller.Focus.Location - Location);
+		radius = VSize(Controller.Focus.Location - Location);
+		
+		v_az = (r cross vect(0, 0, 1)) * OrbitAzimuthDirection;
+		
+		if (radius == 0)
+			`log("Radius is zero, leading to divide by zero");
+			
+		zenith = ACos(Location.z / radius);
+		
+		if (zenith > ZenithMin && zenith < ZenithMax) 
+			v_zen = (r cross Normal(v_az)) * OrbitZenithDirection;
+		
+		if (radius < RadiusMax && radius > RadiusMin)
+			v_rad = Normal(r) * OrbitRadialDirection;
+			
+		if (OrbitTimer == 0)
+			return;
+			
+		speed_az = -((4 * OrbitSpeedAzimuth) / (OrbitTimer ** 2)) * (Counter - OrbitTimer * 0.5) ** 2 + OrbitSpeedAzimuth;
+		speed_zen = -((4 * OrbitSpeedZenith) / (OrbitTimer ** 2)) * (Counter - OrbitTimer * 0.5) ** 2 + OrbitSpeedZenith;
+		speed_rad = -((4 * OrbitSpeedRadial) / (OrbitTimer ** 2)) * (Counter - OrbitTimer * 0.5) ** 2 + OrbitSpeedRadial;
+		
+		AddVelocity(v_az * speed_az + v_zen * speed_zen * 0.5 + v_rad * speed_rad * 0.5, vect(0, 0, 0), None);
+	}
+	
+Begin:
+	`log("Evading");
+	
+	if (ArenaBot(Controller).EvadeDirection dot ((Location - ArenaBot(Controller).Focus.Location) cross vect(0, 0, 1)) >= 0)
+		OrbitAzimuthDirection = -1;
+	else
+		OrbitAzimuthDirection = 1;
+
+	if (ArenaBot(Controller).EvadeDirection dot vect(0, 0, 1) >= 0)
+		OrbitZenithDirection = 1;
+	else
+		OrbitZenithDirection = -1;
+		
+	OrbitRadialDirection = 0;//FRand() >= 0.5 - Abs(RadiusBias()) ? (FRand() >= 0.5 + RadiusBias() ? 1 : -1) : 0;
+	OrbitTimer = Lerp(OrbitTimeMin, OrbitTimeMax, FRand()) * 0.25;
+	OrbitSpeedAzimuth = Lerp(OrbitSpeedMin, OrbitSpeedMax, FRand()) * 2.0;
+	OrbitSpeedZenith = Lerp(OrbitSpeedMin, OrbitSpeedMax, FRand()) * 2.0;
+	OrbitSpeedRadial = 0;//Lerp(OrbitSpeedMin, OrbitSpeedMax, FRand()) * (1 + Abs(RadiusBias()) * 4);
+	Counter = 0;	
+}
+
 defaultproperties
 {
 	Begin Object Name=WPawnSkeletalMeshComponent

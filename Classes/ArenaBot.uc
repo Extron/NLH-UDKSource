@@ -25,6 +25,11 @@ var vector LastStableLocation;
 var vector LastSeenLocation;
 
 /**
+ * The direction the bot is evading in.
+ */
+var vector EvadeDirection;
+
+/**
  * The last navigation point that the AI is or was wandering to.
  */
 var NavigationPoint WanderTarget;
@@ -223,6 +228,16 @@ function name GetAttack(Actor actor)
 	return 'FireWeapon';
 }
 
+function Evade(vector direction, Actor attacker)
+{
+	StopLatentExecution();
+	Pawn.ZeroMovementVariables();
+	EvadeDirection = direction;
+	Focus = attacker;
+	
+	GoToState('Evading');
+}
+
 function ShootAt(Actor actor)
 {
 	local float a;
@@ -237,6 +252,30 @@ function ShootAt(Actor actor)
 		a = FRand();
 		
 		SetTimer(FireIntervalMin * (1 - a) + FireIntervalMax * a, false, 'ReactivateFire');
+	}
+}
+
+function ShotAt(ArenaWeapon weap, Actor attacker, vector traceLoc, vector direction)
+{
+	local float rand;
+	
+	LastShotAtDuration = 0;
+	
+	if (!IsAggressive())
+	{
+		if (IsCautious())
+			rand = FRand() + 0.5;
+		else
+			rand = FRand();
+			
+		if (rand > 0.75)
+		{
+			//Successful dodge roll, begin evasive action.
+			`log("Trace Location" @ traceLoc @ Pawn.Location);
+			DrawDebugLine(traceLoc, Pawn.Location, 255, 0, 0, true);
+			
+			Evade(traceLoc - Pawn.Location, attacker);
+		}
 	}
 }
 
@@ -275,8 +314,10 @@ function bool IsCautious()
 		cautionMeasure -= LastShotAtDuration * 0.15;
 	}
 	
-	if (cautionMeasure > 0.0)
-		`log("Bot" @ self @ "is cautious.");
+	cautionMeasure += Personality.Cowardice * 0.25;
+	
+	//if (cautionMeasure > 0.0)
+		//`log("Bot" @ self @ "is cautious.");
 		
 	return cautionMeasure > 0.0;
 }
@@ -301,6 +342,8 @@ function bool IsAggressive()
 		//Reduce the need for caution for every near friendly bot within 50 units.
 		aggresionMeasure += BotsNear(50) * 0.5;
 	}
+	
+	aggresionMeasure += Personality.Aggression;
 	
 	//if (aggresionMeasure > 0.0)
 		//`log("Bot" @ self @ "is aggresive.");
@@ -332,6 +375,8 @@ function bool IsRetreating()
 		
 		retreatMeasure -= LastShotAtDuration * 0.05;
 	}
+	
+	retreatMeasure += Personality.Cowardice - Personality.Bravery;
 	
 	return retreatMeasure > 0.0;
 }
@@ -560,8 +605,27 @@ Begin:
 	LatentWhatToDoNext();
 }
 
+simulated state Evading
+{
+Begin:
+	if (Pawn != None)
+		Pawn.GoToState('Evading');
+	
+	Sleep(0.1);
+	
+	while(AP_Bot(Pawn).IsEvading())
+		Sleep(0.0);
+	
+	`log("Not evading.");
+	LatentWhatToDoNext();
+}
+
 defaultproperties
 {
+	Begin Object Class=BotPersonality Name=BP
+	End Object
+	Personality=BP
+	
 	BotRange=1000
 	BotFireRange=1000
 	FireIntervalMax=2.5

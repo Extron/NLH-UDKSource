@@ -78,9 +78,6 @@ function InitInventory()
 		}
 		
 		CreateInventory(class'Arena.Ab_Pedestal', true);
-		CreateInventory(class'Arena.Ab_ShockShort', true);
-		CreateInventory(class'Arena.Ab_RockWall', true);
-		CreateInventory(class'Arena.Ab_EMP', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
@@ -127,6 +124,101 @@ simulated function EnableLeftHandPositioning(bool enable)
 			LeftArmControl.ControlStrength = 0.0;
 	}
 		
+}
+
+exec function GiveAbility(string ability)
+{
+	switch (ability)
+	{
+	case "ShockShort":
+		CreateInventory(class'Arena.Ab_ShockShort', true);
+		break;
+		
+	case "ShockMedium":
+		CreateInventory(class'Arena.Ab_ShockMedium', true);
+		break;
+		
+	case "ShockLong":
+		CreateInventory(class'Arena.Ab_ShockLong', true);
+		break;
+		
+	case "EMP":
+		CreateInventory(class'Arena.Ab_EMP', true);
+		break;
+		
+	case "Pedestal":
+		CreateInventory(class'Arena.Ab_Pedestal', true);
+		break;
+	
+	case "RockWall":
+		CreateInventory(class'Arena.Ab_RockWall', true);
+		break;
+		
+	case "Bubble":
+		CreateInventory(class'Arena.Ab_Bubble', true);
+		break;
+		
+	case "ChargedShock":
+		CreateInventory(class'Arena.Ab_ChargedShock', true);
+		break;
+		
+	case "Deflection":
+		CreateInventory(class'Arena.Ab_Deflection', true);
+		break;
+		
+	case "DoubleBubble":
+		CreateInventory(class'Arena.Ab_DoubleBubble', true);
+		break;
+		
+	case "ElectromagneticField":
+		CreateInventory(class'Arena.Ab_ElectromagneticField', true);
+		break;
+		
+	case "FlashOfLightning":
+		CreateInventory(class'Arena.Ab_FlashOfLightning', true);
+		break;
+		
+	case "Repulsion":
+		CreateInventory(class'Arena.Ab_Repulsion', true);
+		break;
+		
+	case "ShotsOfHaste":
+		CreateInventory(class'Arena.Ab_ShotsOfHaste', true);
+		break;
+		
+	case "StoneFlesh":
+		CreateInventory(class'Arena.Ab_StoneFlesh', true);
+		break;
+		
+	case "SoundOfThunder":
+		CreateInventory(class'Arena.Ab_TheSoundOfThunder', true);
+		break;
+		
+	case "ThunderRush":
+		CreateInventory(class'Arena.Ab_ThunderRush', true);
+		break;
+		
+	case "All":
+	case "all":
+		CreateInventory(class'Arena.Ab_ShockShort', true);
+		CreateInventory(class'Arena.Ab_ShockMedium', true);
+		CreateInventory(class'Arena.Ab_ShockLong', true);
+		CreateInventory(class'Arena.Ab_EMP', true);
+		CreateInventory(class'Arena.Ab_Pedestal', true);
+		CreateInventory(class'Arena.Ab_RockWall', true);
+		CreateInventory(class'Arena.Ab_Bubble', true);
+		CreateInventory(class'Arena.Ab_ChargedShock', true);
+		CreateInventory(class'Arena.Ab_Deflection', true);
+		CreateInventory(class'Arena.Ab_DoubleBubble', true);
+		CreateInventory(class'Arena.Ab_ElectromagneticField', true);
+		CreateInventory(class'Arena.Ab_FlashOfLightning', true);
+		CreateInventory(class'Arena.Ab_Repulsion', true);
+		CreateInventory(class'Arena.Ab_ShotsOfHaste', true);
+		CreateInventory(class'Arena.Ab_StoneFlesh', true);
+		CreateInventory(class'Arena.Ab_TheSoundOfThunder', true);
+		CreateInventory(class'Arena.Ab_ThunderRush', true);
+		break;
+	}
 }
 
 defaultproperties

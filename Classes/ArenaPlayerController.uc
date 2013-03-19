@@ -189,6 +189,20 @@ simulated function AimingComplete()
 	ArenaPawn(Pawn).ADS = !ArenaPawn(Pawn).ADS;
 }
 
+function bool PerformedUseAction()
+{
+	local bool ret;
+	
+	ret = super.PerformedUseAction();
+	
+	if (!ret && ArenaPawn(Pawn).NearestInterObject != None)
+	{
+		ArenaPawn(Pawn).NearestInterObject.InteractWith(Pawn);
+		ret = true;
+	}
+	
+	return ret;
+}
 state PlayerWalking
 {
 	simulated function ProcessMove(float delta, vector newAccel, eDoubleClickDir doubleClickMove, rotator deltaRot)

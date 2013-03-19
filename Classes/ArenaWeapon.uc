@@ -322,7 +322,7 @@ simulated function Projectile ProjectileFire()
 		projectile.Damage = BaseDamage * Stats.GetDamageModifier();
 	
 	start = Instigator.GetWeaponStartTraceLocation();
-	direction = Normal(start + vector(GetAdjustedAim(start)));
+	direction = Normal(vector(GetAdjustedAim(start)));
 	
 	SweepBullet(start, direction, SweepExtent, SweepRange);
 	
@@ -515,7 +515,7 @@ simulated function SweepBullet(vector start, vector direction, vector extent, fl
 	
 	foreach TraceActors(class'Arena.AP_Bot', iter, hitLoc, hitNorm, Normal(direction) * range, start, extent)
 	{
-		iter.ShotAt(self, Instigator, start, direction);
+		iter.ShotAt(self, Instigator, hitLoc, direction);
 	}
 }
 
@@ -729,7 +729,7 @@ defaultproperties
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
 	SweepRange=1000
-	SweepExtent=(X=100,Y=100,Z=100)
+	SweepExtent=(X=300,Y=300,Z=300)
 	
 	AmmoPerShot=1
 }

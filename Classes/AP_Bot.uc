@@ -18,11 +18,20 @@ class AP_Bot extends ArenaPawn
 simulated function bool CanShoot();
 
 /**
+ * Indicates that the pawn is currently evading.
+ */
+simulated function bool IsEvading()
+{
+	return false;
+}
+
+/**
  * This is called when a bullet from a weapon passes near the bot.
  */
 simulated function ShotAt(ArenaWeapon weap, Actor attacker, vector traceLoc, vector direction)
 {
-	`log("Bot" @ self @ "was shot at.");
+	if (ArenaBot(Owner) != None)
+		ArenaBot(Owner).ShotAt(weap, attacker, traceLoc, direction);
 }
 
 auto state Idle
@@ -47,4 +56,12 @@ state Recovering
 
 state Wandering
 {
+}
+
+state Evading
+{
+	simulated function bool IsEvading()
+	{
+		return true;
+	}
 }

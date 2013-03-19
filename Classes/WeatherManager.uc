@@ -50,6 +50,11 @@ var array<float> WhiteNoise;
 var array<WeatherPlane> Planes;
 
 /**
+ * The weather volumes on the map.
+ */
+var array<WeatherVolume> Volumes;
+
+/**
  * A list of all dynamic snow mounds on the level.
  */
 var array<SnowMound> SnowMounds;
@@ -233,45 +238,18 @@ var bool ThunderStorm;
 simulated function PostBeginPlay()
 {
 	local int i;
-	local float x, y;
-	local int th;
-	local vector v;
-	local rotator r;
-	local WeatherPlane p;
-	local SnowMound s;
+	local WeatherVolume volume;
 	local Landscape iter;
 	
 	for (i = 0; i < ArraySize; i++)
 	{
 		WhiteNoise[i] = FRand();
 	}
-
-	//Spawn the weather planes to use.
-	for (i = 0; i < WeatherPlaneCount; i++)
-	{
-		x = FRand() * 1000 * (FRand() > 0.5 ? 1 : -1);
-		y = FRand() * 1000 * (FRand() > 0.5 ? 1 : -1);
-		
-		v.x = x;
-		v.y = y;
-		
-		p = Spawn(class'Arena.WeatherPlane', Self, , v);
-		Planes.AddItem(p);
-	}
 	
-	for (i = 0; i < SnowMoundCount; i++)
+	foreach AllActors(class'WeatherVolume', volume)
 	{
-		x = FRand() * 2000 * (FRand() > 0.5 ? 1 : -1);
-		y = FRand() * 2000 * (FRand() > 0.5 ? 1 : -1);
-
-		th = Rand(65536);
-		
-		v.x = x;
-		v.y = y;
-		r.Yaw = th;
-		
-		s = Spawn(class'Arena.SnowMound', Self, , v, r);
-		SnowMounds.AddItem(s);
+		Volumes.AddItem(volume);
+		volume.SpawnWeather(self, Planes, SnowMounds);
 	}
 	
 	EmitSplashEmitters();
@@ -426,6 +404,8 @@ simulated function Tick(float dt)
 			EmitSplashEmitters();
 		}
 	}
+	
+	WeatherIntensity = 1.0;
 	
 	Landscape.Update(self, dt);
 }
