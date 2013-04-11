@@ -24,10 +24,10 @@ var ParticleSystem RainSplashTemplate;
 /** The particle system of the activated effect. */
 var ParticleSystemComponent RainSplash;
 
-
 /** A reference to the material that the actor uses. */
 var MaterialInstanceConstant Material;
 
+var float EmitterRange;
 
 simulated function Tick(float dt)
 {	
@@ -46,8 +46,19 @@ simulated function Tick(float dt)
 		{
 			Material.SetScalarParameterValue('WeatherIntensity', 0);
 		
-			if (Snowflakes == None)
-				EmitSnow();
+			if (IsPlayerNear())
+			{
+				if (Snowflakes == None)
+					EmitSnow();
+				else
+					Snowflakes.ActivateSystem();
+					
+			}
+			else if (Snowflakes != None)
+			{
+				Snowflakes.DeactivateSystem();
+				Snowflakes = None;
+			}
 			
 			if (RainSplash != None)
 			{
@@ -57,9 +68,6 @@ simulated function Tick(float dt)
 				
 			if (Snowflakes != None)
 			{
-				if (!Snowflakes.bIsActive)
-					Snowflakes.ActivateSystem();
-				
 				Snowflakes.SetFloatParameter('WeatherIntensity', ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity);
 				//Snowflakes.SetVectorParameter('Wind', ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
 			}
@@ -101,7 +109,7 @@ function EmitSnow()
 {
 	if (WorldInfo.NetMode != NM_DedicatedServer && SnowflakesTemplate != None)
 	{		
-		Snowflakes = WorldInfo.MyEmitterPool.SpawnEmitter(SnowflakesTemplate, vect(0, 0, 0));
+		Snowflakes = WorldInfo.MyEmitterPool.SpawnEmitter(SnowflakesTemplate, Location);
 		Snowflakes.SetAbsolute(false, false, false);
 		Snowflakes.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		Snowflakes.bUpdateComponentInTick = true;
@@ -123,6 +131,18 @@ function EmitRainSplash()
 	}
 }
 
+function bool IsPlayerNear()
+{
+	local AP_Player iter;
+	
+	foreach WorldInfo.AllPawns(class'Arena.AP_Player', iter, Location, EmitterRange)
+	{
+		return true;
+	}
+	
+	return false;
+}
+
 defaultproperties
 {
 	Begin Object Name=StaticMeshComponent0
@@ -134,6 +154,7 @@ defaultproperties
 		MaxDrawDistance=128
     End Object
 	
+	EmitterRange=2500
 	bStatic=false
 	bCollideActors=false
 	bBlockActors=false

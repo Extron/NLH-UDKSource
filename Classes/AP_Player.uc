@@ -221,6 +221,28 @@ exec function GiveAbility(string ability)
 	}
 }
 
+exec function GiveStatus(string status)
+{
+	local class<StatusEffect> c;
+	local StatusEffect se;
+	
+	switch (status)
+	{
+	case "Electrocuted":
+		c = class'Arena.SE_Electrocuted';
+		break;
+	}
+	
+	if (c != None)
+	{
+		se = Spawn(c, None);
+		se.Affector = ArenaPlayerController(self.Owner);
+		se.Affectee = ArenaPlayerController(self.Owner);
+		
+		AddEffect(se);
+	}
+}
+
 defaultproperties
 {
 	Begin Object Class=SkeletalMeshComponent Name=ArmsMesh
@@ -260,6 +282,9 @@ defaultproperties
 	End Object
 	//RainCylinder=RC
 	//Components.Add(RC)
+	
+	IdleCamAnim=CameraAnim'CameraAssets.Animations.IdleAnimation'
+	WalkCamAnim=CameraAnim'CameraAssets.Animations.WalkAnimation'
 	
 	bScriptTickSpecial=true
 	RecoilControlName=RecoilNode

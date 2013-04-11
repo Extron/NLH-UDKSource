@@ -14,7 +14,7 @@ class DynamicEnvironmentObject extends UDKKActorBreakable implements(IEnvObj)
 
 var(Porperties) Array<string> ObjectProperties;
 
-var Array<EnvironmentEffect> ActiveEffects;
+var EnvironmentEffect ActiveEffect;
 
 /** A reference to the material that the actor uses. */
 var MaterialInstanceConstant Material;
@@ -46,12 +46,8 @@ simulated function PostBeginPlay()
 
 simulated function Tick(float delta)
 {
-	local int i;
-	
-	for (i = 0; i < ActiveEffects.Length; i++)
-	{
-		ActiveEffects[i].UpdateEffect(i);
-	}
+	if (ActiveEffect != None)
+		ActiveEffect.UpdateEffect(delta);
 	
 	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
 	{
@@ -94,10 +90,8 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 			if (HasProperties(e.Default.Properties))
 			{
 				effect = spawn(e, Self);
-				effect.ActivateEffect(Self, ArenaPlayerController(EventInstigator));
-				effect.ChangeState(ActiveEffects);
 				
-				ActiveEffects.AddItem(effect);
+				AddEffect(effect, ArenaPlayerController(EventInstigator));
 				
 				super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
 			}
@@ -139,15 +133,7 @@ simulated function bool HasProperties(array<string> properties)
 
 simulated function bool HasEffect(string effectName)
 {
-	local int i;
-	
-	for (i = 0; i < ActiveEffects.Length; i++)
-	{
-		if (ActiveEffects[i].EffectName == effectName)
-			return true;
-	}
-	
-	return false;
+	return InStr(ActiveEffect.EffectName, effectName) > -1;
 }
 
 /**
@@ -157,20 +143,30 @@ simulated function bool HasEffect(string effectName)
  */
 simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController controller)
 {
-	effect.ActivateEffect(Self, controller);
-	effect.ChangeState(ActiveEffects);
+	local EnvironmentEffect sum;
 	
-	ActiveEffects.AddItem(effect);
+	if (ActiveEffect != None)
+	{
+		sum = class'Arena.EnvironmentEffect'.static.AddEffects(effect, ActiveEffect);
+		RemoveEffect();
+		ActiveEffect = sum;
+	}
+	else
+	{
+		ActiveEffect = effect;
+	}
+		
+	ActiveEffect.ActivateEffect(Self, controller);
 }
 
 /**
- * Removes an effect from the environment object. 
- *
- * @param effect The effect to remove.
+ * Removes the currently active effect from the environment object. 
  */
-simulated function RemoveEffect(EnvironmentEffect effect)
+simulated function RemoveEffect()
 {
-	ActiveEffects.RemoveItem(effect);
+	ActiveEffect.DeactivateEffect();
+	ActiveEffect.Destroy();
+	ActiveEffect = None;
 }
 
 /*
@@ -180,10 +176,6 @@ simulated function RemoveEffect(EnvironmentEffect effect)
  */
 simulated function TouchPawn(ArenaPawn pawn)
 {
-	local int i;
-	
-	for (i = 0; i < ActiveEffects.Length; i++)
-	{
-		ActiveEffects[i].AffectPawn(pawn);
-	}
+	if (ActiveEffect != None)
+		ActiveEffect.AffectPawn(pawn);
 }

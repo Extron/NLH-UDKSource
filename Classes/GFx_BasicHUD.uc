@@ -143,9 +143,9 @@ function UpdateHUD(float dt)
 			CriticalHealthBackground.SetVisible(false);
 			
 		if (Pawn.NearestInterObject != None)
-		{
 			MainMessage.SetText(Pawn.NearestInterObject.GetMessage());
-		}
+		else
+			MainMessage.SetText("");
 		
 		/*
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.8);

@@ -16,13 +16,13 @@ var ParticleSystemComponent ActiveEffects;
 
 var float SpreadTime;
 
-var float Counter;
-
 var bool CanSpread;
 
 simulated function UpdateEffect(float dt)
 {
 	local Actor obj;
+	
+	super.UpdateEffect(dt);
 	
 	if (CanSpread)
 	{
@@ -33,15 +33,9 @@ simulated function UpdateEffect(float dt)
 				if (IEnvObj(obj) != None)
 				{
 					if (IEnvObj(obj).HasProperties(Properties) && !IEnvObj(obj).HasEffect(EffectName))
-					{						
 						IEnvObj(obj).AddEffect(Spawn(class'EE_Charged', obj), Affector);
-					}
 				}
 			}
-		}
-		else
-		{
-			Counter += dt;
 		}
 	}
 }

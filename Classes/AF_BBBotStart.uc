@@ -1,23 +1,16 @@
 /*******************************************************************************
-	SeqEvent_ObjectInteracted
+	AF_BBBotStart
 
-	Creation date: 18/03/2013 15:20
+	Creation date: 04/04/2013 17:51
 	Copyright (c) 2013, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class SeqEvent_ObjectInteracted extends SequenceEvent;
-
-event Activated() 
-{
-	`log("Activating event" @ self);
-}
-
+class AF_BBBotStart extends ActorFactoryPlayerStart;
 
 defaultproperties
 {
-	ObjName="Object Interacted With"
-	ObjCategory="Interactive"
-	
-	OutputLinks[0]=(LinkDesc="Activated")
+	MenuName="Add Bot Battle Bot Start"
+	NewActorClass=class'Arena.BBBotStart'
+	bShowInEditorQuickMenu=true
 }

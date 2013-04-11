@@ -124,6 +124,22 @@ function CleanupPRI()
 	super.CleanupPRI();
 }
 
+function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, class<DamageType> damageType, vector Momentum)
+{
+	local vector dir;
+	
+	super.NotifyTakeHit(InstigatedBy, HitLocation, Damage, damageType, Momentum);
+
+	if (!IsAggressive() && LastShotAtDuration < 5 && Pawn.Health < ArenaPawn(Pawn).HealthMax * 0.65 && FRand() > 0.6)
+	{
+		dir.x = FRand() * 2 - 1;
+		dir.y = FRand() * 2 - 1;
+		dir.z = FRand() * 2 - 1;
+		
+		Evade(dir, InstigatedBy.Pawn);
+	}
+}
+
 function NotifyKilled(Controller killer, Controller killed, Pawn killedPawn, class<DamageType> damageType)
 {
 	super.NotifyKilled(killer, killed, killedPawn, damageType);
@@ -230,12 +246,15 @@ function name GetAttack(Actor actor)
 
 function Evade(vector direction, Actor attacker)
 {
-	StopLatentExecution();
-	Pawn.ZeroMovementVariables();
-	EvadeDirection = direction;
-	Focus = attacker;
-	
-	GoToState('Evading');
+	if (!IsInState('Evading'))
+	{
+		StopLatentExecution();
+		Pawn.ZeroMovementVariables();
+		EvadeDirection = direction;
+		Focus = attacker;
+		
+		GoToState('Evading');
+	}
 }
 
 function ShootAt(Actor actor)
@@ -269,13 +288,7 @@ function ShotAt(ArenaWeapon weap, Actor attacker, vector traceLoc, vector direct
 			rand = FRand();
 			
 		if (rand > 0.75)
-		{
-			//Successful dodge roll, begin evasive action.
-			`log("Trace Location" @ traceLoc @ Pawn.Location);
-			DrawDebugLine(traceLoc, Pawn.Location, 255, 0, 0, true);
-			
 			Evade(traceLoc - Pawn.Location, attacker);
-		}
 	}
 }
 
@@ -412,13 +425,15 @@ auto state Idle
 	{
 		global.Tick(dt);
 		
-		IdleCounter += dt;
+		IdleCounter += dt;		
 	}
 	
 Begin:	
 	if (Pawn != None)
 		Pawn.GoToState('Idle');
-		
+	
+	Sleep(0.1);
+	
 	LatentWhatToDoNext();
 }
 
@@ -615,8 +630,8 @@ Begin:
 	
 	while(AP_Bot(Pawn).IsEvading())
 		Sleep(0.0);
-	
-	`log("Not evading.");
+		
+	Pawn.ZeroMovementVariables();
 	LatentWhatToDoNext();
 }
 

@@ -14,7 +14,7 @@ struct WaveBot
 	var() class<ArenaBot> BotType;
 	
 	/** The type of the bot's pawn. */
-	var() class<ArenaPawn> PawnType;
+	var() class<AP_Bot> PawnType;
 	
 	/** The amount of bots of the specified type to spawn in a wave. */
 	var() int WaveTotal;
@@ -98,20 +98,20 @@ simulated function SpawnWave()
 	}
 }
 
-simulated function bool FindUnusedSpawn(class<ArenaPawn> pawnClass, ArenaTeamInfo wave, out vector spawnLoc)
+simulated function bool FindUnusedSpawn(class<AP_Bot> pawnClass, ArenaTeamInfo wave, out vector spawnLoc)
 {
-	local PlayerStart p, start;
+	local BBBotStart sp, start;
 	local Actor iter, b;
 
-	foreach Parent.WorldInfo.AllNavigationPoints(class'PlayerStart', p)
+	foreach Parent.WorldInfo.AllNavigationPoints(class'Arena.BBBotStart', sp)
 	{
-		if (p.TeamIndex == wave.TeamIndex)
+		if (sp.CanBotSpawnHere(pawnClass, wave.TeamIndex))
 		{
-			foreach Parent.VisibleCollidingActors(class'Actor', iter, pawnClass.Default.CylinderComponent.CollisionRadius, p.Location)
+			foreach Parent.VisibleCollidingActors(class'Actor', iter, pawnClass.Default.CylinderComponent.CollisionRadius, sp.Location)
 				b = iter;
 			
 			if (b == None)
-				start = p;
+				start = sp;
 		}
 	
 	}
@@ -133,7 +133,7 @@ simulated function bool FindUnusedSpawn(class<ArenaPawn> pawnClass, ArenaTeamInf
  * @param pawnClass - The pawn class to use for the bot.
  * @param wave - The wave to add this bot to.
  */
-simulated event bool SpawnBot(int botIndex, class<ArenaBot> botClass, class<ArenaPawn> pawnClass, ArenaTeamInfo wave)
+simulated event bool SpawnBot(int botIndex, class<ArenaBot> botClass, class<AP_Bot> pawnClass, ArenaTeamInfo wave)
 {
 	local ArenaBot bot;
 	local ArenaPawn botPawn;
@@ -154,7 +154,7 @@ simulated event bool SpawnBot(int botIndex, class<ArenaBot> botClass, class<Aren
 	}
 	else
 	{
-		`log("Could not spawn bot.");
+		//`log("Could not spawn bot.");
 		QueuedBots.AddItem(botIndex);
 		return false;
 	}
@@ -172,6 +172,21 @@ simulated event KillBot(ArenaBot bot)
 			break;
 		}
 	}
+	
+	IsComplete();
+}
+
+simulated function IsComplete()
+{
+	local int i;
+	
+	for (i = 0; i < Bots.Length; i++)
+	{
+		if (!(Bots[i].TotalCount >= Bots[i].WaveTotal && Bots[i].ActiveCount <= 0))
+			return;
+	}
+	
+	Complete = true;
 }
 
 defaultproperties

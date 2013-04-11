@@ -47,3 +47,16 @@ simulated function Tick(float dt)
 		}
 	}
 }
+
+/**
+ * This is called when the object is being interacted with.
+ */
+simulated function InteractWith(Pawn user)
+{
+	super.InteractWith(user);
+	
+	if (AutoHack && !Hacking)
+	{
+		Hacking = true;
+	}
+}

@@ -44,8 +44,8 @@ simulated function SpawnWeather(WeatherManager manager, array<WeatherPlane> plan
 	
 	area = bounds.x * bounds.y;
 	
-	planeCount = area * 0.0001 * WeatherPlaneDensity;
-	moundCount = area * 0.0001 * SnowMoundDensity;
+	planeCount = area * 0.00005 * WeatherPlaneDensity;
+	moundCount = area * 0.00005 * SnowMoundDensity;
 	
 	`log("Planes" @ planeCount @ "Mounds" @ moundCount @ "Area" @ area);
 	

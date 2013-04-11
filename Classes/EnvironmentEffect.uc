@@ -9,8 +9,7 @@
 /* 
  * This is the environment version of a status effect, and keeps track of elemental effects to environment objects. 
  */
-class EnvironmentEffect extends Actor
-	abstract;
+class EnvironmentEffect extends Actor;
 
 
 /* The environment object that is being affected by the effect. */
@@ -28,12 +27,43 @@ var Array<string> Properties;
 /* The duration of the environment effect. */
 var float Duration;
 
+var float Counter;
+
 /** The name of the effect. */
 var string EffectName;
 
 
-simulated function UpdateEffect(float delta)
+static function EnvironmentEffect AddEffects(EnvironmentEffect A, EnvironmentEffect B)
 {
+	local EnvironmentEffect sum;
+	local int i;
+	
+	sum = A.Spawn(class'Arena.EnvironmentEffect', None);
+	
+	sum.Duration = FMax(A.Duration - A.Counter, B.Duration - B.Counter);
+	
+	for (i = 0; i < A.StatusEffects.Length; i++)
+		sum.StatusEffects.AddItem(A.StatusEffects[i]);
+	
+	for (i = 0; i < A.Properties.Length; i++)
+		sum.Properties.AddItem(A.Properties[i]);
+		
+	for (i = 0; i < B.StatusEffects.Length; i++)
+		sum.StatusEffects.AddItem(B.StatusEffects[i]);
+		
+	for (i = 0; i < B.Properties.Length; i++)
+		sum.Properties.AddItem(B.Properties[i]);
+		
+	sum.Affectee = A.Affectee;
+	sum.Affector = A.Affector;
+	sum.EffectName = A.EffectName @ "+" @ B.EffectName;
+	
+	return sum;
+}
+
+simulated function UpdateEffect(float dt)
+{
+	Counter += dt;
 }
 
 simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player)
@@ -46,11 +76,7 @@ simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player)
 
 simulated function DeactivateEffect()
 {
-	Affectee.RemoveEffect(Self);
-}
-
-simulated function ChangeState(array<EnvironmentEffect> effects)
-{
+	ClearTimer('DeactivateEffect');
 }
 
 /* 

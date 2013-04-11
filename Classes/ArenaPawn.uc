@@ -12,6 +12,11 @@ class ArenaPawn extends UDKPawn;
 /* The list of active effects that the player has. */
 var Array<StatusEffect> ActiveEffects;
 
+/**
+ * The current active effect of the player, which is the added effect of all effects on the user.
+ */
+var StatusEffect ActiveEffect;
+
 /* The player's gameplay stats. */
 var PlayerStats Stats;
 
@@ -183,8 +188,6 @@ simulated function Tick(float dt)
 		staminaRate = Stats.GetStaminaRate();
 		Stamina = Stamina + (staminaRate / dt);
 		
-		`log("Stamina" @ Stamina);
-		
 		if (Stamina > StaminaMax)
 		{
 			Stamina = StaminaMax;
@@ -242,7 +245,6 @@ function bool DoJump(bool bUpdating)
 		}
 		
 		SpendStamina(350 * nJump);
-		`log("Stamina" @ Stamina);
 		
 		SetPhysics(PHYS_Falling);
 		
@@ -627,13 +629,28 @@ simulated function bool CanSpendEnergy(float energyAmount)
  */
 simulated function AddEffect(StatusEffect effect)
 {
-	effect.ActivateEffect(Self);
-	ActiveEffects.AddItem(effect);
+	local StatusEffect sum;
+	
+	if (ActiveEffect != None)
+	{
+		sum = class'Arena.StatusEffect'.static.AddEffects(effect, ActiveEffect);
+		
+		RemoveEffect();
+		ActiveEffect = sum;
+	}
+	else
+	{
+		ActiveEffect = effect;
+	}
+	
+	ActiveEffect.ActivateEffect(self);
 }
 
-simulated function RemoveEffect(StatusEffect effect)
+simulated function RemoveEffect()
 {
-	ActiveEffects.RemoveItem(effect);
+	ActiveEffect.DeactivateEffect();
+	ActiveEffect.Destroy();
+	ActiveEffect = None;
 }
 
 simulated function AddStatMod(PlayerStatModifier mod)
@@ -831,8 +848,6 @@ defaultproperties
 	End Object
 	Stats=NewStats
 	
-	IdleCamAnim=CameraAnim'CameraAssets.Animations.IdleAnimation'
-	WalkCamAnim=CameraAnim'CameraAssets.Animations.WalkAnimation'
 	ADS=false
 	bDirectHitWall=true
 	InventoryManagerClass=class'Arena.ArenaInventoryManager'

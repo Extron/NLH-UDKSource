@@ -92,17 +92,17 @@ var SoundCue ThunderstormSound;
 /**
  * The wind vector;
  */
-var vector Wind;
+var interp vector Wind;
 
 /**
  * The wind in the sky.
  */
-var vector SkyWind;
+var interp vector SkyWind;
 
 /**
  * The time of day.
  */
-var float TimeOfDay;
+var interp float TimeOfDay;
 
 /**
  * The weather counter for advancing weather.
@@ -112,32 +112,32 @@ var float WeatherCounter;
 /**
  * How fast a day progresses in the map.
  */
-var float DayRate;
+var interp float DayRate;
 
 /**
  * The rate at which weather changes.
  */
-var float WeatherRate;
+var interp float WeatherRate;
 
 /**
  * The tempurature.
  */
-var float Temperature;
+var interp float Temperature;
 
 /**
  * The cloud coverage.
  */
-var float CloudCoverage;
+var interp float CloudCoverage;
 
 /** 
  * The sharpness of the clouds. 
  */
-var float CloudSharpness;
+var interp float CloudSharpness;
 
 /**
  * The intensity of the weather effects.
  */
-var float WeatherIntensity;
+var interp float WeatherIntensity;
 
 /**
  * This stores the value that the cloud coverage needs to be lower than to start weather effects.
@@ -263,6 +263,8 @@ simulated function PostBeginPlay()
 
 function SetWeather(SeqAct_SetWeather action)
 {
+	`log("Setting weather.");
+	
 	Wind = action.Wind;
 	CloudCoverage = action.CloudCoverage;
 	Temperature = action.Temperature;
@@ -336,8 +338,8 @@ simulated function Tick(float dt)
 	
 	//`log(Temperature @ WeatherIntensity @ CloudCoverage);
 	
-	Temperature = 0.1;
-	CloudCoverage = 0.0;
+	//Temperature = 0.7;
+	//CloudCoverage = 5.0;
 	
 	if (CloudCoverage < WeatherCloudThreshold)
 	{
@@ -390,13 +392,19 @@ simulated function Tick(float dt)
 			
 	if (Snowing)
 	{
-		WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-		WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		if (TickWeather)
+		{
+			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
+			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		}
 	}
 	else if (Raining)
 	{
-		WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-		WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		if (TickWeather)
+		{
+			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
+			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+		}
 		
 		if (SplashEmitters[0] == None)
 		{
@@ -405,7 +413,7 @@ simulated function Tick(float dt)
 		}
 	}
 	
-	WeatherIntensity = 1.0;
+	//WeatherIntensity = 1.0;
 	
 	Landscape.Update(self, dt);
 }
@@ -537,6 +545,7 @@ defaultproperties
 	DayRate=0.01
 	WeatherRate=0.1
 	CloudCoverage=0
+	WeatherIntensity=0
 	CloudSharpness=0.001
 	
 	TickDay=true

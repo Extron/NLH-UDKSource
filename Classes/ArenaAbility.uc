@@ -351,6 +351,8 @@ simulated function EmitIHBeam(vector hitLocation)
 		r = Instigator.Controller.Rotation;
 		l = l + (SourceOffset >> r);
 		
+		`log("Emitting beam." @ hitLocation @ l);
+		
 		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
 		IHBeam.SetAbsolute(false, false, false);
 		IHBeam.SetVectorParameter('HitLocation', hitLocation);

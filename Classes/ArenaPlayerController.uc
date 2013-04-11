@@ -27,6 +27,16 @@ var vector DesiredADSOffset;
 /* The vector to use to accelerate the pawn in the next player tick. */
 var vector RushDestination;
 
+/**
+ * The time needed to aim down sights.
+ */
+var float ADSTime;
+
+/**
+ * The amount of time that the player has been aiming for.
+ */
+var float ADSCounter;
+
 /** Gets the amount of time since the player has been dead. */
 var float TimeDead;
 
@@ -88,10 +98,13 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 	
 	DefaultLoc = loc;
 	
-	if (ArenaPawn(Pawn).ADS)
+	if (Pawn == None)
+		return;
+		
+	/*if (ArenaPawn(Pawn).ADS)
 		ADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
 	else
-		ADSOffset = vect(0, 0, 0);
+		ADSOffset = vect(0, 0, 0);*/
 	 
 	if (ArenaPawn(Pawn) != None && (Role < Role_Authority || WorldInfo.NetMode == NM_ListenServer))
 	{
@@ -118,36 +131,49 @@ exec function ADS()
 {
 	local float rem;
 
-	DesiredADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
-	ADSOffset = DesiredADSOffset;
 	ADSDirection *= -1;
-	Aiming = true;
+	
+	if (ADSDirection > 0)
+		DesiredADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
+	else
+		DesiredADSOffset = vect(0, 0, 0);
+		
+	//ADSOffset = DesiredADSOffset;
 	
 	if (ADSDirection > 0)
 		DesiredFOV = FOVAngle / ArenaWeaponBase(Pawn.Weapon).GetZoomLevel();
 	else
 		DesiredFOV = DefaultFOV;
-		
-	rem = GetRemainingTimeForTimer('AimingComplete');
-	
-	if (rem == -1)
-		rem = 0;
 
-	ClearTimer('AimingComplete');
-	SetTimer(ArenaPawn(Pawn).Stats.GetADSSpeed() - rem, false, 'AimingComplete');
+	if (ADSCounter > 0)
+		ADSTime = ADSCounter;
+	else
+		ADSTime = ArenaPawn(Pawn).Stats.GetADSSpeed();
+		
+	Aiming = true;
 }
 
-simulated function PlayerTick(float DeltaTime)
+simulated function PlayerTick(float dt)
 {
 	local float t;
 	
-	super.PlayerTick(DeltaTime);
+	super.PlayerTick(dt);
 	
 	if (Aiming)
 	{
-		`log("Aiming" @ ADSOffset);
-		t = 1 - GetRemainingTimeForTimer('AimingComplete') / ArenaPawn(Pawn).Stats.GetADSSpeed();
-		//ADSOffset = DesiredADSOffset * t;
+		ADSCounter += dt;
+		
+		if (ADSCounter >= ADSTime)
+		{
+			ADSOffset = DesiredADSOffset;
+			ADSCounter = 0;
+			Aiming = false;
+			ArenaPawn(Pawn).ADS = !ArenaPawn(Pawn).ADS;
+		}
+		else
+		{
+			ADSOffset = DesiredADSOffset * ADSCounter / ADSTime;
+		}		
 	}
 }
 

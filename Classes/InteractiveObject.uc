@@ -9,7 +9,8 @@
 /**
  * An interactive object is something that the player can interact with using the interaction key.
  */
-class InteractiveObject extends NavigationPoint;
+class InteractiveObject extends DynamicSMActor
+	placeable;
 
 /**
  * The radius from the object that the player must be to be able to interact with it.
@@ -39,7 +40,8 @@ simulated function Tick(float dt)
  */
 simulated function InteractWith(Pawn user)
 {
-	TriggerEventClass(class'SeqEvent_ObjectInteracted', self);
+	`log("Interacting with object.");	
+	TriggerEventClass(class'SeqEvent_ObjectInteracted', self, 0);
 }
 
 simulated function bool WithinRadius(Pawn user)
@@ -52,3 +54,7 @@ simulated function string GetMessage()
 	return "Press to" @ InteractionMessage;
 }
 
+defaultproperties
+{
+	SupportedEvents.Add(class'Arena.SeqEvent_ObjectInteracted')
+}
