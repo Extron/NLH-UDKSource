@@ -2,7 +2,7 @@
 	Ability
 
 	Creation date: 24/06/2012 18:08
-	Copyright (c) 2012, Trystan
+	Copyright (c) 2012, Trystan (Edited by Zack Diller)
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
@@ -63,7 +63,7 @@ var float MinCharge;
 /** The last cached dt. */
 var float DeltaTime;
 
-/** Indicates that the ability is being sustained. */
+/** Indicates that the ability is being sustained; held down like a machine gun. */
 var bool IsHolding;
 
 /**
@@ -83,7 +83,8 @@ var bool CanCharge;
 /* Indicates that the ability is passive, and non-equippable. */
 var bool IsPassive;
 
-
+/* Indicates that the ability has been fired, as to prevent charge-up abilities to be fired twice. */
+var bool ChargedHasFired;
 
 simulated function Tick(float dt)
 {
@@ -106,15 +107,17 @@ simulated function Tick(float dt)
 
 simulated function StartFire(byte FireModeNum)
 {
+	if (IsPassive) return;
+
 	if (CanCharge && !IsCharging && CanFire)
 	{
 		`log("Beginning charge");
 		CanFire = false;
 		IsCharging = true;
-		SetPendingFire(0);
+		//SetPendingFire(0);
 	}
 	
-	if (CanFire && !IsPassive && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy >= EnergyCost)
+	if (CanFire && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy >= EnergyCost)
 	{
 		PlayArmAnimation('PlayerArmsAbilityOffHand', 0.0);
 		super.StartFire(FireModeNum);
@@ -123,6 +126,11 @@ simulated function StartFire(byte FireModeNum)
 
 simulated function StopFire(byte FireModeNum)
 {
+	`log("Stop fire");
+	
+	// If ChargedHasFired, don't shoot it again.
+	if (ChargedHasFired) return;
+	
 	if (IsHolding)
 	{
 		IsHolding = false;
@@ -130,12 +138,18 @@ simulated function StopFire(byte FireModeNum)
 	}
 	else if (IsCharging && ChargeTime >= MinCharge)
 	{
+		// Cooldown is set after ability is fired
 		`log("Charging complete");
-		CanFire = true;
-		StartFire(0);
+		ClearPendingFire(0);
+		CanFire = false;
+		SetTimer(CoolDown > 0 ? CoolDown : 0.1, false, 'ReactivateAbility');
+		// StartFire(0); caused problem, not needed I think
 		IsCharging = false;
 		ChargeTime = 0;
-		return;
+		ChargedHasFired = true;
+		// ConsumeAmmo
+		ConsumeAmmo(0);
+		// (There was a return statement here, unsure why)
 	}
 	else if (IsCharging && !CanFire)
 	{
@@ -188,6 +202,21 @@ function ConsumeAmmo(byte FireModeNum)
 		}
 		else
 			ArenaPawn(Instigator).SpendEnergy(EnergyCost);
+	}
+}
+
+// Function added by Zack Diller - for when ability failed to be casted, refreshed energy spent and
+// refreshes some of the cooldown, as determined by the RefreshRatio variable (0.0 - 1.0). Note: meant
+//  only for abilities that cannot be held down.
+function RefundAmmo(float RefreshRatio)
+{
+	if (ArenaPawn(Instigator) != None)
+	{
+		ArenaPawn(Instigator).AddEnergy(EnergyCost);
+
+		SetTimer(0.0, false, 'ReactivateAbility');
+		// Is not working, I presume that this function is being undone elsewhere after it is called
+		SetTimer(CoolDown > 0 ? (CoolDown * RefreshRatio) : 0.1, false, 'ReactivateAbility');
 	}
 }
 
@@ -322,6 +351,8 @@ simulated function EmitIHBeam(vector hitLocation)
 		r = Instigator.Controller.Rotation;
 		l = l + (SourceOffset >> r);
 		
+		`log("Emitting beam." @ hitLocation @ l);
+		
 		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
 		IHBeam.SetAbsolute(false, false, false);
 		IHBeam.SetVectorParameter('HitLocation', hitLocation);
@@ -342,6 +373,7 @@ simulated function bool ShouldRefire()
 simulated function ReactivateAbility()
 {
 	CanFire = true;
+	if (CanCharge) ChargedHasFired = false;
 }
 
 simulated function float GetRemainingCoolDownTime()
@@ -367,4 +399,5 @@ defaultproperties
 	bAlwaysRelevant=true
 	
 	CanFire=true
+	ChargedHasFired=false
 }

@@ -27,11 +27,11 @@ defaultproperties
 	bBlockActors=True
 	bCollideActors=True
 
-	Begin Object Class=StaticMeshComponent Name=PickupMesh
+	/*Begin Object Class=StaticMeshComponent Name=PickupMesh
 		StaticMesh=StaticMesh'EngineMeshes.Cube'
 		LightEnvironment=MyLightEnvironment
 		Scale3D=(X=0.25,Y=0.25,Z=0.5)
-	End Object
+	End Object*/
 	//Components.Add(PickupMesh)
 	
 	RemoteRole=ROLE_SimulatedProxy 

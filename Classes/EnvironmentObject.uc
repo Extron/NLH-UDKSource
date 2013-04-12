@@ -12,15 +12,63 @@ class EnvironmentObject extends StaticMeshActor implements(IEnvObj)
 /* A list of properties that the object has.  These define how elemental abilities affect the object.*/
 var(Porperties) Array<string> ObjectProperties;
 
-var Array<EnvironmentEffect> ActiveEffects;
+/**
+ * The currently active effect on the object.
+ */
+var EnvironmentEffect ActiveEffect;
+
+/** A reference to the material that the actor uses. */
+var MaterialInstanceConstant Material;
+
+/**
+ * Stores the level of the snow on the object, which increases when it snows and decreases when it is hot.
+ */
+var float SnowLevel;
+
+/**
+ * Stores the level of rain water on the object, which increases when it rains, decreases when it is hot, 
+ * and becomes ice when it is cold.
+ */
+var float RainLevel;
+
+/**
+ * Indicates that the object should be frozen.
+ */
+var bool Frozen;
 
 simulated function Tick(float delta)
 {
-	local int i;
-	
-	for (i = 0; i < ActiveEffects.Length; i++)
+	if (ActiveEffect != None)
+		ActiveEffect.UpdateEffect(delta);
+
+	if (Material == None)
 	{
-		ActiveEffects[i].UpdateEffect(delta);
+		Material = new class'MaterialInstanceConstant';
+		Material.SetParent(StaticMeshComponent.GetMaterial(0));
+		StaticMeshComponent.SetMaterial(0, Material);
+	}
+	
+	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
+	{
+		if (FastTrace(Location + vect(0, 0, 1000)))
+		{
+			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
+				SnowLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+			else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Thawing)
+				SnowLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.Temperature * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
+			
+			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
+				RainLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.RainBuildupRate;
+			else
+				RainLevel -= delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.RainBuildupRate;
+			
+			SnowLevel = FClamp(SnowLevel, 0.0, 1.0);
+			RainLevel = FClamp(RainLevel, 0.0, 1.0);
+			
+			Material.SetScalarParameterValue('WeatherLevel', SnowLevel > 0 ? SnowLevel : RainLevel);
+			Material.SetScalarParameterValue('Snow', SnowLevel > 0 ? 1 : 0);
+			Material.SetScalarParameterValue('Rain', (!Frozen && RainLevel > 0) ? 1 : 0);
+		}
 	}
 	
 	super.Tick(delta);	
@@ -32,6 +80,8 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	local class<EnvironmentEffect> e;
 	local EnvironmentEffect effect;
 	
+	`log("Hit environment object.");
+	
 	if (class<AbilityDamageType>(DamageType) != None && ArenaPlayerController(EventInstigator) != None)
 	{
 		for (i = 0; i < class<AbilityDamageType>(DamageType).Default.EnvironmentEffects.Length; i++)
@@ -41,10 +91,7 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 			if (HasProperties(e.Default.Properties))
 			{
 				effect = spawn(e, Self);
-				effect.ActivateEffect(Self, ArenaPlayerController(EventInstigator));
-				effect.ChangeState(ActiveEffects);
-				
-				ActiveEffects.AddItem(effect);
+				AddEffect(effect, ArenaPlayerController(EventInstigator));
 				
 				super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
 			}
@@ -86,15 +133,7 @@ simulated function bool HasProperties(array<string> properties)
 
 simulated function bool HasEffect(string effectName)
 {
-	local int i;
-	
-	for (i = 0; i < ActiveEffects.Length; i++)
-	{
-		if (ActiveEffects[i].EffectName == effectName)
-			return true;
-	}
-	
-	return false;
+	return InStr(ActiveEffect.EffectName, effectName) > -1;
 }
 
 /**
@@ -104,20 +143,30 @@ simulated function bool HasEffect(string effectName)
  */
 simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController controller)
 {
-	effect.ActivateEffect(Self, controller);
-	effect.ChangeState(ActiveEffects);
+	local EnvironmentEffect sum;
 	
-	ActiveEffects.AddItem(effect);
+	if (ActiveEffect != None)
+	{
+		sum = class'Arena.EnvironmentEffect'.static.AddEffects(effect, ActiveEffect);
+		RemoveEffect();
+		ActiveEffect = sum;
+	}
+	else
+	{
+		ActiveEffect = effect;
+	}
+		
+	ActiveEffect.ActivateEffect(Self, controller);
 }
 
 /**
- * Removes an effect from the environment object. 
- *
- * @param effect The effect to remove.
+ * Removes the currently active effect from the environment object. 
  */
-simulated function RemoveEffect(EnvironmentEffect effect)
+simulated function RemoveEffect()
 {
-	ActiveEffects.RemoveItem(effect);
+	ActiveEffect.DeactivateEffect();
+	ActiveEffect.Destroy();
+	ActiveEffect = None;
 }
 
 /*
@@ -127,10 +176,12 @@ simulated function RemoveEffect(EnvironmentEffect effect)
  */
 simulated function TouchPawn(ArenaPawn pawn)
 {
-	local int i;
-	
-	for (i = 0; i < ActiveEffects.Length; i++)
-	{
-		ActiveEffects[i].AffectPawn(pawn);
-	}
+	if (ActiveEffect != None)
+		ActiveEffect.AffectPawn(pawn);
+}
+
+defaultproperties
+{
+	bStatic=false
+	bMovable=false
 }

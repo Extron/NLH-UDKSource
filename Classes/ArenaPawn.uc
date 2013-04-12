@@ -12,6 +12,11 @@ class ArenaPawn extends UDKPawn;
 /* The list of active effects that the player has. */
 var Array<StatusEffect> ActiveEffects;
 
+/**
+ * The current active effect of the player, which is the added effect of all effects on the user.
+ */
+var StatusEffect ActiveEffect;
+
 /* The player's gameplay stats. */
 var PlayerStats Stats;
 
@@ -31,6 +36,21 @@ var CameraAnim WalkCamAnim;
  * The default anim set to use for the pawn's mesh.
  */
 var AnimSet DefaultAnimSet;
+
+/**
+ * The skeletal control animation node that manages gun recoil.
+ */
+var GameSkelCtrl_Recoil RecoilControl;
+
+/**
+ * The nearest interactive object to the actor.  Will be none if there aren't any.
+ */
+var InteractiveObject NearestInterObject;
+
+/**
+ * The name of the skeletal control animation node that manages gun recoil.
+ */
+var name RecoilControlName;
 
 /* Stores the amount of energy the player currently has. */
 var float Energy;
@@ -61,6 +81,16 @@ var bool ADS;
 
 /* Indicates that the pawn is sprinting. */
 var bool Sprinting;
+
+/**
+ * Indicates that this pawn is invisible.  This mainly deals with whether or not bots can see the pawn.
+ */
+var bool Invisible;
+
+/**
+ * Indicates that this pawn should not take any damage.
+ */
+var bool Invincible;
 
 var bool initInv;
 
@@ -124,6 +154,9 @@ simulated function Tick(float dt)
 	
 	//super.Tick(dt);
 	
+	if (NearestInterObject != None && !NearestInterObject.WithinRadius(self))
+		NearestInterObject = None;
+		
 	if (CanRegenHealth && Health < HealthMax) 
 	{
 		healthRate = Stats.GetHealingRate();
@@ -197,15 +230,21 @@ simulated function Tick(float dt)
 
 function bool DoJump(bool bUpdating)
 {
-	if (bJumpCapable && !bIsCrouched && !bWantsToCrouch && Physics == PHYS_Walking)
+	local float nJump;
+	
+	if (bJumpCapable && !bIsCrouched && !bWantsToCrouch && Physics == PHYS_Walking && Stamina > 0)
 	{
 		if (!bIsWalking)
 			Velocity.Z = JumpZ * Stats.GetJumpZ();
 			
+		nJump = Stats.GetJumpZ() / Stats.Constants.GetFactorMax("Jump Z");
+		
 		if (Base != None && !Base.bWorldGeometry && Base.Velocity.Z > 0.f)
 		{
 			Velocity.Z += Base.Velocity.Z;
 		}
+		
+		SpendStamina(350 * nJump);
 		
 		SetPhysics(PHYS_Falling);
 		
@@ -217,8 +256,11 @@ function bool DoJump(bool bUpdating)
 
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
-	super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-	`log("Damage Type" @ DamageType @ "Amount" @ DamageAmount);
+	if (!Invincible)
+	{
+		super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+		//`log("Damage Type" @ DamageType @ "Amount" @ DamageAmount);
+	}
 }
 
 simulated function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, class<DamageType> DamageType, vector Momentum,  Actor DamageCauser)
@@ -252,6 +294,115 @@ simulated function Bump(Actor other, PrimitiveComponent otherComp, Vector hitNor
 	}
 }
 
+
+function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
+{	
+	ClearAllTimers();
+	
+	return super.Died(Killer, DamageType, HitLocation);
+}
+
+simulated function RagDoll()
+{
+	StartFallImpactTime = WorldInfo.TimeSeconds;
+	bCanPlayFallingImpacts=true;
+	//GotoState('FeigningDeath');
+
+	// if we had some other rigid body thing going on, cancel it
+	if (Physics == PHYS_RigidBody)
+	{
+		//@note: Falling instead of None so Velocity/Acceleration don't get cleared
+		setPhysics(PHYS_Falling);
+	}
+
+	// Ensure we are always updating kinematic
+	Mesh.MinDistFactorForKinematicUpdate = 0.0;
+
+	SetPawnRBChannels(TRUE);
+	Mesh.ForceSkelUpdate();
+
+	// Move into post so that we are hitting physics from last frame, rather than animated from this
+	Mesh.SetTickGroup(TG_PostAsyncWork);
+
+	bBlendOutTakeHitPhysics = false;
+
+	PreRagdollCollisionComponent = CollisionComponent;
+	CollisionComponent = Mesh;
+
+	// Turn collision on for skelmeshcomp and off for cylinder
+	CylinderComponent.SetActorCollision(false, false);
+	Mesh.SetActorCollision(true, true);
+	Mesh.SetTraceBlocking(true, true);
+
+	SetPhysics(PHYS_RigidBody);
+	Mesh.PhysicsWeight = 1.0;
+
+	// If we had stopped updating kinematic bodies on this character due to distance from camera, force an update of bones now.
+	if( Mesh.bNotUpdatingKinematicDueToDistance )
+	{
+		Mesh.UpdateRBBonesFromSpaceBases(TRUE, TRUE);
+	}
+
+	Mesh.PhysicsAssetInstance.SetAllBodiesFixed(FALSE);
+	Mesh.bUpdateKinematicBonesFromAnimation=FALSE;
+
+	// Set all kinematic bodies to the current root velocity, since they may not have been updated during normal animation
+	// and therefore have zero derived velocity (this happens in 1st person camera mode).
+	Mesh.SetRBLinearVelocity(Velocity, false);
+
+	//FeignDeathStartTime = WorldInfo.TimeSeconds;
+	// reset mesh translation since adjustment code isn't executed on the server
+	// but the ragdoll code uses the translation so we need them to match up for the
+	// most accurate simulation
+	Mesh.SetTranslation(vect(0,0,1) * BaseTranslationOffset);
+	// we'll use the rigid body collision to check for falling damage
+	Mesh.ScriptRigidBodyCollisionThreshold = MaxFallSpeed;
+	Mesh.SetNotifyRigidBodyCollision(true);
+	Mesh.WakeRigidBody();
+
+	if (Role == ROLE_Authority)
+	{
+		//SetTimer(0.15, true, 'FeignDeathDelayTimer');
+	}
+}
+
+simulated function Recover()
+{
+	`log("Recovering");
+	
+	RestorePreRagdollCollisionComponent();
+	Mesh.PhysicsWeight = 0.0f;
+	Mesh.PhysicsAssetInstance.SetAllBodiesFixed(TRUE);
+	Mesh.bUpdateKinematicBonesFromAnimation=TRUE;
+	Mesh.MinDistFactorForKinematicUpdate = default.Mesh.MinDistFactorForKinematicUpdate;
+	SetPawnRBChannels(FALSE);
+
+	if (Physics == PHYS_RigidBody)
+		setPhysics(PHYS_Falling);
+}
+
+simulated function SetPawnRBChannels(bool bRagdollMode)
+{
+	if(bRagdollMode)
+	{
+		Mesh.SetRBChannel(RBCC_Pawn);
+		Mesh.SetRBCollidesWithChannel(RBCC_Default,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Pawn,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Vehicle,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Untitled3,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_BlockingVolume,TRUE);
+	}
+	else
+	{
+		Mesh.SetRBChannel(RBCC_Untitled3);
+		Mesh.SetRBCollidesWithChannel(RBCC_Default,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Pawn,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Vehicle,FALSE);
+		Mesh.SetRBCollidesWithChannel(RBCC_Untitled3,TRUE);
+		Mesh.SetRBCollidesWithChannel(RBCC_BlockingVolume,FALSE);
+	}
+}
+
 function AddVelocity(vector newVel, vector hitLoc, class<DamageType> damageType, optional TraceHitInfo hitInfo)
 {
 	if (Role < Role_Authority)
@@ -263,6 +414,12 @@ function AddVelocity(vector newVel, vector hitLoc, class<DamageType> damageType,
 reliable server function ServerAddVelocity(vector newVel, vector hitLoc, class<DamageType> damageType, optional TraceHitInfo hitInfo)
 {
 	super.AddVelocity(newVel, hitLoc, damageType, hitInfo);
+}
+
+simulated function Recoil()
+{
+	if (RecoilControl != None)
+		RecoilControl.bPlayRecoil = true;
 }
 
 simulated function rotator GetRecoil()
@@ -296,7 +453,7 @@ simulated function StopFireAbility()
 
 simulated function StartSprint()
 {
-	if (!Sprinting && Stamina > 0)
+	if (!Sprinting && Stamina > 0 && VSize(Velocity) > 0)
 	{
 		Sprinting = true;
 		
@@ -365,6 +522,11 @@ simulated function PositionArms()
 {
 }
 
+simulated function SetNearestInterObj(InteractiveObject object)
+{
+	NearestInterObject = object;
+}
+
 simulated function ReplicatedEvent(name property)
 {
 	if (property == nameof(InvManager))
@@ -425,6 +587,24 @@ simulated function SpendEnergy(float EnergyAmount)
 	}
 }
 
+// Function added by Zack to add/refund Energy
+simulated function AddEnergy(float EnergyAmount)
+{
+	local float cost;
+	
+	cost = Stats.GetEnergyCost(EnergyAmount);
+	
+	`log("Energy Added");
+	
+	if (cost > 0)
+	{
+		Energy += cost;
+		// The below line is removed because it would be called before the
+		// ability would spend energy, defeating the purpose of this function
+		//if (Energy > EnergyMax) Energy = EnergyMax;
+	}
+}
+
 simulated function SpendStamina(float StaminaAmount)
 {
 	local float cost;
@@ -449,13 +629,28 @@ simulated function bool CanSpendEnergy(float energyAmount)
  */
 simulated function AddEffect(StatusEffect effect)
 {
-	effect.ActivateEffect(Self);
-	ActiveEffects.AddItem(effect);
+	local StatusEffect sum;
+	
+	if (ActiveEffect != None)
+	{
+		sum = class'Arena.StatusEffect'.static.AddEffects(effect, ActiveEffect);
+		
+		RemoveEffect();
+		ActiveEffect = sum;
+	}
+	else
+	{
+		ActiveEffect = effect;
+	}
+	
+	ActiveEffect.ActivateEffect(self);
 }
 
-simulated function RemoveEffect(StatusEffect effect)
+simulated function RemoveEffect()
 {
-	ActiveEffects.RemoveItem(effect);
+	ActiveEffect.DeactivateEffect();
+	ActiveEffect.Destroy();
+	ActiveEffect = None;
 }
 
 simulated function AddStatMod(PlayerStatModifier mod)
@@ -523,6 +718,16 @@ function name GetWeaponHandSocket()
 exec function KillMe()
 {
 	TakeDamage(Health, ArenaPlayerController(Owner), Location, vect(0, 0, 0), None);
+}
+
+exec function SetInvisible(bool value)
+{
+	Invisible = value;
+}
+
+exec function SetInvincible(bool value)
+{
+	Invincible = value;
 }
 
 exec function CurrentState()
@@ -643,8 +848,6 @@ defaultproperties
 	End Object
 	Stats=NewStats
 	
-	IdleCamAnim=CameraAnim'CameraAssets.Animations.IdleAnimation'
-	WalkCamAnim=CameraAnim'CameraAssets.Animations.WalkAnimation'
 	ADS=false
 	bDirectHitWall=true
 	InventoryManagerClass=class'Arena.ArenaInventoryManager'
@@ -662,5 +865,6 @@ defaultproperties
 	CrouchRadius=21.0
 	bCanCrouch=true
 	
+	Invisible=false
 	initInv=True
 }

@@ -11,7 +11,7 @@ class Wp_PhotonEmitterBase extends ArenaWeaponBase;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'BasicRifleBase.Mesh.BasicRifleBaseMesh_1P'
+		//SkeletalMesh=SkeletalMesh'BasicRifleBase.Mesh.BasicRifleBaseMesh_1P'
 		Rotation=(Yaw=16384)
 		FOV=85.0
 	End Object
@@ -43,4 +43,5 @@ defaultproperties
 	MaxClip=30
 	Ammo=120
 	Clip=30
+	BaseDamage=200
 }

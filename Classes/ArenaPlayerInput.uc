@@ -8,6 +8,12 @@
 
 class ArenaPlayerInput extends UDKPlayerInput within ArenaPlayerController;
 
+/**
+ * This is set when the user is pressing the forward key.
+ */
+var input byte Forward;
+
+
 simulated exec function StartFireAbility()
 {
 	if (ArenaPawn(Pawn) != None)
@@ -34,7 +40,7 @@ simulated exec function StopFireAbility()
 
 simulated exec function StartSprint()
 {
-	if (ArenaPawn(Pawn) != None)
+	if (ArenaPawn(Pawn) != None && Forward == 1)
 	{
 		ArenaPawn(Pawn).StartSprint();
 	}
@@ -75,6 +81,22 @@ simulated exec function Reload()
 	if (ArenaPawn(Pawn) != None)
 	{
 		ArenaPawn(Pawn).ReloadWeapon();
+	}
+}
+
+simulated exec function PrevAbility()
+{
+	if (ArenaPawn(Pawn) != None)
+	{
+		ArenaInventoryManager(ArenaPawn(Pawn).InvManager).PrevAbility();
+	}
+}
+
+simulated exec function NextAbility()
+{
+	if (ArenaPawn(Pawn) != None)
+	{
+		ArenaInventoryManager(ArenaPawn(Pawn).InvManager).NextAbility();
 	}
 }
 

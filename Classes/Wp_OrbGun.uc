@@ -63,4 +63,6 @@ defaultproperties
 	MaxClip=30
 	Ammo=120
 	Clip=30
+	
+	BaseDamage=100
 }

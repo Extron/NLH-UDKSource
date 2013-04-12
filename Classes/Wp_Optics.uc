@@ -8,23 +8,30 @@
 
 class Wp_Optics extends ArenaWeaponComponent;
 
-/* The offset of the optics. */
-var vector OpticsOffset;
+/**
+ * The degree of zoom that the optics component carries.
+ */
+var float ZoomLevel;
 
-function vector GetOpticsOffset(vector location, rotator rotation)
+function vector GetOpticsOffset(vector l, rotator r)
 {
-	local vector opticLoc;
 	local vector socketLoc;
 	local vector v;
 	local rotator socketRot;
 
-	if (SkeletalMeshComponent(Mesh) != None && SkeletalMeshComponent(Mesh).GetSocketByName('OpticsOffsetSocket') != None)
+	if (SkeletalMeshComponent(Mesh) != None && SkeletalMeshComponent(Mesh).GetSocketByName('SightSocket') != None)
 	{
-		if (SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndRotation('OpticsOffsetSocket', socketLoc, socketRot, 0))
+		if (SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndRotation('SightSocket', socketLoc, socketRot, 0))
 		{
-			v = socketLoc - location;
-			
-			
+			v = (socketLoc - l) << r;	
+			v.x = 0;
 		}
 	}
+	
+	return v;
+}
+
+defaultproperties
+{
+	ZoomLevel = 1;
 }

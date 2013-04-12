@@ -11,7 +11,6 @@ class SE_Electrocuted extends StatusEffect;
 
 simulated function float GetHealthDamage(float dt)
 {
-	//TOOD Make this more interesting.
 	return HealthDamage * dt / Duration;
 }
 
@@ -40,11 +39,6 @@ simulated function bool ApplyStaminaDamage()
 	return true;
 }
 
-simulated function ChangeState(array<StatusEffect> effects)
-{
-	//if (effects[effects.Length - 1]
-}
-
 defaultproperties
 {
 	Begin Object Name=NewStatMod
@@ -56,4 +50,23 @@ defaultproperties
 	
 	EffectName="Electrocuted"
 	Duration=5
+	DamageType=class'Arena.SDT_Electrocuted'
+	SEGroup=SEG_Electromagnetism
+	ScreenEffect=PostProcessChain'ArenaMaterials.PostProcess.ElectrocutedPPC';
+	
+	InitialHealthDamage=100
+	InitialEnergyDamage=25
+	InitialStaminaDamage=5
+	
+	HealthDamage=50
+	EnergyDamage=50
+	StaminaDamage=25
+	
+	DurationWeight=1
+	HealthDamageWeight=1
+	EnergyDamageWeight=0.5
+	StaminaDamageWeight=0.25
+	IHDWeight=1
+	IEDWeight=0.5
+	ISDWeight=0.25
 }

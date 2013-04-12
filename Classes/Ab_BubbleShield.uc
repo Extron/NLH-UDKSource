@@ -41,20 +41,15 @@ simulated function PostBeginPlay()
 	
 	EmitShield();
 	
-	/* if (ArenaPawn(Instigator) != None)
-	{
-		// ERROR: Makes the player invicible
-		ArenaPawn(Instigator).Stats.SetTypeDamageInput(class 'Arena.Dmg_LightBeam', DamageReduction);
-	} */
-	
 	// Makes it so the player takes less damage from light beams
 	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_LightBeam', DamageReduction);
 	
 	if (ArenaPawn(Instigator) != None)
 	{
-		// ERROR: Makes the player invicible
 		ArenaPawn(Instigator).Stats.AddModifier(PlayerStatMod);
 	}
+	
+	SetTimer(ShieldTimer, false, 'DestroyShield');
 }
 
 simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vector HitNormal)
@@ -76,21 +71,24 @@ simulated function Tick(float dt)
 		SetLocation(Instigator.Location);
 	}
 	
-	ShieldTimer = ShieldTimer - dt;
-	
-	if (ShieldTimer <= 0) {
-		self.Destroy();
-		// Undo the damage mod
-		//ArenaPawn(Instigator).Stats.SetTypeDamageInput(class 'Arena.Dmg_LightBeam', 1.0);
-		`log("Bubble shield expired");
-	}
-	
 	super.Tick(dt);
 }
 
 simulated function bool StopsProjectile(Projectile P)
 {
 	return false;
+}
+
+simulated function DestroyShield()
+{
+	`log("Bubble shield expired");
+	
+	if (ArenaPawn(Instigator) != None)
+	{
+		ArenaPawn(Instigator).Stats.RemoveModifier(PlayerStatMod);
+	}
+	
+	self.Destroy();	
 }
 
 /**
@@ -114,7 +112,7 @@ defaultproperties
 	bBlockActors=true
 	
 	Begin Object Class=StaticMeshComponent Name=ShieldMesh
-		StaticMesh=StaticMesh'ArenaAbilities.Meshes.DeflectionShieldMesh'
+		StaticMesh=StaticMesh'ArenaAbilities.Meshes.BubbleShieldMesh'
 		DepthPriorityGroup=SDPG_PostProcess
 		bOnlyOwnerSee=false
 		bCastDynamicShadow=false
@@ -122,6 +120,10 @@ defaultproperties
 		Scale=3
 	End Object
 	Mesh=ShieldMesh
+	
+	Begin Object Class=PlayerStatModifier Name=NewMod
+	End Object
+	playerStatMod=NewMod
 	
 	ShieldTimer=15.0
 	DamageReduction=0.85

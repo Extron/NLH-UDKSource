@@ -25,6 +25,28 @@ var int CurrentWave;
 /** The parent game info that owns this wave manager. */
 var GI_BotBattle Parent;
 
+/**
+ * Indicates that we are currently in intermission.
+ */
+var bool Intermission;
+
+simulated function Tick(float dt)
+{
+	if (CurrentWave >= 0 && CurrentWave < Waves.Length)
+	{
+		Waves[CurrentWave].UpdateWave();
+	
+		if (CurrentWaveComplete() && !Intermission)
+		{
+			`log("Wave complete.");
+			
+			Intermission = true;
+			
+			if (AutoBegin)
+				SetTimer(IntermissionTime, false, 'SpawnNextWave');
+		}
+	}
+}
 
 simulated function Initialize(GI_BotBattle gameInfo)
 {
@@ -40,13 +62,17 @@ simulated function Initialize(GI_BotBattle gameInfo)
 
 simulated function SpawnNextWave()
 {
-	CurrentWave++;
-	
-	if (CurrentWave < Waves.Length)
+	if (Intermission)
 	{
-		`log("Spawning new wave.");
+		CurrentWave++;
+		Intermission = false;
 		
-		Waves[CurrentWave].SpawnWave();
+		if (CurrentWave < Waves.Length)
+		{
+			`log("Spawning new wave.");
+			
+			Waves[CurrentWave].SpawnWave();
+		}
 	}
 }
 
@@ -73,5 +99,6 @@ defaultproperties
 {
 	CurrentWave=-1
 	IntermissionTime=5
+	Intermission=true
 	AutoBegin=true
 }

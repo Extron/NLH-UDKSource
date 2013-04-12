@@ -14,7 +14,7 @@ struct WaveBot
 	var() class<ArenaBot> BotType;
 	
 	/** The type of the bot's pawn. */
-	var() class<ArenaPawn> PawnType;
+	var() class<AP_Bot> PawnType;
 	
 	/** The amount of bots of the specified type to spawn in a wave. */
 	var() int WaveTotal;
@@ -29,6 +29,11 @@ struct WaveBot
 	/** The amount of bots currently active. */
 	var int ActiveCount;
 };
+
+/** 
+ * This is a list of bot types that are queued to be spawned.  The index corresponds to the bot type in the Bots list.
+ */
+var array<int> QueuedBots;
 
 /** The bots that are in the wave. */
 var() editinline array<WaveBot> Bots;
@@ -50,6 +55,29 @@ simulated function Initialize(BBWaveManager waveManager)
 	Parent = waveManager;
 }
 
+simulated function UpdateWave()
+{
+	local int i, j;
+	local int spawnCount;
+
+	for (i = 0; i < Bots.Length; i++)
+	{
+		if (Bots[i].ActiveCount < Bots[i].WaveActive && Bots[i].TotalCount < Bots[i].WaveTotal)
+		{	
+			spawnCount = Min(Bots[i].WaveActive - Bots[i].ActiveCount, Bots[i].WaveTotal - Bots[i].TotalCount);
+			
+			for (j = 0;  j < spawnCount; j++)
+			{
+				if (SpawnBot(i, Bots[i].BotType, Bots[i].PawnType, WaveTI))
+				{
+					Bots[i].ActiveCount++;
+					Bots[i].TotalCount++;
+				}
+			}
+		}
+	}
+}
+
 simulated function SpawnWave()
 {
 	local int i;
@@ -61,11 +89,41 @@ simulated function SpawnWave()
 		{
 			`log("Spawning bot in wave.");
 			
-			SpawnBot(Bots[i].BotType, Bots[i].PawnType, WaveTI);
-			Bots[i].TotalCount++;
-			Bots[i].ActiveCount++;
+			if (SpawnBot(i, Bots[i].BotType, Bots[i].PawnType, WaveTI))
+			{
+				Bots[i].TotalCount++;
+				Bots[i].ActiveCount++;
+			}
 		}
 	}
+}
+
+simulated function bool FindUnusedSpawn(class<AP_Bot> pawnClass, ArenaTeamInfo wave, out vector spawnLoc)
+{
+	local BBBotStart sp, start;
+	local Actor iter, b;
+
+	foreach Parent.WorldInfo.AllNavigationPoints(class'Arena.BBBotStart', sp)
+	{
+		if (sp.CanBotSpawnHere(pawnClass, wave.TeamIndex))
+		{
+			foreach Parent.VisibleCollidingActors(class'Actor', iter, pawnClass.Default.CylinderComponent.CollisionRadius, sp.Location)
+				b = iter;
+			
+			if (b == None)
+				start = sp;
+		}
+	
+	}
+	
+	if (start != None)
+	{
+		spawnLoc = start.Location;
+		return true;
+	}
+	
+	spawnLoc = vect(0, 0, 0);
+	return false;
 }
 
 /**
@@ -75,22 +133,31 @@ simulated function SpawnWave()
  * @param pawnClass - The pawn class to use for the bot.
  * @param wave - The wave to add this bot to.
  */
-simulated event SpawnBot(class<ArenaBot> botClass, class<ArenaPawn> pawnClass, ArenaTeamInfo wave)
+simulated event bool SpawnBot(int botIndex, class<ArenaBot> botClass, class<AP_Bot> pawnClass, ArenaTeamInfo wave)
 {
 	local ArenaBot bot;
 	local ArenaPawn botPawn;
-	local NavigationPoint spawnPoint;
+	local vector spawnPoint;
 	
-	bot = Parent.Spawn(botClass);
-	spawnPoint = Parent.Parent.FindPlayerStart(bot, 1);
-	
-	botPawn = Parent.Spawn(pawnClass, , , spawnPoint.Location);
-	
-	if (botPawn == None)
-		`warn("Pawn None!");
+	if (FindUnusedSpawn(pawnClass, wave, spawnPoint))
+	{
+		bot = Parent.Spawn(botClass);
 		
-	bot.Possess(botPawn, false);
-	wave.AddToTeam(bot);
+		botPawn = Parent.Spawn(pawnClass, , , spawnPoint);
+		
+		if (botPawn == None)
+			`warn("Pawn None!");
+			
+		bot.Possess(botPawn, false);
+		wave.AddToTeam(bot);
+		return true;
+	}
+	else
+	{
+		//`log("Could not spawn bot.");
+		QueuedBots.AddItem(botIndex);
+		return false;
+	}
 }
 
 simulated event KillBot(ArenaBot bot)
@@ -101,15 +168,25 @@ simulated event KillBot(ArenaBot bot)
 	{
 		if (bot.IsA(Bots[i].BotType.Name) && bot.Pawn.IsA(Bots[i].PawnType.Name))
 		{
-			if (Bots[i].TotalCount < Bots[i].WaveTotal)
-			{				
-				`log("Spawning new bot.");
-				
-				SpawnBot(Bots[i].BotType, Bots[i].PawnType, WaveTI);
-				Bots[i].TotalCount++;
-			}			
+			Bots[i].ActiveCount--;	
+			break;
 		}
 	}
+	
+	IsComplete();
+}
+
+simulated function IsComplete()
+{
+	local int i;
+	
+	for (i = 0; i < Bots.Length; i++)
+	{
+		if (!(Bots[i].TotalCount >= Bots[i].WaveTotal && Bots[i].ActiveCount <= 0))
+			return;
+	}
+	
+	Complete = true;
 }
 
 defaultproperties

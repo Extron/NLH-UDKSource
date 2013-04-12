@@ -144,7 +144,15 @@ function float GetSprintSpeed()
  */
 function float GetHealingRate()
 {
-	return ((2 ** (float(Owner.Health) / float(Owner.HealthMax))) - 1) * Values[PSVHealthRegenRate];
+	if (Owner != None)
+	{
+		if (Owner.HealthMax == 0)
+			return 0;
+		else
+			return ((2 ** (float(Owner.Health) / float(Owner.HealthMax))) - 1) * Values[PSVHealthRegenRate];
+	}
+	
+	return 0;
 }
 
 /**
@@ -154,6 +162,7 @@ function float GetHealingRate()
  */
 function float GetEnergyRate()
 {
+	//TODO: This is not the final version of the energy rate algorithm.
 	return Owner.EnergyMax * Values[PSVEnergyRegenRate] / 10000;
 }
 
@@ -164,7 +173,8 @@ function float GetEnergyRate()
  */
 function float GetStaminaRate()
 {
-	return 0;
+	//TODO: This is not the final version of the stamina rate algorithm.
+	return Owner.StaminaMax * Values[PSVStaminaRegenRate] / 10000;
 }
 
 /**
@@ -614,12 +624,6 @@ simulated function float GetGGC(int i)
 
 defaultproperties
 {
-	/*DamageInput[0]=10
-    DamageInput[1]=.5
-    DamageInput[2]=.1
-    DamageInput[3]=2
-    DamageInput[4]=5*/
-
 	DamageInput[0]=1
     DamageInput[1]=1
     DamageInput[2]=1
@@ -638,11 +642,11 @@ defaultproperties
 	Values[PSVObstruction]=0
 	Values[PSVGlobalDamageInput]=1
 	Values[PSVHealthRegenDelay]=1
-	Values[PSVEnergyRegenDelay]=1
-	Values[PSVStaminaRegenDelay]=0
+	Values[PSVEnergyRegenDelay]=5
+	Values[PSVStaminaRegenDelay]=1
 	Values[PSVHealthRegenRate]=10
 	Values[PSVEnergyRegenRate]=10
-	Values[PSVStaminaRegenRate]=1
+	Values[PSVStaminaRegenRate]=10
 	Values[PSVEnergyCostFactor]=1
 	Values[PSVStaminaCostFactor]=1
 	Values[PSVEnergyDamageFactor]=1

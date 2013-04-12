@@ -47,6 +47,16 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 	}
 }
 	
+simulated function GetGripSocketLocRot(out vector l, out rotator r)
+{
+	super.GetGripSocketLocRot(l, r);
+	
+	if (SkeletalMeshComponent(Barrel.Mesh).GetSocketByName('GripSocket') != None)
+	{
+		SkeletalMeshComponent(Barrel.Mesh).GetSocketWorldLocationAndRotation('GripSocket', l, r, 0);
+	}
+}
+
 /*
  * Gets the total weight of the weapon.
  *
@@ -57,9 +67,19 @@ function float GetWeight()
 	return Stats.Values[WSVWeight];
 }
 
-function vector GetOpticsOffset()
+function vector GetOpticsOffset(ArenaPawn holder)
+{	
+	local vector t;
+	
+	t.Z = holder.EyeHeight;
+	t = t + holder.Location;
+	
+	return Optics.GetOpticsOffset(t, Rotation);
+}
+
+function float GetZoomLevel()
 {
-	return Optics.OpticsOffset;
+	return Optics.ZoomLevel;
 }
 
 function AttachStock(Wp_Stock s)
