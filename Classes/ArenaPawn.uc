@@ -83,6 +83,11 @@ var bool ADS;
 var bool Sprinting;
 
 /**
+ * Indicates that the pawn is in a weather volume.
+ */
+var bool InWeatherVolume;
+
+/**
  * Indicates that this pawn is invisible.  This mainly deals with whether or not bots can see the pawn.
  */
 var bool Invisible;
@@ -154,6 +159,9 @@ simulated function Tick(float dt)
 	
 	//super.Tick(dt);
 	
+	if (Health <= 0)
+		return;
+		
 	if (NearestInterObject != None && !NearestInterObject.WithinRadius(self))
 		NearestInterObject = None;
 		
@@ -225,6 +233,12 @@ simulated function Tick(float dt)
 		{
 			ArenaInventoryManager(InvManager).Abilities[i].Tick(dt);
 		}
+	}
+	
+	if (InWeatherVolume)
+	{
+		ArenaPlayerController(Owner).PClass.ScaleWeatherMod(ArenaGRI(WorldInfo.GRI).WeatherMgr);
+		Stats.ComputeStats();
 	}
 }
 
@@ -486,6 +500,9 @@ simulated function ReloadWeapon()
 {
 	if (ArenaWeapon(Weapon) != None && ArenaWeapon(Weapon).CanReload())
 	{
+		if (ADS)
+			ArenaPlayerController(Owner).ADS();
+			
 		ArenaWeapon(Weapon).ReloadWeapon();
 	}
 }
@@ -518,7 +535,31 @@ simulated function RebootElectronics(ArenaPawn pawn)
 	//TODO: Reboot electronics of the player here.
 }
 
+simulated function EnterWeatherVolume(WeatherManager weather)
+{
+	`log("Entering weather volume.");
+	ArenaPlayerController(Owner).PClass.ActivateWeatherMod(weather);
+	InWeatherVolume = true;
+}
+
+simulated function ExitWeatherVolume()
+{
+	`log("Exiting weather volume.");
+	ArenaPlayerController(Owner).PClass.DeactivateWeatherMod();
+	InWeatherVolume = false;
+}
+
 simulated function PositionArms()
+{
+}
+
+simulated event StartCrouch( float HeightAdjust )
+{
+	//EyeHeight += HeightAdjust;
+	//SetBaseEyeHeight();
+}
+
+simulated event EndCrouch(float HeightAdjust)
 {
 }
 
@@ -656,6 +697,11 @@ simulated function RemoveEffect()
 simulated function AddStatMod(PlayerStatModifier mod)
 {
 	Stats.AddModifier(mod);
+}
+
+simulated function RemoveStatMod(PlayerStatModifier mod)
+{
+	Stats.RemoveModifier(mod);
 }
 
 simulated function AllowRegenHealth()

@@ -14,6 +14,11 @@ class ArenaPlayerController extends UDKPlayerController;
 var PlayerLoadout Loadout;
 
 /**
+ * The class that the player is using.
+ */
+var PlayerClass PClass;
+
+/**
  * The default location (without ADS).
   */
 var vector DefaultLoc;
@@ -36,6 +41,12 @@ var float ADSTime;
  * The amount of time that the player has been aiming for.
  */
 var float ADSCounter;
+
+var float OldFOV;
+
+var float FOVTime;
+
+var float FOVCounter;
 
 /** Gets the amount of time since the player has been dead. */
 var float TimeDead;
@@ -68,8 +79,11 @@ function Possess(Pawn newPawn, bool bVehicleTransition)
 	if (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer)
 	{
 		ArenaPawn(newPawn).Stats.SetInitialStats(ArenaPawn(newPawn), ArenaGRI(WorldInfo.GRI).Constants);
-				
-		Loadout.InitializeLoadout(self);
+
+		PClass = new Loadout.AbilityClass;
+		PClass.Owner = self;
+		
+		ArenaPawn(newPawn).AddStatMod(PClass.Mod);
 	}
 	
 	super.Possess(newPawn, bVehicleTransition);
@@ -77,16 +91,34 @@ function Possess(Pawn newPawn, bool bVehicleTransition)
 	newPawn.GoToState('Idle');
 }
 
+function SetFOV(float NewFOV)
+{
+	SetFOVWithTime(NewFOV, 0.25);
+}
+
+function SetFOVWithTime(float NewFOV, float time)
+{
+	`log("Setting fov time to" @ time);
+	
+	DesiredFOV = NewFOV;
+	OldFOV = FOVAngle;
+	FOVTime = time;
+}
+
 function AdjustFOV(float DeltaTime )
 {
-	if ( FOVAngle != DesiredFOV )
-	{
-		if ( FOVAngle > DesiredFOV )
-			FOVAngle = FOVAngle - FMax(7, 0.4 * DeltaTime * (FOVAngle - DesiredFOV));
-		else
-			FOVAngle = FOVAngle - FMin(-7, 0.4 * DeltaTime * (FOVAngle - DesiredFOV));
-		if ( Abs(FOVAngle - DesiredFOV) <= 10 )
+	if (FOVAngle != DesiredFOV && FOVTime > 0)
+	{		
+		FOVCounter += DeltaTime;
+		
+		FOVAngle = Lerp(OldFOV, DesiredFOV, FOVCounter / FOVTime); 
+		
+		if (FOVCounter >= FOVTime)
+		{
 			FOVAngle = DesiredFOV;
+			FOVTime = 0;
+			FOVCounter = 0;
+		}
 	}
 	
 	FOV(FOVAngle);
@@ -97,14 +129,22 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 	super.GetPlayerViewPoint(loc, rot);
 	
 	DefaultLoc = loc;
-	
+	
 	if (Pawn == None)
 		return;
 		
-	/*if (ArenaPawn(Pawn).ADS)
+	if (ArenaPawn(Pawn).ADS && !Aiming)
 		ADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
+	else if (Aiming && ADSDirection > 0)
+		ADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn)) * ADSCounter / ADSTime;
+	else if (Aiming && ADSDirection < 0)
+	{
+		`log("Time" @ 1 - ADSCounter / ADSTime);
+		
+		ADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn)) * (1 - ADSCounter / ADSTime);
+	}
 	else
-		ADSOffset = vect(0, 0, 0);*/
+		ADSOffset = vect(0, 0, 0);
 	 
 	if (ArenaPawn(Pawn) != None && (Role < Role_Authority || WorldInfo.NetMode == NM_ListenServer))
 	{
@@ -139,16 +179,16 @@ exec function ADS()
 		DesiredADSOffset = vect(0, 0, 0);
 		
 	//ADSOffset = DesiredADSOffset;
-	
-	if (ADSDirection > 0)
-		DesiredFOV = FOVAngle / ArenaWeaponBase(Pawn.Weapon).GetZoomLevel();
-	else
-		DesiredFOV = DefaultFOV;
 
 	if (ADSCounter > 0)
 		ADSTime = ADSCounter;
 	else
-		ADSTime = ArenaPawn(Pawn).Stats.GetADSSpeed();
+		ADSTime = ArenaPawn(Pawn).Stats.GetADSSpeed();	
+		
+	if (ADSDirection > 0)
+		SetFOVWithTime(FOVAngle / ArenaWeaponBase(Pawn.Weapon).GetZoomLevel(), ADSTime);
+	else
+		SetFOVWithTime(DefaultFOV, ADSTime);
 		
 	Aiming = true;
 }
@@ -163,17 +203,14 @@ simulated function PlayerTick(float dt)
 	{
 		ADSCounter += dt;
 		
+		`log("Ticking aiming." @ ADSCounter @ ADSDirection);
+		
 		if (ADSCounter >= ADSTime)
 		{
-			ADSOffset = DesiredADSOffset;
 			ADSCounter = 0;
 			Aiming = false;
 			ArenaPawn(Pawn).ADS = !ArenaPawn(Pawn).ADS;
 		}
-		else
-		{
-			ADSOffset = DesiredADSOffset * ADSCounter / ADSTime;
-		}		
 	}
 }
 
@@ -185,7 +222,10 @@ simulated function ReplicatedEvent(name property)
 		{		
 			ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
 				
-			Loadout.InitializeLoadout(self);
+			PClass = new Loadout.AbilityClass;
+			PClass.Owner = self;
+		
+			ArenaPawn(Pawn).AddStatMod(PClass.Mod);
 	
 			if (Role < Role_Authority)
 			{

@@ -77,7 +77,7 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		CreateInventory(class'Arena.Ab_Pedestal', true);
+		CreateInventory(class'Arena.Ab_ShockShort', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
@@ -231,6 +231,9 @@ exec function GiveStatus(string status)
 	case "Electrocuted":
 		c = class'Arena.SE_Electrocuted';
 		break;
+	case "Flashed":
+		c = class'Arena.SE_Flash';
+		break;
 	}
 	
 	if (c != None)
@@ -241,6 +244,12 @@ exec function GiveStatus(string status)
 		
 		AddEffect(se);
 	}
+}
+
+exec function GiveAmmo()
+{
+	if (ArenaWeapon(Weapon) != None)
+		ArenaWeapon(Weapon).AddMaxAmmo();
 }
 
 defaultproperties

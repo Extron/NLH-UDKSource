@@ -47,6 +47,27 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 	}
 }
 	
+simulated function AttachToMuzzleSocket(ActorComponent component)
+{
+/*
+	if (Muzzle != None)
+		SkeletalMeshComponent(Muzzle.Mesh).AttachComponentToSocket(component, 'MuzzleEndSocket');
+	else*/	
+	SkeletalMeshComponent(Barrel.Mesh).AttachComponentToSocket(component, 'MuzzleSocket');
+		
+	//SkeletalMeshComponent(Mesh).AttachComponentToSocket(component, BarrelSock);
+}
+
+simulated function ParticleSystem GetMuzzeFlashParticleTemplate()
+{
+	return Barrel.MuzzleFlashTemplate;
+}
+
+simulated function class<UDKExplosionLight> GetMuzzleFlashLightClass()
+{
+	return Barrel.MFLClass;
+}
+
 simulated function GetGripSocketLocRot(out vector l, out rotator r)
 {
 	super.GetGripSocketLocRot(l, r);

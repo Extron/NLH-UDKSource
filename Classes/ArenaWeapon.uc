@@ -82,7 +82,17 @@ var ParticleSystem IHBeamTemplate;
 /**
  * The instance of the IH Beam particle system.
  */
-Var ParticleSystemComponent IHBeam;
+var ParticleSystemComponent IHBeam;
+
+/**
+ * The muzzle flash particle system.
+ */
+var ParticleSystemComponent MuzzleFlash;
+
+/**
+ * The light for the muzzle flash.
+ */
+var	UDKExplosionLight MuzzleFlashLight;
 
 /** The weapon's offset on the screen. */
 var vector ViewOffset;
@@ -329,6 +339,11 @@ simulated function Projectile ProjectileFire()
 	return projectile;
 }
 
+simulated function PlayFireEffects( byte FireModeNum, optional vector HitLocation )
+{
+	EmitMuzzleFlash();
+}
+
 simulated function rotator AddSpread(rotator BaseAim)
 {
 	return Stats.GetInaccuracyShift();
@@ -397,26 +412,7 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
  */
 simulated event SetPosition(UDKPawn Holder)
 {
-	local vector T;
-	local rotator R;
-	
-	//if (!Holder.IsFirstPerson())
-		//return;
-	
-	T.Z = Holder.EyeHeight;
-	T = T + (ViewOffset >> Holder.Controller.Rotation);
-	T = T + Holder.Location;
-	
-	if (Holder.Controller != None)
-	{
-		R = Holder.Controller.Rotation;
-	}
-	
 	ArenaPawn(Holder).PositionArms();
-	
-	//SetLocation(T);
-	//SetRotation(R);
-	//SetBase(Holder);
 }
 
 simulated function PlayArmAnimation(name sequence, float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
@@ -505,6 +501,37 @@ simulated function EmitIHBeam(vector hitLocation)
 	}
 }
 
+simulated function EmitMuzzleFlash()
+{
+	local ParticleSystem muzzleFlashTemplate;
+	local class<UDKExplosionLight> lightClass;
+	
+	muzzleFlashTemplate = GetMuzzeFlashParticleTemplate();
+	lightClass = GetMuzzleFlashLightClass();
+	
+	if (muzzleFlashTemplate != None)
+	{
+		MuzzleFlash = new class'ParticleSystemComponent';
+		MuzzleFlash.bAutoActivate = false;
+		
+		AttachToMuzzleSocket(MuzzleFlash);
+		
+		MuzzleFlash.SetTemplate(muzzleFlashTemplate);
+		MuzzleFlash.ActivateSystem();
+	}
+	
+	if ( MuzzleFlashLight != None )
+	{
+		MuzzleFlashLight.ResetLight();
+	}
+	else if (lightClass != None)
+	{
+		MuzzleFlashLight = new(Outer) lightClass;
+		AttachToMuzzleSocket(MuzzleFlashLight);
+	}
+
+}
+
 /**
  * To help AI know when they are getting shot at, sweep out a trace to check for bots near the bullet path.
  */
@@ -526,6 +553,21 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 {
 	l = vect(0, 0, 0);
 	r = rot(0, 0, 0);
+}
+
+/**
+ * Attaches a primitive component to the weapon's muzzle.  Is designed to be overridden in subclasses.
+ */
+simulated function AttachToMuzzleSocket(ActorComponent component)
+{
+}
+
+simulated function ParticleSystem GetMuzzeFlashParticleTemplate()
+{
+}
+
+simulated function class<UDKExplosionLight> GetMuzzleFlashLightClass()
+{
 }
 
 /**
@@ -646,6 +688,11 @@ simulated function rotator GetRecoilRotation(Pawn holder)
 	return rotator(RecoilPos);
 }
 
+simulated function AddMaxAmmo()
+{
+	Ammo = MaxAmmo;
+}
+
 simulated function bool CanReload()
 {
 	return !Reloading && Clip < MaxClip && Ammo > 0;
@@ -680,15 +727,6 @@ simulated function OnEquippingAnimEnd()
 {
 	Equipping = false;
 	GoToState('Active');
-}
-
-exec function DisplayPosition()
-{
-	if (Mesh != None)
-	{
-		`log("Mesh Position" @ Mesh.GetPosition());
-		`log("Pawn Position" @ Instigator.Location);
-	}
 }
 
 /**

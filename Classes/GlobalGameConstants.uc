@@ -41,8 +41,11 @@ function float NormalizedStat(string statName, float statValue)
 	i = StatMap.Find(statName);
 	
 	if (i == -1)
+	{
+		`log("Couli not find constant for stat" @ statName);
 		return 0;
-		
+	}
+	
 	return statValue / StatValues[i].Y;
 }
 
