@@ -12,6 +12,7 @@
 class EnvironmentEffect extends Actor;
 
 
+
 /* The environment object that is being affected by the effect. */
 var IEnvObj Affectee;
 
@@ -20,6 +21,11 @@ var ArenaPlayerController Affector;
 
 /* The type of damage that this effect causes to players that come in contact with the environment object. */
 var Array<class<StatusEffect> > StatusEffects;
+
+/**
+ * The parent effects of the effect.  Used for effect addition.
+ */
+var Array<EnvironmentEffect> ParentEffects;
 
 /* The properties that the environment object must have to have the effect. */
 var Array<string> Properties;
@@ -38,6 +44,8 @@ static function EnvironmentEffect AddEffects(EnvironmentEffect A, EnvironmentEff
 	local EnvironmentEffect sum;
 	local int i;
 	
+	`log("Adding effect" @ A @ B);
+	
 	sum = A.Spawn(class'Arena.EnvironmentEffect', None);
 	
 	sum.Duration = FMax(A.Duration - A.Counter, B.Duration - B.Counter);
@@ -53,17 +61,27 @@ static function EnvironmentEffect AddEffects(EnvironmentEffect A, EnvironmentEff
 		
 	for (i = 0; i < B.Properties.Length; i++)
 		sum.Properties.AddItem(B.Properties[i]);
-		
+			
 	sum.Affectee = A.Affectee;
 	sum.Affector = A.Affector;
 	sum.EffectName = A.EffectName @ "+" @ B.EffectName;
+	sum.ParentEffects.AddItem(B);
+	sum.ParentEffects.AddItem(A);
 	
 	return sum;
 }
 
 simulated function UpdateEffect(float dt)
 {
+	local int i;
+	
 	Counter += dt;
+	
+	for (i = 0; i < ParentEffects.Length; i++)
+	{
+		if (ParentEffects[i].Counter < ParentEffects[i].Duration)
+			ParentEffects[i].UpdateEffect(dt);
+	}
 }
 
 simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player)
@@ -71,12 +89,18 @@ simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player)
 	Affectee = envobj;
 	Affector = player;
 		
-	SetTimer(Duration, false, 'DeactivateEffect');
+	SetTimer(Duration, false, 'EffectEnded');
+}
+
+function EffectEnded()
+{
+	if (IEnvObj(Affectee) != None)
+		IEnvObj(Affectee).RemoveEffect();
 }
 
 simulated function DeactivateEffect()
 {
-	ClearTimer('DeactivateEffect');
+	ClearTimer('EffectEnded');
 }
 
 /* 

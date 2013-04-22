@@ -119,6 +119,29 @@ simulated function SetArmsDamageInputMod(float factor)
 	DamageInputMods[4] = factor;
 }
 
+/**
+ * Scales all values in the stat mod by the specified scalar.
+ */
+simulated function ScaleValues(float scale)
+{
+	local int i;
+	
+	if (!(scale > 0))
+		return;
+		
+	for (i = 0; i < ValueMods.Length; i++)
+		ValueMods[i] = FMax(ValueMods[i] * scale, 0.01);
+		
+	for (i = 0; i < 5; i++)
+		DamageInputMods[i] *= scale;
+		
+	for (i = 0; i < TypeDamageOutputMods.Length; i++)
+		TypeDamageOutputMods[i] *= scale;
+		
+	for (i = 0; i < TypeDamageInputMods.Length; i++)
+		TypeDamageInputMods[i] *= scale;
+}
+
 defaultproperties
 {
 	ValueMods[PSVWeight]=1
@@ -145,4 +168,10 @@ defaultproperties
 	ValueMods[PSVMeleeRange]=1
 	ValueMods[PSVGlobalDamageOutput]=1
 	ValueMods[PSVAbilityCooldownFactor]=1
+	
+	DamageInputMods[0]=1
+	DamageInputMods[1]=1
+	DamageInputMods[2]=1
+	DamageInputMods[3]=1
+	DamageInputMods[4]=1
 }

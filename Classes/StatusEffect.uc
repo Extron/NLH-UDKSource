@@ -52,6 +52,10 @@ var class<StatusDamageType> DamageType;
 /** A reference to the screen effect to use while this effect is active. */
 var PostProcessChain ScreenEffect;
 
+var StatusEffect ParentA;
+
+var StatusEffect ParentB;
+
 /* The name of the effect. */
 var string EffectName;
 
@@ -164,6 +168,8 @@ static function StatusEffect AddEffects(StatusEffect A, StatusEffect B)
 	
 	se.ScreenEffect = A.ScreenEffect;
 	se.Affectee = A.Affectee;
+	se.ParentA = A;
+	se.ParentB = B;
 	
 	return se;
 }
@@ -298,6 +304,12 @@ simulated function Tick(float dt)
 		if (ApplyStaminaDamage())
 			ArenaPawn(Affectee.Pawn).SpendStamina(GetStaminaDamage(dt));
 	}
+	
+	if (ParentA != None)
+		ParentA.Tick(dt);
+	
+	if (ParentB != None)
+		ParentB.Tick(dt);
 }
 
 simulated function ActivateEffect(ArenaPawn pawn)

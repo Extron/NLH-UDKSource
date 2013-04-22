@@ -20,9 +20,10 @@ defaultproperties
 		ValueMods[WSVMobility]=1.1
 	End Object
 	
+	MuzzleFlashTemplate=ParticleSystem'BasicRifleBarrel.Particles.MuzzleFlashPS'
+	MFLClass=class'Arena.L_RifleMuzzleFlash'
+	
 	CompatibleTypes[0]=WTRifle
-	CompatibleTypes[1]=WTShotgun
-	CompatibleTypes[2]=WTHardLightRifle
 	
 	CompatibleSizes[0]=WSSmall
 	CompatibleSizes[1]=WSRegular

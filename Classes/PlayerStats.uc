@@ -552,11 +552,11 @@ function ComputeStats()
 	local int i, j;
 	
 	ResetStats();
-	
+
 	for (i = 0; i < StatModifiers.Length; i++)
 	{
 		statMod = StatModifiers[i];
-		
+			
 		for (j = 0; j < statMod.Immunities.Length; j++)
 		{
 			AddImmunity(statMod.Immunities[j]);

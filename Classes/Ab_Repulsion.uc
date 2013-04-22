@@ -64,15 +64,13 @@ simulated function Repulse()
 	
 	if (ArenaPawn(Instigator) != None)
 	{
-		foreach DynamicActors(class'Actor', iter)
+		foreach CollidingActors(class'Actor', iter, Radius, origin)
 		{			
 			d = iter.Location - origin;
-			impulse = Normal(d) * Strength;
+			impulse = Normal(d) * Strength / (Radius / FMax((Radius - VSize(d)), 0.1));
 			
-			if (VSize(d) <= Radius && Normal(d) Dot (vect(1, 0, 0) >> r) >= Extent)
+			if (Normal(d) Dot (vect(1, 0, 0) >> r) >= Extent)
 			{
-				`log("Dot" @ Normal(d) Dot (vect(1, 0, 0) >> r));
-				
 				if (ArenaPawn(iter) != None)
 				{
 					`log("Hit pawn" @ iter);
@@ -82,8 +80,11 @@ simulated function Repulse()
 				else if (DynamicEnvironmentObject(iter) != None && DynamicEnvironmentObject(iter).HasProperty("Magnetic"))
 				{
 					`log("Hit block");
-					
-					DynamicEnvironmentObject(iter).AddEffect(Spawn(class'Arena.EE_Magnetized', iter), ArenaPlayerController(Instigator.Controller));
+					`log("Dot" @ Normal(d) Dot (vect(1, 0, 0) >> r));
+				
+					if (!DynamicEnvironmentObject(iter).HasEffect("Magnetized"))
+						DynamicEnvironmentObject(iter).AddEffect(Spawn(class'Arena.EE_Magnetized', iter), ArenaPlayerController(Instigator.Controller));
+						
 					DynamicEnvironmentObject(iter).StaticMeshComponent.AddImpulse(impulse, iter.Location);
 				}
 			}
@@ -119,7 +120,7 @@ defaultproperties
 	CoolDown=5
 	EnergyCost=350
 	Radius=1000
-	Extent=0.5
+	Extent=0.93
 	Strength=2500
 	
 	BurstTemplate=ParticleSystem'ArenaParticles.Particles.EMPBubble'

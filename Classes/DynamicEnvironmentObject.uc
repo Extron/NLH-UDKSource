@@ -87,9 +87,11 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 		{
 			e = class<AbilityDamageType>(DamageType).Default.EnvironmentEffects[i];
 			
-			if (HasProperties(e.Default.Properties))
+			if (HasProperties(e.Default.Properties) && !HasEffect(e.Default.EffectName))
 			{
 				effect = spawn(e, Self);
+				effect.Affectee = self;
+				effect.Affector = ArenaPlayerController(EventInstigator);
 				
 				AddEffect(effect, ArenaPlayerController(EventInstigator));
 				
@@ -133,6 +135,9 @@ simulated function bool HasProperties(array<string> properties)
 
 simulated function bool HasEffect(string effectName)
 {
+	if (ActiveEffect == None)
+		return false;
+		
 	return InStr(ActiveEffect.EffectName, effectName) > -1;
 }
 

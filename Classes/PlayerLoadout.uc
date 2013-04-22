@@ -36,11 +36,6 @@ var string LoadoutName;
 var PlayerModel Model;
 
 
-simulated function InitializeLoadout(ArenaPlayerController player)
-{	
-	ArenaPawn(player.Pawn).AddStatMod(AbilityClass.Default.Mod);
-}
-
 defaultproperties
 {
 	LoadoutName="Custom Loadout"

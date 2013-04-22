@@ -9,7 +9,7 @@
 /**
  * A weather volume dictates where wheather effects like snow and rain can spawn.
  */
-class WeatherVolume extends Volume
+class WeatherVolume extends PhysicsVolume
 	placeable;
 
 /**
@@ -28,6 +28,8 @@ var() float SnowMoundDensity;
  */
 var() bool SpawnSnowMounds;
 
+var WeatherManager Parent;
+
 simulated function SpawnWeather(WeatherManager manager, array<WeatherPlane> planes, array<SnowMound> mounds)
 {
 	local WeatherPlane p;
@@ -39,6 +41,8 @@ simulated function SpawnWeather(WeatherManager manager, array<WeatherPlane> plan
 	local int planeCount;
 	local int moundCount;
 	local int i;
+	
+	Parent = manager;
 	
 	bounds = BrushComponent.Bounds.BoxExtent * 2;
 	
@@ -83,7 +87,26 @@ simulated function SpawnWeather(WeatherManager manager, array<WeatherPlane> plan
 	}
 }
 
+
+event PawnEnteredVolume(Pawn Other)
+{
+	`log("Pawn entered volume" @ Other);
+	
+	if (ArenaPawn(Other) != None)
+		ArenaPawn(Other).EnterWeatherVolume(Parent);
+}
+
+event PawnLeavingVolume(Pawn Other)
+{
+	`log("Pawn left volume" @ Other);
+	
+	if (ArenaPawn(Other) != None)
+		ArenaPawn(Other).ExitWeatherVolume();
+}
+
 defaultproperties
 {
 	BrushColor=(R=0,G=0,B=255,A=255)
+	
+	//bCollideActors=false
 }

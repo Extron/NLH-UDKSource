@@ -16,35 +16,40 @@ var float Magnitude;
 
 simulated function UpdateEffect(float dt)
 {
-	local KActor obj;
+	local DynamicEnvironmentObject obj;
 	local vector force;
 	local vector displacement;
 	local int direction;
-	
-	foreach Actor(Affectee).DynamicActors(class'KActor', obj, class'IEnvObj')
+
+	foreach Actor(Affectee).CollidingActors(class'Arena.DynamicEnvironmentObject', obj, Range, Actor(Affectee).Location)
 	{
-		displacement = obj.Location - Actor(Affectee).Location;
+		if (obj == Affectee)
+			continue;
 			
-		if (VSize(displacement) <= Range && IEnvObj(obj).HasProperties(Properties))
-		{
-			if (IEnvObj(obj).HasEffect(EffectName))
+		displacement = obj.Location - Actor(Affectee).Location;
+		
+		if (obj.HasProperties(Properties))
+		{		
+			if (obj.HasEffect(EffectName))
 				direction = 1;
 			else
 				direction = -1;
 				
-			force = Magnitude * Direction * Normal(displacement) / (displacement dot displacement);
+			force = Magnitude * Direction * Normal(displacement) / (Range * Range / (FMax(Range - VSize(displacement), 0.1) ** 2));
 			obj.StaticMeshComponent.AddForce(force);
+			
+			if (direction < 0 && DynamicEnvironmentObject(Affectee) != None)
+				DynamicEnvironmentObject(Affectee).StaticMeshComponent.AddForce(-force);
 		}
 	}
 }
 
 defaultproperties
 {
-	Properties[0]="Conductive"
-	Properties[1]="Magnetic"
+	Properties[0]="Magnetic"
 	
 	EffectName="Magnetized"
-	Range=500
-	Magnitude=1000
+	Range=1000
+	Magnitude=100
 	Duration=30
 }

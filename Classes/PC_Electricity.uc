@@ -9,14 +9,42 @@
 class PC_Electricity extends PlayerClass
 	dependson(PlayerStats);
 
+/**
+ * Sets the weather stat mod for maximum snow levels.
+ */
+function SetMaxSnowMod(float intensity)
+{
+	WeatherMod.ValueMods[PSVEnergyRegenRate] = 0.25 * intensity;
+	WeatherMod.ValueMods[PSVHealthRegenRate] = 0.25 * intensity;
+	WeatherMod.ValueMods[PSVStaminaRegenRate] = 0.5 * intensity;
+	WeatherMod.ValueMods[PSVGlobalDamageInput] = 1.25 * intensity;
+	WeatherMod.ValueMods[PSVHealthRegenDelay] = 1.5 * intensity;
+	WeatherMod.ValueMods[PSVEnergyRegenDelay]= 1.25 * intensity;
+	WeatherMod.ValueMods[PSVStaminaRegenDelay] = 1.25 * intensity;
+	WeatherMod.ValueMods[PSVEnergyCostFactor] = 0.5 * intensity;
+	WeatherMod.ValueMods[PSVAbilityCooldownFactor] = 0.25 * intensity;
+	WeatherMod.ValueMods[PSVMobility] = 0.85 * intensity;
+}
+
+/**
+ * Sets the weather stat mod for maximum rain levels.
+ */
+function SetMaxRainMod(float intensity)
+{
+	WeatherMod.ValueMods[PSVGlobalDamageOutput] = 1.25 * intensity;
+	WeatherMod.ValueMods[PSVGlobalDamageInput] = 1.15 * intensity;
+	WeatherMod.ValueMods[PSVEnergyRegenDelay] = 0.75 * intensity;
+	WeatherMod.ValueMods[PSVEnergyDamageFactor] = 1.5 * intensity;
+	WeatherMod.ValueMods[PSVAbilityCooldownFactor] = 0.85 * intensity;
+}
+
 defaultproperties
 {
 	ClassName="Electricity"
 	
-	Begin Object Class=PlayerStatModifier Name=NewMod
+	Begin Object Name=NewMod
 		ValueMods[PSVAccuracy]=1.1
 		ValueMods[PSVMobility]=1.1
 		ValueMods[PSVMovement]=1.05
 	End Object
-	Mod=NewMod
 }

@@ -29,7 +29,7 @@ defaultproperties
 	CycleTime=0.25
 	BurstCount=3
 	
-	FireSound=SoundCue'A_Weapon_Link.Cue.A_Weapon_Link_FireCue'
+	FireSound=SoundCue'BasicRifleBase.Audio.GunshotSC'
 	
 	PlayerAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
 	

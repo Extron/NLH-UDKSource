@@ -25,6 +25,8 @@ function vector GetOpticsOffset(vector l, rotator r)
 		{
 			v = (socketLoc - l) << r;	
 			v.x = 0;
+			v.y -= 0.7;
+			v.z += 0.75;
 		}
 	}
 	

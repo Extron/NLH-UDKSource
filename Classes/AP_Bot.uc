@@ -25,6 +25,16 @@ simulated function bool IsEvading()
 	return false;
 }
 
+simulated function EnterWeatherVolume(WeatherManager weather)
+{
+	//TODO: Code some interesting stuff here.
+}
+
+simulated function ExitWeatherVolume()
+{
+	//TODO: Code some interesting stuff here.
+}
+
 /**
  * This is called when a bullet from a weapon passes near the bot.
  */

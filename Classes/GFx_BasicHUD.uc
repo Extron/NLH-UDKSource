@@ -102,7 +102,7 @@ function UpdateHUD(float dt)
 	local float nBloom;
 	local float xR, xL, yT, yB;
 	
-	if (Pawn != None)
+	if (Pawn != None && Pawn.Health > 0)
 	{
 		if (Pawn.ActiveAbility != None)
 		{
@@ -146,7 +146,8 @@ function UpdateHUD(float dt)
 			MainMessage.SetText(Pawn.NearestInterObject.GetMessage());
 		else
 			MainMessage.SetText("");
-		
+
+		Reticule.SetVisible(!Pawn.ADS && !ArenaPlayerController(Pawn.Owner).Aiming);
 		/*
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.8);
 
