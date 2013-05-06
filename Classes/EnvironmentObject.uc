@@ -136,6 +136,14 @@ simulated function bool HasEffect(string effectName)
 	return InStr(ActiveEffect.EffectName, effectName) > -1;
 }
 
+simulated function EnvironmentEffect FindEffect(name effectClass)
+{
+	if (ActiveEffect != None)
+		return ActiveEffect.FindEffect(effectClass);
+	else
+		return None;
+}
+
 /**
  * Adds an effect to the environment object.
  *
@@ -148,7 +156,7 @@ simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController con
 	if (ActiveEffect != None)
 	{
 		sum = class'Arena.EnvironmentEffect'.static.AddEffects(effect, ActiveEffect);
-		RemoveEffect();
+		ActiveEffect.DeactivateEffect();
 		ActiveEffect = sum;
 	}
 	else
@@ -156,7 +164,7 @@ simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController con
 		ActiveEffect = effect;
 	}
 		
-	ActiveEffect.ActivateEffect(Self, controller);
+	ActiveEffect.ActivateEffect(Self, controller, true);
 }
 
 /**

@@ -68,17 +68,11 @@ simulated function Tick(float dt)
 	
 	if (RiseAmount <= 0.0)
 		SetPhysics(PHYS_None);
-
+	
 	CollisionComponent.SetRBPosition(Location + (vect(0, 0, 1) * RiseAmount * direction));
 
 	if (Fall && RiseAmount > Rising)
 			self.Destroy();
-}
-
-event bool EncroachingOn(Actor Other)
-{
-	`log("Encroaching on" @ Other);
-	return EncroachingOn(Other);
 }
 
 simulated function FallDown() 
@@ -102,16 +96,15 @@ defaultproperties
 	bNoDelete=false
 	
 	Begin Object Class=StaticMeshComponent Name=CubeObject
-		StaticMesh=StaticMesh'ArenaTestObjects.Meshes.Cube'
-		Scale3D=(X=0.7,Y=0.7,Z=1.4)
+		StaticMesh=StaticMesh'ArenaAbilities.Meshes.PedestalPillarMesh'
 	End Object
 	StaticMeshComponent=CubeObject
 	Components.Add(CubeObject)
 	
 	CollisionComponent=CubeObject
 	
-	Rising = 19.9
-	RiseAmount = 0
+	Rising=20
+	RiseAmount=0
 	FallTimer=8.0
 	Fall = false
 }

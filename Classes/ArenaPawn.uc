@@ -48,6 +48,16 @@ var GameSkelCtrl_Recoil RecoilControl;
 var InteractiveObject NearestInterObject;
 
 /**
+ * The sensor device that the player is using.
+ */
+var PawnSensor Sensor;
+
+/**
+ * The sensor class that the player is using.
+ */
+var class<PawnSensor> SensorClass;
+
+/**
  * The name of the skeletal control animation node that manages gun recoil.
  */
 var name RecoilControlName;
@@ -582,6 +592,10 @@ simulated function ReplicatedEvent(name property)
 
 function InitInventory()
 {
+	if (SensorClass != None)
+	{
+		Sensor = Spawn(SensorClass, self);
+	}
 }
 
 function ArenaWeapon CreateWeapon(WeaponSchematic schematic)

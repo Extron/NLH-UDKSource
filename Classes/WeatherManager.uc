@@ -18,26 +18,6 @@ class WeatherManager extends Actor
  */
 const ArraySize = 100;
 
-/**
- * The amount of weather planes to add to the map.
- */
-const WeatherPlaneCount = 20;
-
-/**
- * The amount of snow mounds to add to the map.
- */
-const SnowMoundCount = 100;
-
-/**
- * The number of splash emitters that we can have on a level.
- */
-const SplashEmitterCount = 50;
-
-/**
- * The range that splash emitters will be spawned.
- */
-const SplashEmitterRange = 1000;
-
 
 /**
  * The basic white noise used to generate a unique Perlin noise function each time.
@@ -45,24 +25,9 @@ const SplashEmitterRange = 1000;
 var array<float> WhiteNoise;
 
 /**
- * A list of references to the weather planes on the level.
- */
-var array<WeatherPlane> Planes;
-
-/**
  * The weather volumes on the map.
  */
 var array<WeatherVolume> Volumes;
-
-/**
- * A list of all dynamic snow mounds on the level.
- */
-var array<SnowMound> SnowMounds;
-
-/**
- * The rain splash emitters.
- */
-var array<ParticleSystemComponent> SplashEmitters;
 
 /**
  * The template to use for instant hits for the ability.
@@ -249,10 +214,8 @@ simulated function PostBeginPlay()
 	foreach AllActors(class'WeatherVolume', volume)
 	{
 		Volumes.AddItem(volume);
-		volume.SpawnWeather(self, Planes, SnowMounds);
+		volume.SpawnWeather(self);
 	}
-	
-	EmitSplashEmitters();
 	
 	foreach AllActors(class'Landscape', iter)
 	{
@@ -291,7 +254,6 @@ simulated function Tick(float dt)
 	local float time;
 	local float windSpeed;
 	local float windAngle;
-	local int i;
 	
 	if (TickDay)
 		TimeOfDay += dt * DayRate;
@@ -331,15 +293,6 @@ simulated function Tick(float dt)
 		SkyWind.x = cos(windAngle) * windSpeed;
 		SkyWind.y = sin(windAngle) * windSpeed;
 	}
-	
-	//Temperature = 0.1;//sin(0.25 * WeatherCounter) ** 2;
-	//CloudCoverage = 0.0;//sin(0.1 * WeatherCounter) ** 2;
-	//WeatherIntensity = 1.0;//sin(5 * WeatherCounter) ** 2;
-	
-	//`log(Temperature @ WeatherIntensity @ CloudCoverage);
-	
-	//Temperature = 0.7;
-	//CloudCoverage = 5.0;
 	
 	if (CloudCoverage < WeatherCloudThreshold)
 	{
@@ -383,12 +336,6 @@ simulated function Tick(float dt)
 	
 	if (Temperature > ThawTempThreshold)
 		Thawing = true;
-	
-	for (i = 0; i < SplashEmitterCount; i++)
-	{
-		if (SplashEmitters[i] != None)
-			SplashEmitters[i].DeactivateSystem();
-	}
 			
 	if (Snowing)
 	{
@@ -405,15 +352,7 @@ simulated function Tick(float dt)
 			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
 			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
 		}
-		
-		if (SplashEmitters[0] == None)
-		{
-			SplashEmitters.Length = 0;
-			EmitSplashEmitters();
-		}
 	}
-	
-	//WeatherIntensity = 1.0;
 	
 	Landscape.Update(self, dt);
 }
@@ -463,32 +402,6 @@ function float Interpolate(float f1, float f2, float a)
 	local float x;
 	x = (1 - Cos(a * 3.1415927)) * 0.5;
 	return  f1 * (1 - x) + f2 * x;
-}
-
-function EmitSplashEmitters()
-{
-	local int i, s;
-	local float x, y;
-	local vector v;
-	local ParticleSystemComponent RainSplash;
-	
-	s = int(Sqrt(SplashEmitterCount));
-	
-	for (i = 0; i < SplashEmitterCount; i++)
-	{
-		x = (i % s) * (2 * SplashEmitterRange / float(s)) - SplashEmitterRange;
-		y = (i / s) * (2 * SplashEmitterRange / float(s)) - SplashEmitterRange;
-		
-		v.x = x;
-		v.y = y;
-		
-		RainSplash = WorldInfo.MyEmitterPool.SpawnEmitter(RainSplashTemplate, v);
-		RainSplash.SetAbsolute(false, false, false);
-		RainSplash.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
-		RainSplash.bUpdateComponentInTick = true;
-		
-		SplashEmitters.AddItem(RainSplash);
-	}
 }
 
 function LightningStrike()

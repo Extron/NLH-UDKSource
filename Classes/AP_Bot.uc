@@ -15,7 +15,26 @@ class AP_Bot extends ArenaPawn
 /**
  * Allows the pawn to govern when to shoot.
  */
-simulated function bool CanShoot();
+simulated function bool CanShoot()
+{
+	return true;
+}
+
+/**
+ * Allows the pawn to govern when it can use an ability.
+ */
+simulated function bool CanUseAbility()
+{
+	return true;
+}
+
+/**
+ * Determines if the bot should use an ability at this point.
+ */
+simulated function bool HasAbility(ArenaPawn target)
+{
+	return false;
+}
 
 /**
  * Indicates that the pawn is currently evading.

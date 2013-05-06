@@ -14,12 +14,20 @@ var float Range;
 /** The magnitude of the force dealt by this effect. */
 var float Magnitude;
 
+/**
+ * The charge of the current effect.
+ */
+var int Charge;
+
+
 simulated function UpdateEffect(float dt)
 {
 	local DynamicEnvironmentObject obj;
+	local EE_Magnetized effect;
 	local vector force;
 	local vector displacement;
 	local int direction;
+	local int otherCharge;
 
 	foreach Actor(Affectee).CollidingActors(class'Arena.DynamicEnvironmentObject', obj, Range, Actor(Affectee).Location)
 	{
@@ -31,7 +39,16 @@ simulated function UpdateEffect(float dt)
 		if (obj.HasProperties(Properties))
 		{		
 			if (obj.HasEffect(EffectName))
-				direction = 1;
+			{
+				effect = EE_Magnetized(obj.ActiveEffect.FindEffect('EE_Magnetized'));
+				
+				if (effect != None)
+					otherCharge = effect.Charge;
+				else
+					otherCharge = 1;
+					
+				direction = Charge * otherCharge;
+			}
 			else
 				direction = -1;
 				
@@ -52,4 +69,5 @@ defaultproperties
 	Range=1000
 	Magnitude=100
 	Duration=30
+	Charge=1
 }

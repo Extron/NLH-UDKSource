@@ -40,6 +40,14 @@ simulated function bool HasProperties(array<string> properties);
 simulated function bool HasEffect(string effectName);
 
 /**
+ * Finds an effect of a specified class on the object.  If no effect could be found, will return None.
+ *
+ * @param effectClass - The class of effect to find.
+ * @return Returns an effect of the specified type, None if no effect could be found.
+ */
+simulated function EnvironmentEffect FindEffect(name effectClass);
+
+/**
  * Adds an effect to the environment object.
  *
  * @param effect The effect to add to the object.

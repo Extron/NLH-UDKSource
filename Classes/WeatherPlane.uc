@@ -82,13 +82,18 @@ simulated function Tick(float dt)
 				
 			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
 			{
-				//if (RainSplash == None)
-					//EmitRainSplash();
-				
-				if (RainSplash != None)
+				if (IsPlayerNear())
 				{
-					if (!RainSplash.bIsActive)
+					if (RainSplash == None)
+						EmitRainSplash();
+					else
 						RainSplash.ActivateSystem();
+						
+				}
+				else if (RainSplash != None)
+				{
+					RainSplash.DeactivateSystem();
+					RainSplash = None;
 				}
 			
 				Material.SetScalarParameterValue('WeatherIntensity', ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity);
@@ -120,10 +125,8 @@ function EmitSnow()
 function EmitRainSplash()
 {
 	if (WorldInfo.NetMode != NM_DedicatedServer && RainSplashTemplate != None)
-	{		
-		`log("Emitting splashes.");
-		
-		RainSplash = WorldInfo.MyEmitterPool.SpawnEmitter(RainSplashTemplate, vect(0, 0, 0));
+	{
+		RainSplash = WorldInfo.MyEmitterPool.SpawnEmitter(RainSplashTemplate, Location);
 		RainSplash.SetAbsolute(false, false, false);
 		RainSplash.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		RainSplash.bUpdateComponentInTick = true;
@@ -147,11 +150,10 @@ defaultproperties
 {
 	Begin Object Name=StaticMeshComponent0
         StaticMesh = StaticMesh'ArenaWeather.Meshes.WeatherCylinderMesh'
-		//Scale=10
 		Scale3D=(X=5,Y=5,Z=5)
 		bCastDynamicShadow=false
 		CastShadow=false
-		MaxDrawDistance=128
+		MaxDrawDistance=64
     End Object
 	
 	EmitterRange=2500

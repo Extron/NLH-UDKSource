@@ -7,7 +7,7 @@
 *******************************************************************************/
 
 class Ab_Shock extends ArenaAbility
-abstract;
+	abstract;
 
 defaultproperties
 {

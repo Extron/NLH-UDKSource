@@ -19,9 +19,8 @@ simulated function FireAmmunition()
 defaultproperties
 {
 	AbilityName="Charged Shock"
-	FireSound=SoundCue'A_Weapon_ShockRifle.Cue.A_Weapon_SR_FireCue'
 	
 	CanCharge=true
-	MaxCharge=15
-	MinCharge=5
+	MaxCharge=7.5
+	MinCharge=2.5
 }

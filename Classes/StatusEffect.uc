@@ -38,10 +38,10 @@ var array<float> PSMWeights;
 var array<int> PSMDirections;
 
 /* The player that is being affected by the status effect. */
-var ArenaPlayerController Affectee;
+var Controller Affectee;
 
 /* The player that spawned the status effect. */
-var ArenaPlayerController Affector;
+var Controller Affector;
 
 /* The stat modifier for the status effect. */
 var PlayerStatModifier StatsModifier;
@@ -314,7 +314,7 @@ simulated function Tick(float dt)
 
 simulated function ActivateEffect(ArenaPawn pawn)
 {
-	Affectee = ArenaPlayerController(pawn.Owner);
+	Affectee = Controller(pawn.Owner);
 	
 	pawn.Stats.AddModifier(StatsModifier);
 	
@@ -322,9 +322,10 @@ simulated function ActivateEffect(ArenaPawn pawn)
 	ArenaPawn(Affectee.Pawn).SpendEnergy(GetInitialEnergyDamage());
 	ArenaPawn(Affectee.Pawn).SpendStamina(GetInitialStaminaDamage());
 	
-	if (LocalPlayer(Affectee.Player) != None && LocalPlayer(Affectee.Player).PlayerPostProcess != None && ScreenEffect != None)
+	if (PlayerController(Affectee) != None)
 	{
-		LocalPlayer(Affectee.Player).InsertPostProcessingChain(ScreenEffect, 0, false);
+		if (LocalPlayer(PlayerController(Affectee).Player) != None && LocalPlayer(PlayerController(Affectee).Player).PlayerPostProcess != None && ScreenEffect != None)
+			LocalPlayer(PlayerController(Affectee).Player).InsertPostProcessingChain(ScreenEffect, 0, false);
 	}
 	
 	SetTimer(Duration, false, 'EffectEnded');
@@ -338,14 +339,14 @@ function EffectEnded()
 
 function DeactivateEffect()
 {
-	`log("Deactivating effect.");
 	ClearTimer('EffectEnded');
 	
 	ArenaPawn(Affectee.Pawn).Stats.RemoveModifier(StatsModifier);
 	
-	if (LocalPlayer(Affectee.Player) != None && LocalPlayer(Affectee.Player).PlayerPostProcess != None && ScreenEffect != None)
+	if (PlayerController(Affectee) != None)
 	{
-		LocalPlayer(Affectee.Player).RemovePostProcessingChain(0);
+		if (LocalPlayer(PlayerController(Affectee).Player) != None && LocalPlayer(PlayerController(Affectee).Player).PlayerPostProcess != None && ScreenEffect != None)
+			LocalPlayer(PlayerController(Affectee).Player).RemovePostProcessingChain(0);
 	}
 }
 

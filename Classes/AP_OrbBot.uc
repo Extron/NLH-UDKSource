@@ -149,6 +149,17 @@ simulated function RebootElectronics(ArenaPawn pawn)
 		ArenaBot(Owner).Stun(5);
 }
 
+simulated function bool HasAbility(ArenaPawn target)
+{
+	if (ActiveAbility != None && target != None)
+	{
+		if (VSize(Location - target.Location) < ActiveAbility.GetIdealRange())
+			return true;
+	}
+	
+	return false;
+}
+
 function InitInventory()
 {
 	local Wp_OrbGun newWeapon;
@@ -167,6 +178,18 @@ function InitInventory()
 			InvManager.AddInventory(newWeapon);
 			InvManager.NextWeapon();
 		}
+		
+		CreateInventory(class'Arena.Ab_ShockShort', true);
+
+		ArenaInventoryManager(InvManager).NextAbility();
+	}
+}
+
+function GetAbilitySourceOffset(out vector l, out rotator r)
+{	
+	if (Mesh.GetSocketByName('ArmSocket') != None)
+	{
+		Mesh.GetSocketWorldLocationAndRotation('ArmSocket', l, r, 0);
 	}
 }
 

@@ -9,7 +9,12 @@
 class EE_Charged extends EnvironmentEffect;
 
 /** The particle template to use when this effect is active. */
-var ParticleSystem ActiveTemplate;
+var ParticleSystem ActiveTemplate_Static;
+
+/**
+ * The particle system for dynamic environment objects.
+ */
+var ParticleSystem ActiveTemplate_Dynamic;
 
 /** The particle system of the activated effect. */
 var ParticleSystemComponent ActiveEffects;
@@ -40,11 +45,9 @@ simulated function UpdateEffect(float dt)
 	}
 }
 
-simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player)
+simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player, bool isBase)
 {
-	super.ActivateEffect(envobj, player);
-	
-	`log("Activating Charged");
+	super.ActivateEffect(envobj, player, isBase);
 	
 	EmitEffect(envobj);
 }
@@ -58,15 +61,28 @@ simulated function DeactivateEffect()
 
 simulated function EmitEffect(IEnvObj envobj)
 {	
-	if (WorldInfo.NetMode != NM_DedicatedServer && ActiveTemplate != None)
+	if (WorldInfo.NetMode != NM_DedicatedServer && ActiveTemplate_Static != None && ActiveTemplate_Dynamic != None)
 	{
 		`log("Emitting particles");
 		
-		ActiveEffects = WorldInfo.MyEmitterPool.SpawnEmitter(ActiveTemplate, vect(0, 0, 0));
+		if (DynamicEnvironmentObject(envobj) != None)
+			ActiveEffects = WorldInfo.MyEmitterPool.SpawnEmitter(ActiveTemplate_Dynamic, vect(0, 0, 0));
+		else
+			ActiveEffects = WorldInfo.MyEmitterPool.SpawnEmitter(ActiveTemplate_Static, vect(0, 0, 0));
+			
 		ActiveEffects.SetAbsolute(false, false, false);
 		ActiveEffects.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		ActiveEffects.bUpdateComponentInTick = true;
-		ActiveEffects.SetActorParameter('EnvObjMesh', Actor(envobj));
+		
+		if (DynamicEnvironmentObject(envobj) != None)
+		{
+			ActiveEffects.SetFloatParameter('Radius', DynamicEnvironmentObject(envobj).StaticMeshComponent.Bounds.SphereRadius / DynamicEnvironmentObject(envobj).DrawScale);
+			DynamicEnvironmentObject(envobj).AttachComponent(ActiveEffects);
+		}
+		else
+		{
+			ActiveEffects.SetActorParameter('EnvObjMesh', Actor(envobj));
+		}
 	}
 }
 
@@ -76,7 +92,8 @@ defaultproperties
 	
 	Properties[0]="Conductive"
 	
-	ActiveTemplate=ParticleSystem'ArenaParticles.Particles.ChargedParticles'
+	ActiveTemplate_Static=ParticleSystem'ArenaParticles.Particles.ChargedParticles'
+	ActiveTemplate_Dynamic=ParticleSystem'ArenaParticles.Particles.ChargedDEOParticles'
 	EffectName="Charged"
 	Duration=15
 	CanSpread=false

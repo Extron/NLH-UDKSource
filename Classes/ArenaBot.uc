@@ -55,6 +55,16 @@ var float FireIntervalMin;
 var float FireIntervalMax;
 
 /**
+ * The minimum amount of time that the bot needs to use an ability again.
+ */
+var float UseAbIntervalMin;
+
+/**
+ * The maximum amount of time that the bot needs to use an ability again.
+ */
+var float UseAbIntervalMax;
+
+/**
  * The amount of time that the bot was last shot at.
  */
 var float LastShotAtDuration;
@@ -88,6 +98,11 @@ var bool ApproachedTarget;
  * Indicates that the bot can shoot.
  */
 var bool CanFire;
+
+/**
+ * Indicates that the bot can use an ability.
+ */
+var bool CanUseAbility;
 
 /**
  * Indicates that the bot should be searching for its target.
@@ -241,7 +256,10 @@ function ArenaPawn FindNearestTarget()
 
 function name GetAttack(Actor actor)
 {
-	return 'FireWeapon';
+	if (AP_Bot(Pawn).HasAbility(ArenaPawn(Focus)) && CanUseAbility)
+		return 'UsingAbility';
+	else
+		return 'FiringWeapon';
 }
 
 function Evade(vector direction, Actor attacker)
@@ -265,11 +283,33 @@ function ShootAt(Actor actor)
 	{
 		Pawn.StartFire(0);
 		CanFire = false;
+		//CanUseAbility = false;
 		
 		Pawn.StopFire(0);
 		
 		a = FRand();
 		
+		SetTimer(FireIntervalMin * (1 - a) + FireIntervalMax * a, false, 'ReactivateFire');
+		//SetTimer(UseAbIntervalMin * (1 - a) + UseAbIntervalMax * a, false, 'ReactivateAbility');
+	}
+}
+
+function UseAbility(Actor actor)
+{
+	local float a;
+	
+	if (ArenaPawn(Pawn) != None && CanUseAbility && CanFire)
+	{
+		`log("Bot using ability.");
+		ArenaPawn(Pawn).StartFireAbility();
+		CanUseAbility = false;
+		CanFire = false;
+		
+		ArenaPawn(Pawn).StopFireAbility();
+		
+		a = FRand();
+		
+		SetTimer(UseAbIntervalMin * (1 - a) + UseAbIntervalMax * a, false, 'ReactivateAbility');
 		SetTimer(FireIntervalMin * (1 - a) + FireIntervalMax * a, false, 'ReactivateFire');
 	}
 }
@@ -419,6 +459,11 @@ function ReactivateFire()
 	CanFire = true;
 }
 
+function ReactivateAbility()
+{
+	CanUseAbility = true;
+}
+
 auto state Idle
 {
 	event Tick(float dt)
@@ -499,7 +544,7 @@ Begin:
 	GoToState(GetAttack(Focus));
 }
 
-simulated state FireWeapon
+simulated state FiringWeapon
 {
 Begin:
 
@@ -510,6 +555,21 @@ Begin:
 		FinishRotation();
 			
 	ShootAt(None);
+	
+	LatentWhatToDoNext();
+}
+
+simulated state UsingAbility
+{
+Begin:
+
+	while(!AP_Bot(Pawn).CanUseAbility())
+		Sleep(0.0);
+		
+	if (Pawn.NeedToTurn(GetFocalPoint()))
+		FinishRotation();
+			
+	UseAbility(None);
 	
 	LatentWhatToDoNext();
 }
@@ -645,5 +705,8 @@ defaultproperties
 	BotFireRange=1000
 	FireIntervalMax=2.5
 	FireIntervalMin=0.25
+	UseAbIntervalMax=15
+	UseAbIntervalMin=5
 	CanFire=true
+	CanUseAbility=true
 }

@@ -61,7 +61,7 @@ simulated function Tick(float dt)
 	
 	direction = Fall ? -1 : ((RiseAmount > 0.0) ? 1 : 0);
 	
-	RiseAmount = RiseAmount - direction * 0.6;
+	RiseAmount = RiseAmount - direction * 4.8;
 	
 	if (RiseAmount <= 0.0)
 		SetPhysics(PHYS_None);
@@ -109,16 +109,15 @@ defaultproperties
 	bNoDelete=false
 	
 	Begin Object Class=StaticMeshComponent Name=CubeObject
-		StaticMesh=StaticMesh'ArenaTestObjects.Meshes.Cube'
-		Scale3D=(X=0.45,Y=2.9,Z=1.0)
+		StaticMesh=StaticMesh'ArenaAbilities.Meshes.RockWallMesh'
 	End Object
 	StaticMeshComponent=CubeObject
 	Components.Add(CubeObject)
 	
 	CollisionComponent=CubeObject
 	
-	Rising = 20.0
-	RiseAmount = 0
+	Rising=40
+	RiseAmount = 0
 	FallTimer=8.0
 	Fall = false
 }

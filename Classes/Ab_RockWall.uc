@@ -11,6 +11,17 @@ class Ab_RockWall extends ArenaAbility;
 /* The pedestal that the ability generates. */
 var Ab_RockWallBoulder Wall;
 
+/**
+ * The range of the ability.  This is mainly used to determine how high the player can be above the
+ * ground and still summon the wall.
+ */
+var float Range;
+
+/**
+ * The height of the rock wall to use when checking bounds.
+ */
+var float Height;
+
 /* The float that determines how far in the ground the pedestal starts */
 var float StartDepth;
 
@@ -21,70 +32,40 @@ var float MinWallDistance;
 /* How much further away the wall will spawn per DeltaTime of charging up */
 var float ChargeDistance;
 
-/* How high and low the SummonWall function will check for surface before giving up */
-var float CheckHeight;
 
-simulated function StopFire(byte FireModeNum)
+
+simulated function StartFire(byte FireModeNum)
 {
-	// Don't fire twice for max charged shots
-	if (ChargedHasFired) return;
+	local vector loc;
+	
+	loc = vect(1, 0, 0) << Instigator.Rotation;
+	
+	//This checks that we hit the floor, and that we don't hit the ceiling, before trying to cast the ability.
+	if (!FastTrace(Instigator.Location + vect(0, 0, -1) * Range + loc, Instigator.Location + loc) &&
+		FastTrace(Instigator.Location + vect(0, 0, 1) * Height + loc, Instigator.Location + loc))
+ 		super.StartFire(FireModeNum);
+}
 
-	`log((ChargeTime * ChargeDistance) + MinWallDistance);
+simulated function FireAmmunition()
+{
 	SummonWall((ChargeTime * ChargeDistance) + MinWallDistance);
 	
-	super.StopFire(FireModeNum);
+	super.FireAmmunition();
 }
 
 simulated function SummonWall(float Dist)
 {
-	// So that it spawns in front of the player
-	local float rotSin;
-	local float rotCos;
+	local vector traceLoc, traceNorm, loc;
+
+	//This is a neat little operator.  The << operator takes a vector and a rotation, and returns the 
+	//rotated wector.  So no need to screw around with trig, it does it for you.
+	loc = vect(1, 0, 0) << Instigator.Rotation;
 	
-	// How far down the wall must spawn to be at the correct height
-	local vector checkDepthTop;
-	local vector checkDepthBot;
-	
-	// The current loop iteration
-	local int u;
-	// The number of loop iterations
-	local int CheckTimes;
-	
-	// 0 if looking in x direction
-	rotSin = Sin(Instigator.Rotation.Yaw / (10430.3783505));
-	// 1 if looking in y direction
-	rotCos = Cos(Instigator.Rotation.Yaw / (10430.3783505));
-	
-	//`log("Spawning rock wall");
-	//`log(Dist);
-	
-	checkDepthTop = Instigator.Location +
-			(vect(0, 1, 0) * Dist * rotSin) +
-			(vect(1, 0, 0) * Dist * rotCos) +
-			(vect(0, 0, 1) * CheckHeight);
-	checkDepthBot = checkDepthTop + vect(0, 0, -10);
-	
-	// Divide by 5, not 10, so that it keeps going down instead of stopping as user level
-	CheckTimes = (CheckHeight / 5);
-	
-	// Try casting the rock wall on top of the center cubes or somewhere below you (jump & cast): always same height!
-	for (u = 0; u < CheckTimes; ++u) {
-		if (!FastTrace(checkDepthBot, checkDepthTop)) {
-			// TODO: Fix rock wall height after spawning (we do not want + vect(0, 0, 100);)
-			Wall = Spawn(class 'Arena.Ab_RockWallBoulder', None, , checkDepthBot + (vect(0, 0, -1) * StartDepth) + vect(0, 0, 90));
-			u = CheckTimes + 9;
-		}
-		else {
-			checkDepthTop = checkDepthBot;
-			checkDepthBot += vect(0, 0, -10);
-		}
-	}
-	
-	// This idicates that the wall was never spawned, the user shall get a refund
-	if (u == CheckTimes) {
-		`log("The rock could not find a surface to spawn on.");
-		RefundAmmo(0.4);
-	}
+	loc.x *= Dist;
+	loc.y *= -Dist;
+
+	if (Trace(traceLoc, traceNorm, Instigator.Location + vect(0, 0, -1) * Range + loc, Instigator.Location + loc) != None)
+		Wall = Spawn(class 'Arena.Ab_RockWallBoulder', None, , traceLoc + (vect(0, 0, -1) * StartDepth), Instigator.Rotation);
 }
 
 defaultproperties
@@ -99,12 +80,12 @@ defaultproperties
 	IsPassive = false
 	CanCharge = true
 	
-	StartDepth = 265.0
-	MinWallDistance = 460.0
+	StartDepth=150
+	Range=120
+	Height=200
+	MinWallDistance = 120
 	ChargeDistance = 191.2
-	CheckHeight = 700.0
 
-	// Charge-up abilities
-	MinCharge = 0.0
-	MaxCharge = 3.0
+	MinCharge=0.0
+	MaxCharge=3.0
 }

@@ -44,8 +44,8 @@ simulated function bool ApplyStaminaDamage()
 simulated function Tick(float dt)
 {
 	super.Tick(dt);
-	
-	FlashMaterial.SetScalarParameterValue('FlashAmount', 1 - Counter / Duration);
+
+	FlashMaterial.SetScalarParameterValue('FlashAmount', (1 - (Counter / Duration) ** 4) * 2);
 }
 
 simulated function ActivateEffect(ArenaPawn pawn)
@@ -56,11 +56,11 @@ simulated function ActivateEffect(ArenaPawn pawn)
 	
 	pawn.Stats.AddModifier(StatsModifier);
 	
-	Affectee.Pawn.TakeDamage(GetInitialHealthDamage(), Affector, pawn.Location, vect(0, 0, 0), DamageType);
-	ArenaPawn(Affectee.Pawn).SpendEnergy(GetInitialEnergyDamage());
-	ArenaPawn(Affectee.Pawn).SpendStamina(GetInitialStaminaDamage());
+	pawn.TakeDamage(GetInitialHealthDamage(), Affector, pawn.Location, vect(0, 0, 0), DamageType);
+	pawn.SpendEnergy(GetInitialEnergyDamage());
+	pawn.SpendStamina(GetInitialStaminaDamage());
 	
-	if (LocalPlayer(Affectee.Player) != None && LocalPlayer(Affectee.Player).PlayerPostProcess != None && ScreenEffect != None)
+	if (LocalPlayer(PlayerController(Affectee).Player) != None && LocalPlayer(PlayerController(Affectee).Player).PlayerPostProcess != None && ScreenEffect != None)
 	{
 		effect = MaterialEffect(ScreenEffect.FindPostProcessEffect('FlashMat'));
 		
@@ -71,7 +71,7 @@ simulated function ActivateEffect(ArenaPawn pawn)
 			effect.Material = FlashMaterial;
 		}
 		
-		LocalPlayer(Affectee.Player).InsertPostProcessingChain(ScreenEffect, 0, false);
+		LocalPlayer(PlayerController(Affectee).Player).InsertPostProcessingChain(ScreenEffect, 0, false);
 	}
 	
 	SetTimer(Duration, false, 'EffectEnded');

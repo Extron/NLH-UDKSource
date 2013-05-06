@@ -126,6 +126,14 @@ simulated function EnableLeftHandPositioning(bool enable)
 		
 }
 
+simulated function RebootElectronics(ArenaPawn pawn)
+{
+	if (PlayerController(Controller) != None && ArenaHUD(PlayerController(Controller).MyHUD) != None)
+	{
+		ArenaHUD(PlayerController(Controller).MyHUD).RebootHUD();
+	}
+}
+
 exec function GiveAbility(string ability)
 {
 	switch (ability)
@@ -144,6 +152,10 @@ exec function GiveAbility(string ability)
 		
 	case "EMP":
 		CreateInventory(class'Arena.Ab_EMP', true);
+		break;
+		
+	case "RangedEMP":
+		CreateInventory(class'Arena.Ab_RangedEMP', true);
 		break;
 		
 	case "Pedestal":
@@ -182,6 +194,10 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_Repulsion', true);
 		break;
 		
+	case "Magnetism":
+		CreateInventory(class'Arena.Ab_Magnetism', true);
+		break;
+		
 	case "ShotsOfHaste":
 		CreateInventory(class'Arena.Ab_ShotsOfHaste', true);
 		break;
@@ -197,13 +213,14 @@ exec function GiveAbility(string ability)
 	case "ThunderRush":
 		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		break;
-		
+	
 	case "All":
 	case "all":
 		CreateInventory(class'Arena.Ab_ShockShort', true);
 		CreateInventory(class'Arena.Ab_ShockMedium', true);
 		CreateInventory(class'Arena.Ab_ShockLong', true);
 		CreateInventory(class'Arena.Ab_EMP', true);
+		CreateInventory(class'Arena.Ab_RangedEMP', true);
 		CreateInventory(class'Arena.Ab_Pedestal', true);
 		CreateInventory(class'Arena.Ab_RockWall', true);
 		CreateInventory(class'Arena.Ab_Bubble', true);
@@ -213,6 +230,7 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_ElectromagneticField', true);
 		CreateInventory(class'Arena.Ab_FlashOfLightning', true);
 		CreateInventory(class'Arena.Ab_Repulsion', true);
+		CreateInventory(class'Arena.Ab_Magnetism', true);
 		CreateInventory(class'Arena.Ab_ShotsOfHaste', true);
 		CreateInventory(class'Arena.Ab_StoneFlesh', true);
 		CreateInventory(class'Arena.Ab_TheSoundOfThunder', true);

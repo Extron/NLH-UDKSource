@@ -49,16 +49,10 @@ static function EnvironmentEffect AddEffects(EnvironmentEffect A, EnvironmentEff
 	sum = A.Spawn(class'Arena.EnvironmentEffect', None);
 	
 	sum.Duration = FMax(A.Duration - A.Counter, B.Duration - B.Counter);
-	
-	for (i = 0; i < A.StatusEffects.Length; i++)
-		sum.StatusEffects.AddItem(A.StatusEffects[i]);
-	
+
 	for (i = 0; i < A.Properties.Length; i++)
 		sum.Properties.AddItem(A.Properties[i]);
-		
-	for (i = 0; i < B.StatusEffects.Length; i++)
-		sum.StatusEffects.AddItem(B.StatusEffects[i]);
-		
+
 	for (i = 0; i < B.Properties.Length; i++)
 		sum.Properties.AddItem(B.Properties[i]);
 			
@@ -76,7 +70,7 @@ simulated function UpdateEffect(float dt)
 	local int i;
 	
 	Counter += dt;
-	
+
 	for (i = 0; i < ParentEffects.Length; i++)
 	{
 		if (ParentEffects[i].Counter < ParentEffects[i].Duration)
@@ -84,23 +78,48 @@ simulated function UpdateEffect(float dt)
 	}
 }
 
-simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player)
+simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player, bool isBase)
 {
+	local int i;
+	
 	Affectee = envobj;
 	Affector = player;
+	
+	`log("Activating effect" @ self @ isBase);
+	
+	for (i = 0; i < ParentEffects.Length; i++)
+	{
+		`log("Parent Effect" @ i @ ParentEffects[i]);
 		
-	SetTimer(Duration, false, 'EffectEnded');
+		ParentEffects[i].ActivateEffect(envobj, player, false);
+	}
+	
+	if (isBase)
+		SetTimer(Duration, false, 'EffectEnded');
+	else
+		SetTimer(Duration, false, 'DeactivateEffect');
 }
 
 function EffectEnded()
 {
+	`log("Effect ended" @ self);
+	
 	if (IEnvObj(Affectee) != None)
 		IEnvObj(Affectee).RemoveEffect();
 }
 
 simulated function DeactivateEffect()
 {
+	local int i;
+	
 	ClearTimer('EffectEnded');
+	
+	`log("Deactivating effect" @ self);
+	
+	for (i = 0; i < ParentEffects.Length; i++)
+	{
+		ParentEffects[i].DeactivateEffect();
+	}
 }
 
 /* 
@@ -114,6 +133,12 @@ simulated function AffectPawn(ArenaPawn pawn)
 	local class<StatusEffect> sClass;
 	local StatusEffect status;
 	
+	for (i = 0; i < ParentEffects.Length; i++)
+	{
+		if (ParentEffects[i].Counter < ParentEffects[i].Duration)
+			ParentEffects[i].AffectPawn(pawn);
+	}
+	
 	for (i = 0; i < StatusEffects.Length; i++)
 	{
 		sClass = StatusEffects[i];
@@ -125,4 +150,31 @@ simulated function AffectPawn(ArenaPawn pawn)
 			pawn.AddEffect(status);
 		}
 	}
+}
+
+simulated function EnvironmentEffect FindEffect(name className)
+{
+	local int i;
+	local EnvironmentEffect effect;
+	
+	if (ParentEffects.Length == 0)
+	{
+		if (IsA(className))
+			return self;
+		else 
+			return None;
+	}
+	
+	for (i = 0; i < ParentEffects.Length; i++)
+	{
+		if (ParentEffects[i].IsA(className))
+			return ParentEffects[i];
+		
+		effect = ParentEffects[i].FindEffect(className);
+		
+		if (effect != None)
+			return effect;
+	}
+	
+	return None;
 }

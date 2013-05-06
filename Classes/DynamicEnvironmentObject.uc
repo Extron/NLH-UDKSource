@@ -80,7 +80,7 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	local int i;
 	local class<EnvironmentEffect> e;
 	local EnvironmentEffect effect;
-	
+
 	if (class<AbilityDamageType>(DamageType) != None && ArenaPlayerController(EventInstigator) != None)
 	{
 		for (i = 0; i < class<AbilityDamageType>(DamageType).Default.EnvironmentEffects.Length; i++)
@@ -90,9 +90,6 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 			if (HasProperties(e.Default.Properties) && !HasEffect(e.Default.EffectName))
 			{
 				effect = spawn(e, Self);
-				effect.Affectee = self;
-				effect.Affector = ArenaPlayerController(EventInstigator);
-				
 				AddEffect(effect, ArenaPlayerController(EventInstigator));
 				
 				super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
@@ -141,6 +138,14 @@ simulated function bool HasEffect(string effectName)
 	return InStr(ActiveEffect.EffectName, effectName) > -1;
 }
 
+simulated function EnvironmentEffect FindEffect(name effectClass)
+{
+	if (ActiveEffect != None)
+		return ActiveEffect.FindEffect(effectClass);
+	else
+		return None;
+}
+
 /**
  * Adds an effect to the environment object.
  *
@@ -153,7 +158,7 @@ simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController con
 	if (ActiveEffect != None)
 	{
 		sum = class'Arena.EnvironmentEffect'.static.AddEffects(effect, ActiveEffect);
-		RemoveEffect();
+		ActiveEffect.DeactivateEffect();
 		ActiveEffect = sum;
 	}
 	else
@@ -161,7 +166,7 @@ simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController con
 		ActiveEffect = effect;
 	}
 		
-	ActiveEffect.ActivateEffect(Self, controller);
+	ActiveEffect.ActivateEffect(Self, controller, true);
 }
 
 /**

@@ -12,6 +12,10 @@
 class WeatherVolume extends PhysicsVolume
 	placeable;
 
+var Array<WeatherPlane> Planes;
+
+var Array<SnowMound> SnowMounds;
+
 /**
  * The density of the weather planes for this volume.  Note that this should not be set too high, or 
  * the game will suffer poor performance.
@@ -30,7 +34,7 @@ var() bool SpawnSnowMounds;
 
 var WeatherManager Parent;
 
-simulated function SpawnWeather(WeatherManager manager, array<WeatherPlane> planes, array<SnowMound> mounds)
+simulated function SpawnWeather(WeatherManager manager)
 {
 	local WeatherPlane p;
 	local SnowMound s;
@@ -62,7 +66,7 @@ simulated function SpawnWeather(WeatherManager manager, array<WeatherPlane> plan
 		pos.y = y;
 		
 		p = Spawn(class'Arena.WeatherPlane', manager, , pos);
-		planes.AddItem(p);
+		Planes.AddItem(p);
 	}
 	
 	if (SpawnSnowMounds)
@@ -81,7 +85,7 @@ simulated function SpawnWeather(WeatherManager manager, array<WeatherPlane> plan
 			if (Trace(traceLoc, traceNorm, pos * vect(1, 1, 0) - vect(0, 0, 100), pos) != None)
 			{
 				s = Spawn(class'Arena.SnowMound', manager, , traceLoc, rotn);
-				mounds.AddItem(s);
+				SnowMounds.AddItem(s);
 			}
 		}
 	}

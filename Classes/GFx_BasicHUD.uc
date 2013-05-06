@@ -55,6 +55,10 @@ var float ReticuleBloomXMax;
  */
 var float ReticuleBloomYMax;
 
+/**
+ * Indicates that all components of the HUD are hidden.
+ */
+var bool Hidden;
 
 function Init(optional LocalPlayer player)
 {
@@ -102,13 +106,16 @@ function UpdateHUD(float dt)
 	local float nBloom;
 	local float xR, xL, yT, yB;
 	
+	if (Hidden)
+		return;
+		
 	if (Pawn != None && Pawn.Health > 0)
 	{
 		if (Pawn.ActiveAbility != None)
 		{
 			AbilityName.SetText("Ability:" @ Pawn.ActiveAbility.AbilityName);		
 		
-			if (Pawn.ActiveAbility.CanFire)
+			if (Pawn.ActiveAbility.CanFire || Pawn.ActiveAbility.IsHolding || Pawn.ActiveAbility.IsCharging)
 			{
 				AbilityCoolDown.SetText("Ability ready to fire.");
 			}
@@ -169,6 +176,26 @@ function AngleComponent(GFxObject component)
 	aX = -(8 * AngleXMax / (NativeHeight ** 3)) * (posY - NativeHeight / 2.0) ** 3;
 	component.SetFloat("rotationY", aY);
 	component.SetFloat("rotationX", aX);
+}
+
+function HideAllComponents()
+{
+	WeaponStats.SetVisible(false);
+	AbilityStats.SetVisible(false);
+	Reticule.SetVisible(false);
+	HealthStats.SetVisible(false);
+	MainMessage.SetVisible(false);
+	Hidden = true;
+}
+
+function UnhideAllComponents()
+{
+	WeaponStats.SetVisible(true);
+	AbilityStats.SetVisible(true);
+	Reticule.SetVisible(true);
+	HealthStats.SetVisible(true);
+	MainMessage.SetVisible(true);
+	Hidden = false;
 }
 
 defaultproperties

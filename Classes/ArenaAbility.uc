@@ -83,8 +83,6 @@ var bool CanCharge;
 /* Indicates that the ability is passive, and non-equippable. */
 var bool IsPassive;
 
-/* Indicates that the ability has been fired, as to prevent charge-up abilities to be fired twice. */
-var bool ChargedHasFired;
 
 simulated function Tick(float dt)
 {
@@ -105,6 +103,9 @@ simulated function Tick(float dt)
 	}
 }
 
+/**
+ * StartFire is called when the designated firing button is pressed.
+ */
 simulated function StartFire(byte FireModeNum)
 {
 	if (IsPassive) return;
@@ -119,17 +120,18 @@ simulated function StartFire(byte FireModeNum)
 	
 	if (CanFire && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy >= EnergyCost)
 	{
+		`log("Firing weapon.");
 		PlayArmAnimation('PlayerArmsAbilityOffHand', 0.0);
 		super.StartFire(FireModeNum);
 	}
 }
 
+/**
+ * StopFire is called when the designated fire button is released.
+ */
 simulated function StopFire(byte FireModeNum)
 {
 	`log("Stop fire");
-	
-	// If ChargedHasFired, don't shoot it again.
-	if (ChargedHasFired) return;
 	
 	if (IsHolding)
 	{
@@ -138,18 +140,17 @@ simulated function StopFire(byte FireModeNum)
 	}
 	else if (IsCharging && ChargeTime >= MinCharge)
 	{
-		// Cooldown is set after ability is fired
+		//Zack, do not change this part.  This code is what makes changed abilities work.  The way it works is 
+		//that StopFire is called when the fire button is released, and if we have been charging it, the flags above 
+		//will be true.  So we must call StartFire to begin the firing pipeline.  StartFire will handle all firing
+		//logic like spending energy, setting cooldown time, etc.  But if we call super.StopFire, that will abort the
+		//StartFire, so we return without calling it.
 		`log("Charging complete");
-		ClearPendingFire(0);
-		CanFire = false;
-		SetTimer(CoolDown > 0 ? CoolDown : 0.1, false, 'ReactivateAbility');
-		// StartFire(0); caused problem, not needed I think
-		IsCharging = false;
-		ChargeTime = 0;
-		ChargedHasFired = true;
-		// ConsumeAmmo
-		ConsumeAmmo(0);
-		// (There was a return statement here, unsure why)
+        CanFire = true;
+        StartFire(0);
+        IsCharging = false;
+        ChargeTime = 0;
+        return;
 	}
 	else if (IsCharging && !CanFire)
 	{
@@ -373,7 +374,7 @@ simulated function bool ShouldRefire()
 simulated function ReactivateAbility()
 {
 	CanFire = true;
-	if (CanCharge) ChargedHasFired = false;
+	//if (CanCharge) ChargedHasFired = false;
 }
 
 simulated function float GetRemainingCoolDownTime()
@@ -390,6 +391,14 @@ simulated function ProcessHitPawn(ArenaPawn pawn)
 {
 }
 
+/**
+ * Used for AI when using ability, gets the ideal range that the ability can be used in.
+ */
+simulated function float GetIdealRange()
+{
+	return WeaponRange;
+}
+
 defaultproperties
 {
 	FiringStatesArray[0]=WeaponFiring
@@ -399,5 +408,5 @@ defaultproperties
 	bAlwaysRelevant=true
 	
 	CanFire=true
-	ChargedHasFired=false
+	//ChargedHasFired=false
 }

@@ -69,6 +69,7 @@ function SetMesh()
 	i = Rand(Meshes.Length);
 	
 	StaticMeshComponent.SetStaticMesh(Meshes[i], true);	
+	StaticMeshComponent.SetScale3D(vect(0, 0, 0));
 	
 	RandScaleComp = FRand() * 0.5 + 0.5;
 	RandScaleZComp = FRand() * 0.5 + 0.5;;

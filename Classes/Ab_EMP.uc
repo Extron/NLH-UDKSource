@@ -71,6 +71,8 @@ defaultproperties
 {
 	WeaponFireTypes(0)=EWFT_Custom
 	
+	FireSound=SoundCue'ArenaAbilities.Audio.EMPBurstSC'
+	
 	AbilityName="EMP"
 	CoolDown=5
 	EnergyCost=350
