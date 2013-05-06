@@ -24,13 +24,15 @@ var float ChargeDistance;
 /* How high and low the SummonWall function will check for surface before giving up */
 var float CheckHeight;
 
+// The actual height the wall will spawn at
+var float SpawnHeigh;
+
 simulated function StopFire(byte FireModeNum)
 {
 	// Don't fire twice for max charged shots
 	if (ChargedHasFired) return;
-
-	`log((ChargeTime * ChargeDistance) + MinWallDistance);
-	SummonWall((ChargeTime * ChargeDistance) + MinWallDistance);
+	
+	SummonWall(ChargeTime * ChargeDistance + MinWallDistance);
 	
 	super.StopFire(FireModeNum);
 }
@@ -50,40 +52,51 @@ simulated function SummonWall(float Dist)
 	// The number of loop iterations
 	local int CheckTimes;
 	
+	`log("After dist: " @ Dist);
+	
 	// 0 if looking in x direction
 	rotSin = Sin(Instigator.Rotation.Yaw / (10430.3783505));
 	// 1 if looking in y direction
 	rotCos = Cos(Instigator.Rotation.Yaw / (10430.3783505));
 	
-	//`log("Spawning rock wall");
-	//`log(Dist);
-	
 	checkDepthTop = Instigator.Location +
 			(vect(0, 1, 0) * Dist * rotSin) +
-			(vect(1, 0, 0) * Dist * rotCos) +
-			(vect(0, 0, 1) * CheckHeight);
-	checkDepthBot = checkDepthTop + vect(0, 0, -10);
+			(vect(1, 0, 0) * Dist * rotCos);
+	checkDepthBot = checkDepthTop + vect(0, 0, -10.0);
 	
-	// Divide by 5, not 10, so that it keeps going down instead of stopping as user level
-	CheckTimes = (CheckHeight / 5);
+	CheckTimes = (CheckHeight / 10);
 	
-	// Try casting the rock wall on top of the center cubes or somewhere below you (jump & cast): always same height!
+	// First attempt to spawn wall in a location below the user
 	for (u = 0; u < CheckTimes; ++u) {
 		if (!FastTrace(checkDepthBot, checkDepthTop)) {
-			// TODO: Fix rock wall height after spawning (we do not want + vect(0, 0, 100);)
-			Wall = Spawn(class 'Arena.Ab_RockWallBoulder', None, , checkDepthBot + (vect(0, 0, -1) * StartDepth) + vect(0, 0, 90));
-			u = CheckTimes + 9;
+			Wall = Spawn(class 'Arena.Ab_RockWallBoulder', None, , checkDepthBot + (vect(0, 0, -1) * StartDepth));
+			u =(CheckTimes * 2) + 1;
 		}
 		else {
 			checkDepthTop = checkDepthBot;
-			checkDepthBot += vect(0, 0, -10);
+			checkDepthBot += vect(0, 0, -10.0);
+		}
+	}
+	// Otherwise spawn on a location above the user
+	checkDepthTop = Instigator.Location +
+			(vect(0, 1, 0) * Dist * rotSin) +
+			(vect(1, 0, 0) * Dist * rotCos);
+	checkDepthBot = checkDepthTop + vect(0, 0, 10.0);
+	for (u = u; u < (CheckTimes + CheckTimes); ++u) {
+		if (!FastTrace(checkDepthBot, checkDepthTop)) {
+			Wall = Spawn(class 'Arena.Ab_RockWallBoulder', None, , checkDepthBot + (vect(0, 0, -1) * StartDepth));
+			u = (CheckTimes * 2) + 1;
+		}
+		else {
+			checkDepthTop = checkDepthBot;
+			checkDepthBot += vect(0, 0, 10.0);
 		}
 	}
 	
 	// This idicates that the wall was never spawned, the user shall get a refund
-	if (u == CheckTimes) {
+	if (u == CheckTimes * 2) {
 		`log("The rock could not find a surface to spawn on.");
-		RefundAmmo(0.4);
+		RefundAmmo(0.01);
 	}
 }
 
@@ -101,8 +114,8 @@ defaultproperties
 	
 	StartDepth = 265.0
 	MinWallDistance = 460.0
-	ChargeDistance = 191.2
-	CheckHeight = 700.0
+	ChargeDistance = 300.0
+	CheckHeight = 350.0
 
 	// Charge-up abilities
 	MinCharge = 0.0

@@ -53,5 +53,5 @@ defaultproperties
 	IsPassive=false
 	CanCharge=false
 	StartDepth = 265.0
-	Range=150
+	Range=15000
 }

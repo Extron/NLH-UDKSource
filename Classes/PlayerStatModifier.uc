@@ -6,7 +6,8 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-/* Manages player stat modification, and can be attached to any object to allow that object to affect players' stats. */
+/* Manages player stat modification, and can be attached to any object to allow
+	that object to affect players' stats. */
 class PlayerStatModifier extends Object
 	dependson(PlayerStats);
 
@@ -20,10 +21,12 @@ var Array<class<DamageType> > DamageTypeMap;
 /* A list of factors that amplify the player's damage output per damage type. */
 var Array<float> TypeDamageOutputMods;
 
-/* A list of factors that modify the damage taken by the player per damage type. */
+/* A list of factors that modify the damage taken by the player per damage
+	type. */
 var Array<float> TypeDamageInputMods;
 
-/* A list of factors that modify the damage taken by the player per body part (0 = head, 1 = torso, 2 = abdomen, 3 = arms, 4 = legs). */
+/* A list of factors that modify the damage taken by the player per body part
+	(0 = head, 1 = torso, 2 = abdomen, 3 = arms, 4 = legs). */
 var float DamageInputMods[5];
 
 /** A list of all mods, indexed by enum, for the player stats. */

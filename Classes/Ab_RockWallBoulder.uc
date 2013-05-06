@@ -20,6 +20,8 @@ var bool Fall;
 /* This is the variable the stores the time before the pedestal disappears */
 var float FallTimer;
 
+// Determines the rate of falling/rising
+var float MoveAmount;
 
 simulated function Initialize()
 {
@@ -37,14 +39,13 @@ simulated function PostBeginPlay()
 {
 	`log("Rock wall spawned.");	
 	super.PostBeginPlay();
-
-	SetRotation(Instigator.Rotation);
 	
 	if (ArenaPawn(Instigator).Controller != None) 
 	{
 		SetPhysics(PHYS_RigidBody);
 		CollisionComponent.SetRBPosition(Location);
 		CollisionComponent.SetRBCollidesWithChannel(RBCC_Default, false);
+		CollisionComponent.SetRBRotation(Instigator.Rotation);
 	}
 	
 	RiseAmount = Rising;
@@ -52,7 +53,7 @@ simulated function PostBeginPlay()
 	SetTimer(FallTimer, false, 'FallDown');
 }
 
-// Have the pedestal Fall until it reaches its correct height
+// Have the rock wall rise/fall until it reaches its correct height
 simulated function Tick(float dt)
 {
 	local int direction;
@@ -61,13 +62,13 @@ simulated function Tick(float dt)
 	
 	direction = Fall ? -1 : ((RiseAmount > 0.0) ? 1 : 0);
 	
-	RiseAmount = RiseAmount - direction * 0.6;
+	RiseAmount = RiseAmount - direction * MoveAmount;
 	
 	if (RiseAmount <= 0.0)
 		SetPhysics(PHYS_None);
 
 	CollisionComponent.SetRBPosition(Location + (vect(0, 0, 1) * RiseAmount * direction));
-
+	
 	if (Fall && RiseAmount > Rising)
 		self.Destroy();
 }
@@ -76,15 +77,13 @@ simulated function Tick(float dt)
 simulated function Bump(Actor Other, PrimitiveComponent OtherComp, Vector HitNormal)
 {
 	// Enemies take damage if they are hit while the wall is rising
-	//if (RiseAmount > 0.0) {
+	if (RiseAmount > 0.0) {
 		// To do: fix so that the enemy gets knocked up (and reduce damage) & FIX
-		//Other.TakeDamage(2000.0, Instigator.Controller, HitNormal, Velocity, class'DamageType');
-		// class'AbilityDamageType' ???
-	//}
+		Other.TakeDamage(2000.0, Instigator.Controller, HitNormal, Velocity, class'DamageType');
+	}
 	
 	super.Bump(Other, OtherComp, HitNormal);
-	//`log("THE ROCK WALL HAS BEEN BUMPED");
-	//`log(Other);
+	//`log("THE ROCK WALL HAS BEEN BUMPED: " @ Other);
 }
 
 
@@ -117,8 +116,9 @@ defaultproperties
 	
 	CollisionComponent=CubeObject
 	
-	Rising = 20.0
+	Rising = 22.0
 	RiseAmount = 0
-	FallTimer=8.0
+	FallTimer= 8.0
 	Fall = false
+	MoveAmount = 0.6
 }

@@ -22,14 +22,14 @@ var PlayerStatModifier playerStatMod;
 
 simulated function CustomFire()
 {
+	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_Fire', DamageReduction);
+	// TODO: Does not extend to extended classes?
+	playerStatMod.SetTypeDamageInputMod(class 'DamageType', DamageReduction);
+	// Test...
+	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_LightBeam', DamageReduction);
+
 	if (ArenaPawn(Instigator) != None)
 	{
-		playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_Fire', DamageReduction);
-		// TODO: Does not extend to extended classes?
-		playerStatMod.SetTypeDamageInputMod(class 'DamageType', DamageReduction);
-		// Test...
-		// playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_LightBeam', DamageReduction);
-		
 		ArenaPawn(Instigator).Stats.AddModifier(PlayerStatMod);
 	}
 	
@@ -57,10 +57,6 @@ defaultproperties
 	CanHold = false
 	IsPassive = false
 	CanCharge = false
-	
-	Begin Object Class=PlayerStatModifier Name=NewMod
-	End Object
-	playerStatMod=NewMod
 	
 	DamageReduction = 0.75
 	// I belive they are multiplied not added; .5 = .75 * .6666666666, needs to be tested

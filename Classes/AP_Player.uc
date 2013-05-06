@@ -58,6 +58,11 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 	}
 }
 
+/*
+simulated event TakeDamage(int Damage, Controller InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser) {
+
+} */
+
 function InitInventory()
 {
 	local ArenaWeapon newWeapon;
@@ -77,7 +82,9 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		CreateInventory(class'Arena.Ab_ShockShort', true);
+		CreateInventory(class'Arena.Ab_RockWall', true);
+		CreateInventory(class'Arena.Ab_pedesTAL', true);
+		CreateInventory(class'Arena.Ab_stoneflesh', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
@@ -176,6 +183,10 @@ exec function GiveAbility(string ability)
 		
 	case "FlashOfLightning":
 		CreateInventory(class'Arena.Ab_FlashOfLightning', true);
+		break;
+		
+	case "Osmosis":
+		CreateInventory(class'Arena.Ab_Osmosis', true);
 		break;
 		
 	case "Repulsion":

@@ -56,6 +56,8 @@ event DrawHUD()
 {
 	super.DrawHUD();
 	
+	Canvas.DrawText("Health:" @ PlayerOwner.Pawn.Health);
+	
 	/*
 	if (ArenaPawn(PlayerOwner.Pawn) != None)
 	{

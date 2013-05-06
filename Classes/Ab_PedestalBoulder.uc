@@ -18,6 +18,9 @@ var bool Fall;
 /* This is the variable the stores the time before the pedestal disappears */
 var float FallTimer;
 
+// Determines the rate of falling/rising
+var float MoveAmount;
+
 
 simulated function Initialize()
 {
@@ -41,7 +44,7 @@ simulated function PostBeginPlay()
 	// The below lines makes the pedestal's rotation random
 	// In the unreal engine, 1 circle = 65536
     newRot.Yaw += Rand(65536);
-    SetRotation(newRot);		
+	CollisionComponent.SetRBRotation(newRot);
 
 	if (ArenaPawn(Instigator).Controller != None) 
 	{
@@ -64,7 +67,7 @@ simulated function Tick(float dt)
 	
 	direction = Fall ? -1 : ((RiseAmount > 0.0) ? 1 : 0);
 	
-	RiseAmount = RiseAmount - direction * 0.6;
+	RiseAmount = RiseAmount - direction * MoveAmount;
 	
 	if (RiseAmount <= 0.0)
 		SetPhysics(PHYS_None);
@@ -110,8 +113,9 @@ defaultproperties
 	
 	CollisionComponent=CubeObject
 	
-	Rising = 19.9
+	Rising = 22.0
 	RiseAmount = 0
-	FallTimer=8.0
+	FallTimer= 8.0
 	Fall = false
+	MoveAmount = 0.6
 }
