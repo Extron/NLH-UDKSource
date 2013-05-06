@@ -215,9 +215,7 @@ function RefundAmmo(float RefreshRatio)
 	{
 		ArenaPawn(Instigator).AddEnergy(EnergyCost);
 
-		SetTimer(0.0, false, 'ReactivateAbility');
-		// Is not working, I presume that this function is being undone elsewhere after it is called
-		SetTimer(CoolDown > 0 ? (CoolDown * RefreshRatio) : 0.1, false, 'ReactivateAbility');
+		SetTimer(CoolDown * RefreshRatio, false, 'ReactivateAbility');
 	}
 }
 

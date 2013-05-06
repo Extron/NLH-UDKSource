@@ -33,6 +33,7 @@ var float MinWallDistance;
 var float ChargeDistance;
 
 
+<<<<<<< HEAD
 
 simulated function StartFire(byte FireModeNum)
 {

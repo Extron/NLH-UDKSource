@@ -52,6 +52,7 @@ defaultproperties
 	CanHold=false
 	IsPassive=false
 	CanCharge=false
+	
 	StartDepth=400
 	Range=150
 }
