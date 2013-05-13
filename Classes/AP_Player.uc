@@ -47,14 +47,22 @@ simulated event TickSpecial(float dt)
 
 simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 {
-	Super.PostInitAnimTree(SkelComp);
+	local AN_BlendBySprint node;
+
+	super.PostInitAnimTree(SkelComp);
 
 	if (SkelComp == Arms)
 	{
 		RecoilControl = GameSkelCtrl_Recoil(Arms.FindSkelControl(RecoilControlName));
 		LeftArmControl = SkelControlLimb(Arms.FindSkelControl(LeftArmControlName));
+		LeftArmControl.ControlStrength = 0.0;
 		
-		EnableLeftHandPositioning(true);
+		EnableLeftHandPositioning(false);
+		
+		foreach Arms.AllAnimNodes(class'AN_BlendBySprint', node) 
+		{
+			SprintAnimNodes.AddItem(node);
+		}
 	}
 }
 
@@ -82,9 +90,7 @@ function InitInventory()
 			InvManager.NextWeapon();
 		}
 		
-		CreateInventory(class'Arena.Ab_RockWall', true);
-		CreateInventory(class'Arena.Ab_pedesTAL', true);
-		CreateInventory(class'Arena.Ab_stoneflesh', true);
+		CreateInventory(class'Arena.Ab_ShockShort', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
@@ -246,6 +252,7 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_StoneFlesh', true);
 		CreateInventory(class'Arena.Ab_TheSoundOfThunder', true);
 		CreateInventory(class'Arena.Ab_ThunderRush', true);
+		CreateInventory(class'Arena.Ab_Osmosis', true);
 		break;
 	}
 }

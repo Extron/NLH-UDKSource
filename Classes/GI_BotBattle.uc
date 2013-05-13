@@ -75,4 +75,24 @@ simulated function SpawnWave()
 	
 	if (WaveManager != None && !WaveManager.AllWavesComplete())
 		WaveManager.SpawnNextWave();
+		
+	if (GRI_BotBattle(GameReplicationInfo) != None)
+	{
+		GRI_BotBattle(GameReplicationInfo).CurrentWave++;
+	}
+}
+
+defaultproperties
+{
+	PlayerControllerClass=class'Arena.ArenaPlayerController'
+	DefaultPawnClass=class'Arena.AP_Player'
+	HUDType=class'Arena.HUD_BotBattle'
+	GameReplicationInfoClass=class'Arena.GRI_BotBattle'
+	PlayerReplicationInfoClass=class'Arena.ArenaPRI'
+	//bDelayedStart=true
+	
+	RespawnTime=3
+	AllowFastRespawn=false
+	CanRespawn=true
+	ForceRespawn=true
 }

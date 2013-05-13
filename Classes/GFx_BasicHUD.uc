@@ -8,11 +8,6 @@
 
 class GFx_BasicHUD extends GFxMoviePlayer;
 
-/**
- * The pawn that owns the HUD.
- */
-var ArenaPawn Pawn;
-
 var GFxObject WeaponStats, AbilityStats;
 var GFxObject WeaponName, WeaponAmmo;
 var GFxObject AbilityName, AbilityCoolDown;
@@ -61,13 +56,10 @@ var float ReticuleBloomYMax;
 var bool Hidden;
 
 function Init(optional LocalPlayer player)
-{
+{	
 	super.Init(player);
 	
 	//GRI = UTGameReplicationInfo(GetPC().WorldInfo.GRI);
-	
-	if (ArenaPawn(GetPC().Pawn) != None)
-		Pawn = ArenaPawn(GetPC().Pawn);
 		
 	Start();
     Advance(0);
@@ -103,35 +95,39 @@ function Init(optional LocalPlayer player)
 
 function UpdateHUD(float dt)
 {
+	local ArenaPawn pawn;
 	local float nBloom;
 	local float xR, xL, yT, yB;
 	
 	if (Hidden)
 		return;
 		
-	if (Pawn != None && Pawn.Health > 0)
-	{
-		if (Pawn.ActiveAbility != None)
-		{
-			AbilityName.SetText("Ability:" @ Pawn.ActiveAbility.AbilityName);		
+	if (ArenaPawn(GetPC().Pawn) != None)
+		pawn = ArenaPawn(GetPC().Pawn);
 		
-			if (Pawn.ActiveAbility.CanFire || Pawn.ActiveAbility.IsHolding || Pawn.ActiveAbility.IsCharging)
+	if (pawn != None && pawn.Health > 0)
+	{
+		if (pawn.ActiveAbility != None)
+		{
+			AbilityName.SetText("Ability:" @ pawn.ActiveAbility.AbilityName);		
+		
+			if (pawn.ActiveAbility.CanFire || pawn.ActiveAbility.IsHolding || pawn.ActiveAbility.IsCharging)
 			{
 				AbilityCoolDown.SetText("Ability ready to fire.");
 			}
 			else
 			{
-				AbilityCoolDown.SetText("Cooling Down..." @ Pawn.ActiveAbility.GetRemainingCoolDownTime());
+				AbilityCoolDown.SetText("Cooling Down..." @ pawn.ActiveAbility.GetRemainingCoolDownTime());
 			}
 		
 		}
 		
-		if (ArenaWeaponBase(Pawn.Weapon) != None)
+		if (ArenaWeaponBase(pawn.Weapon) != None)
 		{
-			WeaponName.SetText("Weapon:" @ ArenaWeaponBase(Pawn.Weapon).WeaponName);
-			WeaponAmmo.SetText("Clip:" @ ArenaWeaponBase(Pawn.Weapon).Clip);
+			WeaponName.SetText("Weapon:" @ ArenaWeaponBase(pawn.Weapon).WeaponName);
+			WeaponAmmo.SetText("Clip:" @ ArenaWeaponBase(pawn.Weapon).Clip);
 			
-			nBloom = ArenaWeaponBase(Pawn.Weapon).Bloom / ArenaWeaponBase(Pawn.Weapon).Stats.Constants.GetStatMax("Bloom");
+			nBloom = ArenaWeaponBase(pawn.Weapon).Bloom / ArenaWeaponBase(pawn.Weapon).Stats.Constants.GetStatMax("Bloom");
 			xL = -nBloom * ReticuleBloomXMax * NativeWidth * 0.5;
 			xR = nBloom * (ReticuleBloomXMax * NativeWidth * 0.5);
 			yT = -nBloom * ReticuleBloomYMax * NativeHeight * 0.5;
@@ -144,17 +140,17 @@ function UpdateHUD(float dt)
 			
 		}
 		
-		if (Pawn.Health < Pawn.HealthMax / 2.0)
+		if (pawn.Health < pawn.HealthMax / 2.0)
 			CriticalHealthBackground.SetVisible(true);
 		else
 			CriticalHealthBackground.SetVisible(false);
 			
-		if (Pawn.NearestInterObject != None)
-			MainMessage.SetText(Pawn.NearestInterObject.GetMessage());
+		if (pawn.NearestInterObject != None)
+			MainMessage.SetText(pawn.NearestInterObject.GetMessage());
 		else
 			MainMessage.SetText("");
 
-		Reticule.SetVisible(!Pawn.ADS && !ArenaPlayerController(Pawn.Owner).Aiming);
+		Reticule.SetVisible(!pawn.ADS && !ArenaPlayerController(pawn.Owner).Aiming);
 		/*
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.8);
 

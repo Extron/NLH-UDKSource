@@ -6,7 +6,8 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 ******************************************************************************/
 
-class Ab_Osmosis extends ArenaAbility;
+class Ab_Osmosis extends ArenaAbility
+	dependson(PlayerStatModifier);
 
 /* The PlayerStatModifier */
 var PlayerStatModifier StatMod;
@@ -52,8 +53,8 @@ defaultproperties
 	AbilityName="Osmosis"
 	
 	Begin Object Class=PlayerStatModifier Name=NewMod
-		StatMod.ValueMods[PSVEnergyRegenRate]=1.5
-		StatMod.ValueMods[PSVStaminaRegenRate]=1.5
+		ValueMods[PSVEnergyRegenRate]=1.5
+		ValueMods[PSVStaminaRegenRate]=1.5
 	End Object
 	
 	HasModifier=false

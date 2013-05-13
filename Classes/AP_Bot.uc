@@ -12,6 +12,50 @@
 class AP_Bot extends ArenaPawn
 	abstract;
 	
+var ParticleSystem DeathExplosionTemplate;
+
+var ParticleSystemComponent DeathExplosion;
+
+var class<UDKExplosionLight> DELClass;
+
+var UDKExplosionLight DeathExplosionLight;
+
+var bool MeshInvisibleOnDeath;
+
+function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
+{
+	if (MeshInvisibleOnDeath)
+		Mesh.SetHidden(true);
+		
+	EmitDeathExplosion();
+	
+	return super.Died(Killer, DamageType, HitLocation);
+}
+
+function EmitDeathExplosion()
+{
+	if (DeathExplosionTemplate != None)
+	{
+		DeathExplosion = new class'ParticleSystemComponent';
+		DeathExplosion.bAutoActivate = false;
+		
+		DeathExplosion.SetTemplate(DeathExplosionTemplate);
+		DeathExplosion.ActivateSystem();
+		
+		AttachComponent(DeathExplosion);
+	}
+	
+	if (DeathExplosionLight != None)
+	{
+		DeathExplosionLight.ResetLight();
+	}
+	else if (DELClass != None)
+	{
+		DeathExplosionLight = new(Outer) DELClass;
+		AttachComponent(DeathExplosionLight);
+	}
+}
+
 /**
  * Allows the pawn to govern when to shoot.
  */

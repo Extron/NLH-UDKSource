@@ -13,6 +13,11 @@ class ArenaPawn extends UDKPawn;
 var Array<StatusEffect> ActiveEffects;
 
 /**
+ * This stores any sprint blending animation nodes used by the pawn's mesh.
+ */
+var array<AN_BlendBySprint> SprintAnimNodes;
+
+/**
  * The current active effect of the player, which is the added effect of all effects on the user.
  */
 var StatusEffect ActiveEffect;
@@ -154,6 +159,20 @@ simulated function PostBeginPlay()
 	Mesh.AnimSets[0] = DefaultAnimSet;
 }
 
+simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
+{
+	local AN_BlendBySprint node;
+
+	super.PostInitAnimTree(SkelComp);
+	
+	if (SkelComp == Mesh)
+	{
+		foreach Mesh.AllAnimNodes(class'AN_BlendBySprint', node) 
+		{
+			SprintAnimNodes.AddItem(node);
+		}
+	}
+}
 
 /** 
  * Ticks the pawn.
@@ -461,7 +480,7 @@ simulated function rotator GetRecoil()
  */
 simulated function StartFireAbility()
 {
-	if (ActiveAbility != None)
+	if (ActiveAbility != None && !Sprinting)
 	{
 		ActiveAbility.StartFire(0);
 	}
@@ -475,12 +494,26 @@ simulated function StopFireAbility()
 	}
 }
 
+simulated function StartFire(byte mode)
+{
+	if (!Sprinting)
+		super.StartFire(mode);
+}
+
 simulated function StartSprint()
 {
+	local int i;
+	
 	if (!Sprinting && Stamina > 0 && VSize(Velocity) > 0)
 	{
 		Sprinting = true;
 		
+		for (i = 0; i < SprintAnimNodes.Length; i++)
+			SprintAnimNodes[i].SetSprint(Sprinting);
+			
+		if (ADS)
+			ArenaPlayerController(Owner).ADS();
+			
 		ServerStartSprint();
 		
 		GoToState('Running');
@@ -489,8 +522,13 @@ simulated function StartSprint()
 
 simulated function StopSprint()
 {
+	local int i;
+	
 	Sprinting = false;
 	
+	for (i = 0; i < SprintAnimNodes.Length; i++)
+			SprintAnimNodes[i].SetSprint(Sprinting);
+			
 	ServerStopSprinting();
 	
 	GoToState('Walking');

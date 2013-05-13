@@ -310,6 +310,8 @@ state Dead
 	
 	event Timer()
 	{
+		`log("Respawn Timer called." @ bFrozen);
+		
 		if (!bFrozen)
 			return;
 
@@ -317,21 +319,43 @@ state Dead
 		bPressedJump = false;
 		
 		if (ArenaGRI(WorldInfo.GRI).ForceRespawn)
-				ServerReStartPlayer();
+		{
+			`log("Forcing respawn.");
+			ServerReStartPlayer();
+		}
 	}
 	
 	exec function StartFire( optional byte FireModeNum )
 	{
-		if (bFrozen)
+		if (ArenaGRI(WorldInfo.GRI).AllowFastRespawn || !bFrozen)
+			ServerReStartPlayer();
+	}
+	
+	function PlayerMove(float DeltaTime)
+	{
+		local vector X,Y,Z;
+		local rotator DeltaRot, ViewRotation;
+
+		if ( !bFrozen )
 		{
-			if (!IsTimerActive() || GetTimerCount() > ArenaGRI(WorldInfo.GRI).RespawnTime)
-				bFrozen = false;
-				
-			return;
+			if ( bPressedJump )
+			{
+				StartFire( 0 );
+				bPressedJump = false;
+			}
+			GetAxes(Rotation,X,Y,Z);
+			// Update view rotation.
+			ViewRotation = Rotation;
+			// Calculate Delta to be applied on ViewRotation
+			DeltaRot.Yaw	= PlayerInput.aTurn;
+			DeltaRot.Pitch	= PlayerInput.aLookUp;
+			ProcessViewRotation( DeltaTime, ViewRotation, DeltaRot );
+			SetRotation(ViewRotation);
+			if ( Role < ROLE_Authority ) // then save this move and replicate it
+					ReplicateMove(DeltaTime, vect(0,0,0), DCLICK_None, rot(0,0,0));
 		}
 
-		if (ArenaGRI(WorldInfo.GRI).AllowFastRespawn)
-			ServerReStartPlayer();
+		ViewShake(DeltaTime);
 	}
 }
 

@@ -51,7 +51,6 @@ simulated function PostBeginPlay()
 			break;
 		}
 	}
-	//WeatherMgr = Spawn(class'Arena.WeatherManager', self);
 }
 
 defaultproperties

@@ -118,17 +118,6 @@ simulated function Recover()
 	SetMovementPhysics();
 }
 
-function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
-{
-	local bool ret;
-	
-	ret = super.Died(Killer, DamageType, HitLocation);
-	
-	`log("Pawn is dying.");
-	Ragdoll();
-	return ret;
-}
-
 function SetMovementPhysics()
 {
 	if (Physics != PHYS_Flying)
@@ -137,14 +126,17 @@ function SetMovementPhysics()
 
 function SetDyingPhysics()
 {
-	if (Physics != PHYS_RigidBody)
-		SetPhysics(PHYS_RigidBody);
+	`log("Setting orb death physics");
+	
+	//if (Physics != PHYS_RigidBody)
+		//SetPhysics(PHYS_RigidBody);
+		
+	if (Physics != PHYS_None)
+		SetPhysics(PHYS_None);
 }
 
 simulated function RebootElectronics(ArenaPawn pawn)
 {
-	`log("Rebooting");
-	
 	if (ArenaBot(Owner) != None)
 		ArenaBot(Owner).Stun(5);
 }
@@ -431,6 +423,9 @@ defaultproperties
 		Values[PSVHealthRegenDelay]=5
 	End Object
 	
+	DeathExplosionTemplate=ParticleSystem'AC_Orb.Particles.DeathExplosionPS'
+	DELClass=class'Arena.L_OrbDeathExplosion'
+	
 	OrbitTimeMax=1.5
 	OrbitTimeMin=0.25
 	OrbitSpeedMin=100
@@ -447,6 +442,7 @@ defaultproperties
 	
 	bCanStrafe=true
 	bCanFly=true
+	MeshInvisibleOnDeath=true
 	
 	//AirSpeed=200
 	//MovementSpeedModifier = 0.5;

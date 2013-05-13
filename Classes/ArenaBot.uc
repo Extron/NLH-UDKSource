@@ -444,11 +444,14 @@ function int BotsNear(float radius)
 {
 	local ArenaPawn b;
 	local int count;
-	
+
 	foreach WorldInfo.AllPawns(class'ArenaPawn', b, Pawn.Location, radius)
 	{
-		if (Pawn.GetTeam().TeamIndex == b.GetTeam().TeamIndex)
-			count++;
+		if (b.Health > 0)
+		{
+			if (Pawn.GetTeam().TeamIndex == b.GetTeam().TeamIndex)
+				count++;
+		}
 	}
 	
 	return count;

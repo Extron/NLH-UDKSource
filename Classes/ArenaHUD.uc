@@ -14,6 +14,11 @@ class ArenaHUD extends UDKHUD;
 var GFx_BasicHUD HUDMovie;
 
 /**
+ * A reference to the movie to use for the pause screen.
+ */
+var GFx_PauseMenu PauseMenu;
+
+/**
  * The class of the HUD to create.
  */
 var class<GFx_BasicHUD> HUDClass;
@@ -41,6 +46,58 @@ simulated function PostBeginPlay()
 	HUDMovie = new HUDClass;
 	HUDMovie.SetTimingMode(TM_Real);
 	HUDMovie.Init(class'Engine'.static.GetEngine().GamePlayers[HUDMovie.LocalPlayerOwnerIndex]);
+}
+
+function SetVisible(bool visible)
+{
+	if (!visible)
+		HUDMovie.HideAllComponents();
+	else
+		HUDMovie.UnhideAllComponents();
+}
+
+function CloseOtherMenus()
+{
+}
+
+exec function ShowMenu()
+{
+	`log("ShowMenu called.");
+	TogglePauseMenu();
+}
+
+function TogglePauseMenu()
+{
+    if (PauseMenu != none && PauseMenu.bMovieIsOpen)
+	{
+		PauseMenu.PlayCloseAnimation();
+	}
+	else
+    {
+		CloseOtherMenus();
+
+        PlayerOwner.SetPause(True);
+
+        if (PauseMenu == None)
+        {
+	        PauseMenu = new class'GFx_PauseMenu';
+            PauseMenu.MovieInfo = SwfMovie'ArenaUI.PauseMenu';
+            PauseMenu.bEnableGammaCorrection = FALSE;
+			PauseMenu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerOwner.Player));
+            PauseMenu.SetTimingMode(TM_Real);
+        }
+
+		SetVisible(false);
+        PauseMenu.Start();
+        PauseMenu.PlayOpenAnimation();
+    }
+}
+
+function ClosePauseMenu()
+{
+	PlayerOwner.SetPause(False);
+	PauseMenu.Close(false);
+	SetVisible(true);
 }
 
 function RebootHUD()
