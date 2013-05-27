@@ -11,3 +11,22 @@
  * menus.
  */
 class AP_Specter extends ArenaPawn;
+
+/**
+ * The current menu that the player is viewing.
+ */
+var GFx_Menu CurrentMenu;
+
+
+simulated function Tick(float dt)
+{
+	super.Tick(dt);
+	
+	if (CurrentMenu != None)
+		CurrentMenu.Update(dt);
+}
+
+simulated function SetMenu(GFx_Menu menu)
+{
+	CurrentMenu = menu;
+}

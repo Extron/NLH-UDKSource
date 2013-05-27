@@ -143,7 +143,7 @@ simulated function AffectPawn(ArenaPawn pawn)
 	{
 		sClass = StatusEffects[i];
 		
-		if (!pawn.HasStatus(Affector, sClass.Default.EffectName, status))
+		if (!pawn.HasStatus(sClass.Default.EffectName))
 		{
 			status = spawn(sClass, Self);
 			status.Affector = Affector;

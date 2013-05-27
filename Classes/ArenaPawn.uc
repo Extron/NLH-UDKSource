@@ -58,6 +58,16 @@ var InteractiveObject NearestInterObject;
 var PawnSensor Sensor;
 
 /**
+ * The template PS for blood splatters, which are played when damage is taken.
+ */
+var ParticleSystem BloodSplatterTemplate;
+
+/**
+ * The PS for blood splatters.
+ */
+var ParticleSystemComponent BloodSplatter;
+
+/**
  * The sensor class that the player is using.
  */
 var class<PawnSensor> SensorClass;
@@ -299,10 +309,33 @@ function bool DoJump(bool bUpdating)
 
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
+	local int i;
+	local class<StatusEffect> seClass;
+	local StatusEffect effect;
+	
 	if (!Invincible)
 	{
-		super.TakeDamage(Stats.GetDamageTaken(DamageAmount, DamageType), EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
-		//`log("Damage Type" @ DamageType @ "Amount" @ DamageAmount);
+		if (class<AbilityDamageType>(DamageType) != None && (ArenaPlayerController(EventInstigator) != None || ArenaBot(EventInstigator) != None))
+		{
+			`log("You were hit by an ability.");
+			
+			for (i = 0; i < class<AbilityDamageType>(DamageType).Default.StatusEffects.Length; i++)
+			{
+				seClass = class<AbilityDamageType>(DamageType).Default.StatusEffects[i];
+				
+				if (/*HasProperties(e.Default.Properties) &&*/ !HasStatus(seClass.Default.EffectName))
+				{
+					effect = spawn(seClass, Self);
+					AddEffect(effect);
+					
+					super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+				}
+			}
+		}
+		else
+		{
+			super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType,  HitInfo, DamageCauser);
+		}
 	}
 }
 
@@ -310,6 +343,7 @@ simulated function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, in
 {
 	super.NotifyTakeHit(InstigatedBy, HitLocation, Damage, DamageType, Momentum, DamageCauser);
 	
+	EmitBloodSplatter();
 	CanRegenHealth = false;
 	SetTimer(Stats.GetRegenHealthDelay(), false, 'AllowRegenHealth');
 }
@@ -411,8 +445,6 @@ simulated function RagDoll()
 
 simulated function Recover()
 {
-	`log("Recovering");
-	
 	RestorePreRagdollCollisionComponent();
 	Mesh.PhysicsWeight = 0.0f;
 	Mesh.PhysicsAssetInstance.SetAllBodiesFixed(TRUE);
@@ -483,6 +515,9 @@ simulated function StartFireAbility()
 	if (ActiveAbility != None && !Sprinting)
 	{
 		ActiveAbility.StartFire(0);
+		
+		if (ADS)
+			ArenaPlayerController(Owner).ADS();
 	}
 }
 
@@ -583,6 +618,14 @@ simulated function RebootElectronics(ArenaPawn pawn)
 	//TODO: Reboot electronics of the player here.
 }
 
+/**
+ * Determines if the pawn is wearing or holding enough metal to be contductive.
+ */
+simulated function bool IsConductive()
+{
+	return false;
+}
+
 simulated function EnterWeatherVolume(WeatherManager weather)
 {
 	`log("Entering weather volume.");
@@ -595,6 +638,20 @@ simulated function ExitWeatherVolume()
 	`log("Exiting weather volume.");
 	ArenaPlayerController(Owner).PClass.DeactivateWeatherMod();
 	InWeatherVolume = false;
+}
+
+function EmitBloodSplatter()
+{
+	if (BloodSplatterTemplate != None)
+	{
+		BloodSplatter = new class'ParticleSystemComponent';
+		BloodSplatter.bAutoActivate = false;
+		
+		BloodSplatter.SetTemplate(BloodSplatterTemplate);
+		BloodSplatter.ActivateSystem();
+		
+		AttachComponent(BloodSplatter);
+	}
 }
 
 simulated function PositionArms()
@@ -687,8 +744,6 @@ simulated function AddEnergy(float EnergyAmount)
 	
 	cost = Stats.GetEnergyCost(EnergyAmount);
 	
-	`log("Energy Added");
-	
 	if (cost > 0)
 	{
 		Energy += cost;
@@ -772,24 +827,12 @@ simulated function AllowRegenStamina()
 	CanRegenStamina = true;
 }
 
-function bool HasStatus(ArenaPlayerController player, string effectName, out StatusEffect effect)
+function bool HasStatus(string effectName)
 {
-	local int i;
-	
-	if (ActiveEffects.Length > 0)
-	{
-		for (i = 0; i < ActiveEffects.Length; i++)
-		{
-			if (ActiveEffects[i].EffectName == effectName && player == ActiveEffects[i].Affector)
-			{
-				effect = ActiveEffects[i];
-				return true;
-			}
-		}
-	}
-	
-	effect = None;
-	return false;
+	if (ActiveEffect == None)
+		return false;
+		
+	return InStr(ActiveEffect.EffectName, effectName) > -1;
 }
 
 /**
@@ -808,9 +851,18 @@ function GetWeaponSourceOffset(out vector l, out rotator r)
 	r = rot(0, 0 , 0);
 }
 
+function AttachToAbilitySource(ActorComponent component)
+{
+}
+
 function name GetWeaponHandSocket()
 {
 	return 'RightHandSocket';
+}
+
+function name GetAbilityHandSocket()
+{
+	return 'AbilitySourceSocket';
 }
 
 exec function KillMe()

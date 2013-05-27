@@ -8,8 +8,55 @@
 
 class ArenaAbility extends UDKWeapon;
 
-/** The firing animation of the ability. */
-var array<name> FireAnims;
+/**
+ * The animation to play before the ability is fired.
+ */
+var name FireStartAnim;
+
+/**
+ * The animation to play before the ability is fired.
+ */
+var name FireEndAnim;
+
+/**
+ * The animation to play when starting to charge an ability.
+ */
+var name ChargeStartAnim;
+
+/**
+ * The anim te play while the ability is charging.
+ */
+var name ChargingAnim;
+
+/**
+ * The anim to play when firing a charged ability.
+ */
+var name ChargeFireAnim;
+
+/**
+ * The animation to play after a charged ability is fired.
+ */
+var name ChargeEndAnim;
+
+/**
+ * The animation to play if a charged ability is aborted.
+ */
+var name ChargeAbortAnim;
+
+/**
+ * The anim to play when starting a held ability.
+ */
+var name HoldStartAnim;
+
+/**
+ * The animation to play for a held ability.
+ */
+var name HoldingAnim;
+
+/**
+ * The animation to play if a held ability is ended.
+ */
+var name HoldEndAnim;
 
 /** The target of the ability. */
 var ArenaPawn Target;
@@ -26,6 +73,16 @@ var ParticleSystem IHBeamTemplate;
  * The instance of the IH Beam particle system.
  */
 var ParticleSystemComponent IHBeam;
+
+/**
+ * The template to use for particles when charging an ability.
+ */
+var ParticleSystem ChargeParticlesTemplate;
+
+/**
+ * The instance of the charging particle system.
+ */
+var ParticleSystemComponent ChargeParticles;
 
 /**
  * The ability-specific offset of the source location of the ability.
@@ -80,6 +137,27 @@ var bool CanHold;
 /* Indicates that the player can charge the ability. */
 var bool CanCharge;
 
+/**
+ * This indicates that the ability can fire since the start fire animation is complete.
+ */
+var bool PlayedStartAnim;
+
+/**
+ * Indicates that the charge start anim is currently playing.  This is used to prevend ChargeTime from increasing during that time.
+ */
+var bool PlayingChargeStartAnim;
+
+/**
+ * Indicates that StopFire was called before the charge start anim could complete.  This allows the StopFire call to be queued, and
+ * it will be called when the charge start anim finishes.
+ */
+var bool InterruptedChargeStartAnim;
+
+/**
+ * Indicates that the charge firing anim is currently playing.  This is used to prevend ChargeTime from increasing during that time.
+ */
+var bool PlayingChargeFireAnim;
+
 /* Indicates that the ability is passive, and non-equippable. */
 var bool IsPassive;
 
@@ -91,13 +169,15 @@ simulated function Tick(float dt)
 		HeldTime += dt;
 		DeltaTime = dt;
 	}
-	else if (IsCharging)
+	else if (IsCharging && !PlayingChargeFireAnim)
 	{
 		ChargeTime += dt;
 		
+		if (ChargeParticles != None)
+			ChargeParticles.SetFloatParameter('ChargeTime', ChargeTime);
+			
 		if (ChargeTime >= MaxCharge)
 		{
-			`log("Charging maxed");
 			StopFire(0);
 		}
 	}
@@ -112,17 +192,35 @@ simulated function StartFire(byte FireModeNum)
 
 	if (CanCharge && !IsCharging && CanFire)
 	{
-		`log("Beginning charge");
 		CanFire = false;
-		IsCharging = true;
-		//SetPendingFire(0);
+		PlayArmAnimation(ChargeStartAnim, 0.0, true);
+		SetTimer(GetArmAnimLength(ChargeStartAnim) - 0.1, false, 'ChargeAnimComplete');
+		PlayingChargeStartAnim = true;
+		InterruptedChargeStartAnim = false;
 	}
 	
 	if (CanFire && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy >= EnergyCost)
 	{
-		`log("Firing weapon.");
-		PlayArmAnimation('PlayerArmsAbilityOffHand', 0.0);
-		super.StartFire(FireModeNum);
+		if (PlayedStartAnim || AP_Player(Instigator) == None)
+		{
+			if (CanHold && AP_Player(Instigator) != None)
+				PlayArmAnimation(HoldingAnim, 0.0, true);
+				
+			super.StartFire(FireModeNum);
+		}
+		else
+		{
+			if (CanHold)
+			{
+				PlayArmAnimation(HoldStartAnim, 0.0);
+				SetTimer(GetArmAnimLength(HoldStartAnim), false, 'FireAnimComplete');
+			}
+			else
+			{
+				PlayArmAnimation(FireStartAnim, 0.0);
+				SetTimer(GetArmAnimLength(FireStartAnim), false, 'FireAnimComplete');
+			}
+		}
 	}
 }
 
@@ -131,33 +229,50 @@ simulated function StartFire(byte FireModeNum)
  */
 simulated function StopFire(byte FireModeNum)
 {
-	`log("Stop fire");
-	
 	if (IsHolding)
 	{
 		IsHolding = false;
 		HeldTime = 0;
+		
+		if (AP_Player(Instigator) != None)
+			PlayArmAnimation(HoldEndAnim, 0.0);
+			
+		PlayedStartAnim = false;
 	}
 	else if (IsCharging && ChargeTime >= MinCharge)
 	{
-		//Zack, do not change this part.  This code is what makes changed abilities work.  The way it works is 
-		//that StopFire is called when the fire button is released, and if we have been charging it, the flags above 
-		//will be true.  So we must call StartFire to begin the firing pipeline.  StartFire will handle all firing
-		//logic like spending energy, setting cooldown time, etc.  But if we call super.StopFire, that will abort the
-		//StartFire, so we return without calling it.
-		`log("Charging complete");
         CanFire = true;
-        StartFire(0);
-        IsCharging = false;
-        ChargeTime = 0;
+		
+		if (!PlayedStartAnim && AP_Player(Instigator) != None)
+		{
+			PlayArmAnimation(ChargeFireAnim, 0.0);
+			SetTimer(GetArmAnimLength(ChargeFireAnim) - 0.1, false, 'ChargeFireAnimComplete');
+			PlayingChargeFireAnim = true;
+		}
+		else
+		{
+			StartFire(0);
+			IsCharging = false;
+			ChargeTime = 0;
+		}
+		
         return;
 	}
 	else if (IsCharging && !CanFire)
 	{
-		`log("Charging aborted");
 		IsCharging = false;
 		CanFire = true;
 		ChargeTime = 0;
+		
+		if (AP_Player(Instigator) != None)
+			PlayArmAnimation(ChargeAbortAnim, 0.0);
+		
+		if (ChargeParticles != None)
+				ChargeParticles.DeactivateSystem();
+	}
+	else if (PlayingChargeStartAnim)
+	{
+		InterruptedChargeStartAnim = true;
 	}
 	
 	super.StopFire(FireModeNum);
@@ -169,11 +284,26 @@ simulated function FireAmmunition()
 	
 	if (CoolDown > 0 && !CanHold)
 	{
-		`log("Firing ability");
 		AbilityPlaySound(FireSound);
 		CanFire = false;
 		ClearPendingFire(0);
 		SetTimer(ArenaPawn(Instigator).Stats.GetCooldownTime(CoolDown), false, 'ReactivateAbility');
+		
+		if (CanCharge)
+		{
+			if (AP_Player(Instigator) != None)
+				PlayArmAnimation(ChargeEndAnim, 0.0);
+			
+			if (ChargeParticles != None)
+				ChargeParticles.DeactivateSystem();
+		}
+		else
+		{
+			if (AP_Player(Instigator) != None)
+				PlayArmAnimation(FireEndAnim, 0.0);
+		}
+			
+		PlayedStartAnim = false;
 	}
 	else if (CanHold)
 	{
@@ -267,12 +397,29 @@ simulated function InstantFire()
 	}
 }
 
+simulated function float GetArmAnimLength(name sequence)
+{
+	local AP_Player player;
+	
+	player = AP_Player(Instigator);
+
+	if (player != None)
+	{
+		if (player.Arms == None)
+			return 0;
+			
+		return player.Arms.GetAnimLength(sequence);
+	}
+	
+	return 0;
+}
+
 simulated function PlayArmAnimation(name sequence, float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
 {
 	local AP_Player player;
 	local AnimNodePlayCustomAnim node;
 
-	if( WorldInfo.NetMode == NM_DedicatedServer || Instigator == None || !Instigator.IsFirstPerson())
+	if (WorldInfo.NetMode == NM_DedicatedServer || Instigator == None || !Instigator.IsFirstPerson())
 		return;
 	
 	player = AP_Player(Instigator);
@@ -280,23 +427,11 @@ simulated function PlayArmAnimation(name sequence, float duration, optional bool
 	if (player != None)
 	{
 		node = GetArmAnimNode();
-		
-		`log("Node" @ node);
-		
+
 		if (player.Arms == None || node == None)
 			return;
 
-		node.PlayCustomAnim(sequence, 1.0);
-		
-		//if (duration > 0.0)
-		//{
-		//}
-		//else
-		//{
-			//node = AnimNodeSequence(player.Arms.Animations);
-			//node.SetAnim(sequence);
-			//node.PlayAnim(loop, DefaultAnimSpeed);
-		//}
+		node.PlayCustomAnim(sequence, 1.0, , , loop);
 	}
 }
 
@@ -311,6 +446,36 @@ simulated function AnimNodePlayCustomAnim GetArmAnimNode()
 		return AnimNodePlayCustomAnim(AnimTree(skelMesh.Animations).Children[0].Anim);
 
 	return None;
+}
+
+simulated function FireAnimComplete()
+{
+	PlayedStartAnim = true;
+	StartFire(0);
+}
+
+simulated function ChargeFireAnimComplete()
+{
+	PlayedStartAnim = true;
+	PlayingChargeFireAnim = false;
+	StartFire(0);
+	IsCharging = false;
+	ChargeTime = 0;
+}
+
+simulated function ChargeAnimComplete()
+{
+	if (InterruptedChargeStartAnim)
+	{
+		IsCharging = true;
+		StopFire(0);
+	}
+	else
+	{
+		IsCharging = true;
+		PlayArmAnimation(ChargingAnim, 0.0, true);
+		EmitChargeParticles();
+	}
 }
 
 /**
@@ -349,15 +514,50 @@ simulated function EmitIHBeam(vector hitLocation)
 		
 		r = Instigator.Controller.Rotation;
 		l = l + (SourceOffset >> r);
-		
-		`log("Emitting beam." @ hitLocation @ l);
-		
-		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
+
+		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l, r);
 		IHBeam.SetAbsolute(false, false, false);
 		IHBeam.SetVectorParameter('HitLocation', hitLocation);
 		IHBeam.SetVectorParameter('SourceLocation', l);
 		IHBeam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		IHBeam.bUpdateComponentInTick = true;
+	}
+}
+
+/**
+ * Emits the particle system used for ability charging.
+ */
+simulated function EmitChargeParticles()
+{
+	local vector l;
+	local rotator r;
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && ChargeParticlesTemplate != None)
+	{
+		if (ArenaPawn(Instigator) != None)
+			ArenaPawn(Instigator).GetAbilitySourceOffset(l, r);// + SourceOffset) >> );r
+		
+		r = Instigator.Controller.Rotation;
+		l = l + (SourceOffset >> r);
+		
+		ChargeParticles = new class'ParticleSystemComponent';
+		ChargeParticles.bAutoActivate = false;
+		
+		if (ArenaPawn(Instigator) != None)
+			ArenaPawn(Instigator).AttachToAbilitySource(ChargeParticles);
+			
+		//AttachToMuzzleSocket(MuzzleFlash);
+		
+		ChargeParticles.SetTemplate(ChargeParticlesTemplate);
+		ChargeParticles.ActivateSystem();
+		
+		//ChargeParticles = WorldInfo.MyEmitterPool.SpawnEmitter(ChargeParticlesTemplate, l);
+		//ChargeParticles.SetAbsolute(false, false, false);
+		//ChargeParticles.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		//ChargeParticles.bUpdateComponentInTick = true;
+		
+		//if (ArenaPawn(Instigator) != None)
+			//ArenaPawn(Instigator).AttachToAbilitySource(ChargeParticles);
 	}
 }
 
@@ -404,6 +604,18 @@ defaultproperties
 	FireInterval[0]=1.0
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
+	
+	FireStartAnim=PlayerArmsAbilityOffHandStart
+	FireEndAnim=PlayerArmsAbilityOffHandEnd
+	ChargeStartAnim=PlayerArmsAbilityChargeStart
+	ChargingAnim=PlayerArmsAbilityCharging
+	ChargeFireAnim=PlayerArmsAbilityChargeFire
+	ChargeEndAnim=PlayerArmsAbilityChargeEnd
+	ChargeAbortAnim=PlayerArmsAbilityChargeAbort
+	HoldStartAnim=PlayerArmsAbilityHoldStart
+	HoldingAnim=PlayerArmsAbilityHolding
+	HoldEndAnim=PlayerArmsAbilityHoldEnd
+	
 	
 	CanFire=true
 	//ChargedHasFired=false

@@ -24,7 +24,7 @@ defaultproperties
 	
 	WeaponFireTypes(0)=EWFT_Projectile
 	InstantHitDamageTypes(0)=None
-	WeaponProjectiles(0)=class'Arena.RifleBullet'
+	WeaponProjectiles(0)=class'Arena.Proj_RifleBullet'
 	Mode=FMFullAuto
 	CycleTime=0.25
 	BurstCount=3

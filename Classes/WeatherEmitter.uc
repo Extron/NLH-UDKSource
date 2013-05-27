@@ -1,52 +1,54 @@
 /*******************************************************************************
-	WeatherPlane
+	WeatherEmitter
 
-	Creation date: 06/02/2013 12:06
+	Creation date: 19/05/2013 05:43
 	Copyright (c) 2013, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-
 /**
- * The weather plane used for drawing weather effects like rain and snow.
+ * This class manages the weather emitters.
  */
-class WeatherPlane extends StaticMeshActor;
+class WeatherEmitter extends Actor;
 
-/** The particle template to use when this effect is active. */
+/** 
+ * The particle template to use when this effect is active. 
+ */
 var ParticleSystem SnowflakesTemplate;
 
-/** The particle system of the activated effect. */
+/**
+ * The particle system of the activated effect. 
+ */
 var ParticleSystemComponent Snowflakes;
 
-/** The particle template to use when this effect is active. */
+/** 
+ * The particle template to use when this effect is active. 
+ */
 var ParticleSystem RainSplashTemplate;
 
-/** The particle system of the activated effect. */
+/** 
+ * The particle system of the activated effect. 
+ */
 var ParticleSystemComponent RainSplash;
 
-/** A reference to the material that the actor uses. */
-var MaterialInstanceConstant Material;
+/**
+ * The range at which rain particles begin to spawn.
+ */
+var float EmitterRangeRain;
 
-var float EmitterRange;
+/**
+ * The range at which snow particles begin to spawn.
+ */
+var float EmitterRangeSnow;
 
 simulated function Tick(float dt)
-{	
-	local rotator r;
-	
-	if (Material == None)
-	{
-		Material = new class'MaterialInstanceConstant';
-		Material.SetParent(StaticMeshComponent.GetMaterial(0));
-		StaticMeshComponent.SetMaterial(0, Material);
-	}
+{
 	
 	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
 	{
 		if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
 		{
-			Material.SetScalarParameterValue('WeatherIntensity', 0);
-		
-			if (IsPlayerNear())
+			if (IsPlayerNear(EmitterRangeSnow))
 			{
 				if (Snowflakes == None)
 					EmitSnow();
@@ -82,7 +84,7 @@ simulated function Tick(float dt)
 				
 			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
 			{
-				if (IsPlayerNear())
+				if (IsPlayerNear(EmitterRangeRain))
 				{
 					if (RainSplash == None)
 						EmitRainSplash();
@@ -95,17 +97,8 @@ simulated function Tick(float dt)
 					RainSplash.DeactivateSystem();
 					RainSplash = None;
 				}
-			
-				Material.SetScalarParameterValue('WeatherIntensity', ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity);
-				
-				r = rotator(ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
-
-				r.Pitch = 1000 * VSize(ArenaGRI(WorldInfo.GRI).WeatherMgr.Wind);
-				
-				StaticMeshComponent.SetRotation(r);
 			}
 			else
-				Material.SetScalarParameterValue('WeatherIntensity', 0);
 		}
 	}
 }
@@ -118,29 +111,27 @@ function EmitSnow()
 		Snowflakes.SetAbsolute(false, false, false);
 		Snowflakes.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		Snowflakes.bUpdateComponentInTick = true;
-		Snowflakes.SetActorParameter('WeatherPlane', self);
 	}
 }
 
 function EmitRainSplash()
 {
 	if (WorldInfo.NetMode != NM_DedicatedServer && RainSplashTemplate != None)
-	{
+	{		
 		RainSplash = WorldInfo.MyEmitterPool.SpawnEmitter(RainSplashTemplate, Location);
 		RainSplash.SetAbsolute(false, false, false);
 		RainSplash.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
 		RainSplash.bUpdateComponentInTick = true;
-		RainSplash.SetActorParameter('WeatherPlane', self);
 	}
 }
 
-function bool IsPlayerNear()
+function bool IsPlayerNear(float range)
 {
 	local ArenaPlayerController iter;
 	
 	foreach LocalPlayerControllers(class'Arena.ArenaPlayerController', iter)
 	{
-		if (iter.Pawn != None && VSize(iter.Pawn.Location - Location) < EmitterRange)
+		if (iter.Pawn != None && VSize(iter.Pawn.Location - Location) < range)
 			return true;
 	}
 	
@@ -149,18 +140,8 @@ function bool IsPlayerNear()
 
 defaultproperties
 {
-	Begin Object Name=StaticMeshComponent0
-        StaticMesh = StaticMesh'ArenaWeather.Meshes.WeatherCylinderMesh'
-		Scale3D=(X=1,Y=1,Z=1)
-		bCastDynamicShadow=false
-		CastShadow=false
-		MaxDrawDistance=64
-    End Object
-	
-	EmitterRange=2500
-	bStatic=false
-	bCollideActors=false
-	bBlockActors=false
+	EmitterRangeRain=768
+	EmitterRangeSnow=2048
 	SnowflakesTemplate=ParticleSystem'ArenaWeather.Particles.SnowParticles'
 	RainSplashTemplate=ParticleSystem'ArenaWeather.Particles.RainDropSplashes'
 }

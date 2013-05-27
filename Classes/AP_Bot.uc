@@ -16,20 +16,45 @@ var ParticleSystem DeathExplosionTemplate;
 
 var ParticleSystemComponent DeathExplosion;
 
+var ParticleSystem DamageTemplate;
+
+var ParticleSystemComponent DamagePS;
+
 var class<UDKExplosionLight> DELClass;
 
 var UDKExplosionLight DeathExplosionLight;
 
 var bool MeshInvisibleOnDeath;
 
+simulated function PostBeginPlay()
+{
+	super.PostBeginPlay();
+	
+	EmitDamagePS();
+}
+
 function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
 {
 	if (MeshInvisibleOnDeath)
 		Mesh.SetHidden(true);
 		
+	if (DamagePS != None)
+		DamagePS.DeactivateSystem();
+		
 	EmitDeathExplosion();
 	
 	return super.Died(Killer, DamageType, HitLocation);
+}
+
+simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
+{
+	super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType,  HitInfo, DamageCauser);
+	
+	if (DamagePS != None)
+	{
+		`log("Setting damage" @ 1 - (float(Health) / float(HealthMax)));
+		DamagePS.SetFloatParameter('Health', 1 - (float(Health) / float(HealthMax)));
+	}
 }
 
 function EmitDeathExplosion()
@@ -53,6 +78,19 @@ function EmitDeathExplosion()
 	{
 		DeathExplosionLight = new(Outer) DELClass;
 		AttachComponent(DeathExplosionLight);
+	}
+}
+
+function EmitDamagePS()
+{
+	if (WorldInfo.NetMode != NM_DedicatedServer && DamageTemplate != None)
+	{
+		DamagePS = WorldInfo.MyEmitterPool.SpawnEmitter(DamageTemplate, vect(0, 0, 0));
+		DamagePS.SetAbsolute(false, false, false);
+		DamagePS.SetFloatParameter('Health', 1 - (float(Health) / float(HealthMax)));
+		DamagePS.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		DamagePS.bUpdateComponentInTick = true;
+		AttachComponent(DamagePS);
 	}
 }
 

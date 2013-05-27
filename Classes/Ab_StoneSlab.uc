@@ -1,20 +1,16 @@
 /*******************************************************************************
-	SeqEvent_TerminalHacked
+	Ab_StoneSlab
 
-	Creation date: 18/03/2013 11:57
+	Creation date: 14/05/2013 07:05
 	Copyright (c) 2013, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class SeqEvent_TerminalHacked extends SequenceEvent;
-
-event Activated() 
-{
-	`log("Activating event" @ self);
-}
+class Ab_StoneSlab extends Ab_RockWall;
 
 defaultproperties
 {
-	ObjName="Terminal Hacked"
-	ObjCategory="Interactive"
+	WallClass=class'Arena.Ab_StoneSlabBoulder'
+	
+	AbilityName="Stone Slab"
 }

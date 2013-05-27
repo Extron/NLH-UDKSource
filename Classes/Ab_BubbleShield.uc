@@ -56,11 +56,11 @@ simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLo
 {
 	super.Touch(Other, OtherComp, HitLocation, HitNormal);
 	
-	if (RifleBullet(Other) != None)
+	if (Proj_RifleBullet(Other) != None)
 	{
 		`log("Decreasing Bullet Damage");
 		
-		RifleBullet(Other).Damage = (RifleBullet(Other).Damage) * DamageReduction;
+		Proj_RifleBullet(Other).Damage = (Proj_RifleBullet(Other).Damage) * DamageReduction;
 	}
 }
 

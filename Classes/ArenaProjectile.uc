@@ -8,6 +8,11 @@
 
 class ArenaProjectile extends UDKProjectile;
 
+/**
+ * The weapon that fired the projectile.
+ */
+var ArenaWeapon Weapon;
+
 /* The tamplate to use for the particles of the projectile. */
 var ParticleSystem ProjTemplate;
 
@@ -20,18 +25,46 @@ var ParticleSystemComponent Projectile;
 /* The particle system component used to render the sparks when the projectile hits a wall. */
 var ParticleSystemComponent Sparks;
 
+/**
+ * The width and height of the projectile's decal.
+ */
+var float DecalWidth, DecalHeight;
+
 simulated function PostBeginPlay()
 {
 	super.PostBeginPlay();
 	
+	if (Instigator != None)
+		Weapon = ArenaWeapon(Instigator.Weapon);
+		
 	//Since this is a projectile, the moment it comes into being, we create the particle effect for it.
 	Emit();
 }
 
-simulated function HitWall(vector normal, Actor wall, PrimitiveComponent component)
+simulated function HitWall(vector norm, Actor wall, PrimitiveComponent component)
 {
-	super.HitWall(normal, wall, component);
-	Spark(normal);
+	local vector l, n;
+	local TraceHitInfo hitInfo;
+	local Actor traceActor;
+	
+	super.HitWall(norm, wall, component);
+	
+	traceActor = Trace(l, n, Location + Normal(Velocity) * 2, Location - Normal(Velocity) * 2 , , , hitInfo);
+
+	if (traceActor == wall && hitInfo.PhysMaterial != None)
+	{
+		if (!(ArenaPMP(hitInfo.PhysMaterial.PhysicalMaterialProperty) != None && !ArenaPMP(hitInfo.PhysMaterial.PhysicalMaterialProperty).AllowOtherParticleSystem))
+			Spark(norm, hitInfo.PhysMaterial);
+			
+		SpawnPhysMatEffects(hitInfo.PhysMaterial);
+		SpawnDecal(Location, norm, hitInfo.PhysMaterial);
+	}
+	else
+	{
+		`log("Trace" @ traceActor @ "Wall" @ wall);
+		
+		Spark(norm, None);
+	}
 }
  
 simulated function ProcessTouch(Actor Other, Vector HitLocation, Vector HitNormal)
@@ -44,11 +77,11 @@ simulated function Emit()
 	local vector l;
 	local rotator r;
 	
-	if (WorldInfo.NetMode != NM_DedicatedServer && ProjTemplate != None && ArenaWeaponBase(Owner) != None)
+	if (WorldInfo.NetMode != NM_DedicatedServer && ProjTemplate != None && ArenaWeaponBase(Weapon) != None)
 	{
-		if (SkeletalMeshComponent(ArenaWeaponBase(Owner).Barrel.Mesh).GetSocketByName('MuzzleSocket') != None)
+		if (SkeletalMeshComponent(ArenaWeaponBase(Weapon).Barrel.Mesh).GetSocketByName('MuzzleSocket') != None)
 		{
-			SkeletalMeshComponent(ArenaWeaponBase(Owner).Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
+			SkeletalMeshComponent(ArenaWeaponBase(Weapon).Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
 			SetLocation(l);
 		}
 		
@@ -60,7 +93,29 @@ simulated function Emit()
 	}
 }
 
-simulated function Spark(vector norm)
+simulated function SpawnDecal(vector loc, vector norm, PhysicalMaterial mat)
+{
+	local MaterialInterface decalMat;
+	local PhysicalMaterial parentMat;
+	
+	parentMat = mat.Parent;
+
+	if (ArenaPMP(mat.PhysicalMaterialProperty) != None)
+		decalMat = ArenaPMP(mat.PhysicalMaterialProperty).GetHitDecal(Weapon);
+		
+	while (decalMat == None && parentMat != None)
+	{
+		if (ArenaPMP(parentMat.PhysicalMaterialProperty) != None)
+			decalMat = ArenaPMP(parentMat.PhysicalMaterialProperty).GetHitDecal(Weapon);
+			
+		parentMat = parentMat.Parent;
+	}
+
+	if (WorldInfo.NetMode != NM_DedicatedServer && decalMat != None)
+		WorldInfo.MyDecalManager.SpawnDecal(decalMat, loc, rotator(-norm), DecalWidth, DecalHeight, 10.0, true);
+}
+
+simulated function Spark(vector norm, PhysicalMaterial physMat)
 {
 	local vector v;
 	local vector a;
@@ -79,9 +134,71 @@ simulated function Spark(vector norm)
 		Sparks = WorldInfo.MyEmitterPool.SpawnEmitter(SparksTemplate, Location);
 		Sparks.SetAbsolute(false, false, false);
 		Sparks.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
-		//ProjEffects.OnSystemFinished = MyOnParticleSystemFinished;
 		Sparks.SetVectorParameter('SparkVelocity', v + n * 0.25);
 		Sparks.SetVectorParameter('DustVelocity', a);
 		Sparks.bUpdateComponentInTick = true;
+	}
+}
+
+simulated function SpawnPhysMatEffects(PhysicalMaterial mat)
+{
+	local ParticleSystem ps;
+	local PhysicalMaterial parentMat;
+	local ParticleSystemComponent psc;
+	
+	parentMat = mat.Parent;
+
+	if (ArenaPMP(mat.PhysicalMaterialProperty) != None)
+		ps = ArenaPMP(mat.PhysicalMaterialProperty).GetHitParticleSystem(Weapon);
+		
+	while (ps == None && parentMat != None)
+	{
+		if (ArenaPMP(parentMat.PhysicalMaterialProperty) != None)
+			ps = ArenaPMP(parentMat.PhysicalMaterialProperty).GetHitParticleSystem(Weapon);
+			
+		parentMat = parentMat.Parent;
+	}
+
+	if (WorldInfo.NetMode != NM_DedicatedServer && ps != None)
+	{
+		psc = WorldInfo.MyEmitterPool.SpawnEmitter(ps, Location);
+		psc.SetAbsolute(false, false, false);
+		psc.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		psc.bUpdateComponentInTick = true;
+	}
+	
+	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
+	{
+		ps = None;
+		parentMat = mat.Parent;
+
+		if (ArenaPMP(mat.PhysicalMaterialProperty) != None)
+		{
+			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
+				ps = ArenaPMP(mat.PhysicalMaterialProperty).RainHitPS;
+			else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
+				ps = ArenaPMP(mat.PhysicalMaterialProperty).SnowHitPS;
+		}
+			
+		while (ps == None && parentMat != None)
+		{
+			if (ArenaPMP(parentMat.PhysicalMaterialProperty) != None)
+			{
+				if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
+					ps = ArenaPMP(mat.PhysicalMaterialProperty).RainHitPS;
+				else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
+					ps = ArenaPMP(mat.PhysicalMaterialProperty).SnowHitPS;
+			}
+				
+			parentMat = parentMat.Parent;
+		}
+
+		if (WorldInfo.NetMode != NM_DedicatedServer && ps != None)
+		{
+			psc = WorldInfo.MyEmitterPool.SpawnEmitter(ps, Location);
+			psc.SetAbsolute(false, false, false);
+			psc.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+			psc.bUpdateComponentInTick = true;
+		}
 	}
 }

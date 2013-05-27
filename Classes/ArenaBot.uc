@@ -132,13 +132,6 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	WhatToDoNext();
 }
 
-function CleanupPRI()
-{
-	`log("PRI" @ PlayerReplicationInfo);
-	
-	super.CleanupPRI();
-}
-
 function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, class<DamageType> damageType, vector Momentum)
 {
 	local vector dir;
@@ -357,9 +350,11 @@ function bool IsCautious()
 	
 	if (ArenaPawn(Focus) != None)
 	{
-		cautionMeasure += 0.5 * Pawn.HealthMax / float(Pawn.Health);
+		if (Pawn.Health > 0)
+			cautionMeasure += 0.5 * Pawn.HealthMax / float(Pawn.Health);
 		
-		cautionMeasure -= 0.5 * ArenaPawn(Focus).HealthMax / float(ArenaPawn(Focus).Health);
+		if (ArenaPawn(Focus).Health > 0)
+			cautionMeasure -= 0.5 * ArenaPawn(Focus).HealthMax / float(ArenaPawn(Focus).Health);
 		
 		//Reduce the need for caution for every near friendly bot within 50 units.
 		cautionMeasure -= BotsNear(50) * 0.5;

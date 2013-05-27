@@ -12,6 +12,11 @@ class Ab_RockWall extends ArenaAbility;
 var Ab_RockWallBoulder Wall;
 
 /**
+ * The class to use for the boulder.  This can be overridden in subclasses to change what kind of wall is generated.
+ */
+var class<Ab_RockWallBoulder> WallClass;
+
+/**
  * The range of the ability.  This is mainly used to determine how high the player can be above the
  * ground and still summon the wall.
  */
@@ -64,7 +69,7 @@ simulated function SummonWall(float Dist)
 	loc.y *= -Dist;
 
 	if (Trace(traceLoc, traceNorm, Instigator.Location + vect(0, 0, -1) * Range + loc, Instigator.Location + loc) != None)
-		Wall = Spawn(class 'Arena.Ab_RockWallBoulder', None, , traceLoc + (vect(0, 0, -1) * StartDepth), Instigator.Rotation);
+		Wall = Spawn(WallClass, None, , traceLoc + (vect(0, 0, -1) * StartDepth), Instigator.Rotation);
 }
 
 defaultproperties
@@ -74,6 +79,8 @@ defaultproperties
 	CoolDown=10
 	EnergyCost=78
 	AbilityName="Rock Wall"
+	
+	WallClass=class'Arena.Ab_RockWallBoulder'
 	
 	CanHold = false
 	IsPassive = false

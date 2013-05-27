@@ -98,8 +98,6 @@ function SetFOV(float NewFOV)
 
 function SetFOVWithTime(float NewFOV, float time)
 {
-	`log("Setting fov time to" @ time);
-	
 	DesiredFOV = NewFOV;
 	OldFOV = FOVAngle;
 	FOVTime = time;
@@ -138,11 +136,7 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 	else if (Aiming && ADSDirection > 0)
 		ADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn)) * ADSCounter / ADSTime;
 	else if (Aiming && ADSDirection < 0)
-	{
-		`log("Time" @ 1 - ADSCounter / ADSTime);
-		
 		ADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn)) * (1 - ADSCounter / ADSTime);
-	}
 	else
 		ADSOffset = vect(0, 0, 0);
 	 
@@ -202,9 +196,7 @@ simulated function PlayerTick(float dt)
 	if (Aiming)
 	{
 		ADSCounter += dt;
-		
-		`log("Ticking aiming." @ ADSCounter @ ADSDirection);
-		
+
 		if (ADSCounter >= ADSTime)
 		{
 			ADSCounter = 0;
@@ -229,7 +221,6 @@ simulated function ReplicatedEvent(name property)
 	
 			if (Role < Role_Authority)
 			{
-				`log("Replicating event");
 				ServerInitializePlayerStats();
 			}
 		}
@@ -310,8 +301,6 @@ state Dead
 	
 	event Timer()
 	{
-		`log("Respawn Timer called." @ bFrozen);
-		
 		if (!bFrozen)
 			return;
 
@@ -320,7 +309,6 @@ state Dead
 		
 		if (ArenaGRI(WorldInfo.GRI).ForceRespawn)
 		{
-			`log("Forcing respawn.");
 			ServerReStartPlayer();
 		}
 	}

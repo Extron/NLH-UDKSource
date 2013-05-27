@@ -450,7 +450,6 @@ defaultproperties
 	Landscape=Lscp
 	
 	LightningBoltTemplate=ParticleSystem'ArenaParticles.Particles.Lightning'
-	RainSplashTemplate=ParticleSystem'ArenaParticles.Particles.RainDropSplashes'
 	
 	ThunderstormSound=SoundCue'ArenaWeather.Audio.ThunderstormLoop'
 	

@@ -102,14 +102,19 @@ function InitInventory()
  */
 function GetAbilitySourceOffset(out vector l, out rotator r)
 {	
-	if (Arms.GetSocketByName('LeftHandSocket') != None)
-		Arms.GetSocketWorldLocationAndRotation('LeftHandSocket', l, r, 0);
+	if (Arms.GetSocketByName('AbilitySourceSocket') != None)
+		Arms.GetSocketWorldLocationAndRotation('AbilitySourceSocket', l, r, 0);
 }
 
 function GetWeaponSourceOffset(out vector l, out rotator r)
 {	
 	if (Arms.GetSocketByName('RightHandSocket') != None)
 		Arms.GetSocketWorldLocationAndRotation('RightHandSocket', l, r, 0);
+}
+
+function AttachToAbilitySource(ActorComponent component)
+{
+	Arms.AttachComponentToSocket(component, GetAbilityHandSocket());
 }
 
 simulated function PositionArms()
@@ -163,6 +168,10 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_ShockLong', true);
 		break;
 		
+	case "LightningBolt":
+		CreateInventory(class'Arena.Ab_LightningBolt', true);
+		break;
+		
 	case "EMP":
 		CreateInventory(class'Arena.Ab_EMP', true);
 		break;
@@ -177,6 +186,10 @@ exec function GiveAbility(string ability)
 	
 	case "RockWall":
 		CreateInventory(class'Arena.Ab_RockWall', true);
+		break;
+	
+	case "StoneSlab":
+		CreateInventory(class'Arena.Ab_StoneSlab', true);
 		break;
 		
 	case "Bubble":
@@ -231,15 +244,21 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		break;
 	
+	case "Sand":
+		CreateInventory(class'Arena.Ab_Sand', true);
+		break;
+		
 	case "All":
 	case "all":
 		CreateInventory(class'Arena.Ab_ShockShort', true);
 		CreateInventory(class'Arena.Ab_ShockMedium', true);
 		CreateInventory(class'Arena.Ab_ShockLong', true);
+		CreateInventory(class'Arena.Ab_LightningBolt', true);
 		CreateInventory(class'Arena.Ab_EMP', true);
 		CreateInventory(class'Arena.Ab_RangedEMP', true);
 		CreateInventory(class'Arena.Ab_Pedestal', true);
 		CreateInventory(class'Arena.Ab_RockWall', true);
+		CreateInventory(class'Arena.Ab_StoneSlab', true);
 		CreateInventory(class'Arena.Ab_Bubble', true);
 		CreateInventory(class'Arena.Ab_ChargedShock', true);
 		CreateInventory(class'Arena.Ab_Deflection', true);
@@ -253,6 +272,7 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_TheSoundOfThunder', true);
 		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		CreateInventory(class'Arena.Ab_Osmosis', true);
+		CreateInventory(class'Arena.Ab_Sand', true);
 		break;
 	}
 }
@@ -269,6 +289,10 @@ exec function GiveStatus(string status)
 		break;
 	case "Flashed":
 		c = class'Arena.SE_Flash';
+		break;
+		
+	case "Blinded":
+		c = class'Arena.SE_Blind';
 		break;
 	}
 	

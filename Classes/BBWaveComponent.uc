@@ -109,12 +109,14 @@ simulated function bool FindUnusedSpawn(class<AP_Bot> pawnClass, ArenaTeamInfo w
 		{
 			foreach Parent.VisibleCollidingActors(class'Actor', iter, pawnClass.Default.CylinderComponent.CollisionRadius, sp.Location)
 			{
-				if (Volume(iter) == None) 
+				if (Volume(iter) == None && ArenaTree(iter) == None) 
 					b = iter;
 			}
 			
 			if (b == None)
 				start = sp;
+			//else
+				//`log("Actor in the way of bot spawn" @ b);
 		}
 	
 	}

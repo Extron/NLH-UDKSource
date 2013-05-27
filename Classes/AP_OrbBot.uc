@@ -109,7 +109,7 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 {
 	super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
 	
-	`log("Bot Taking damage" @ self);
+	//`log("Bot Taking damage" @ self);
 }
 
 simulated function Recover()
@@ -126,8 +126,6 @@ function SetMovementPhysics()
 
 function SetDyingPhysics()
 {
-	`log("Setting orb death physics");
-	
 	//if (Physics != PHYS_RigidBody)
 		//SetPhysics(PHYS_RigidBody);
 		
@@ -139,6 +137,14 @@ simulated function RebootElectronics(ArenaPawn pawn)
 {
 	if (ArenaBot(Owner) != None)
 		ArenaBot(Owner).Stun(5);
+}
+
+/**
+ * Orbs are always considered conductive.
+ */
+simulated function bool IsConductive()
+{
+	return true;
 }
 
 simulated function bool HasAbility(ArenaPawn target)
@@ -424,6 +430,8 @@ defaultproperties
 	End Object
 	
 	DeathExplosionTemplate=ParticleSystem'AC_Orb.Particles.DeathExplosionPS'
+	DamageTemplate=ParticleSystem'AC_Orb.Particles.DamagePS'
+	BloodSplatterTemplate=ParticleSystem'AC_Orb.Particles.BloodSplatterPS'
 	DELClass=class'Arena.L_OrbDeathExplosion'
 	
 	OrbitTimeMax=1.5

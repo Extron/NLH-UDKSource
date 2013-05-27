@@ -20,6 +20,7 @@ defaultproperties
 {
 	AbilityName="Charged Shock"
 	
+	ChargeParticlesTemplate=ParticleSystem'ArenaAbilities.Particles.ChargedShockPS'
 	CanCharge=true
 	MaxCharge=7.5
 	MinCharge=2.5

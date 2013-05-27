@@ -49,7 +49,7 @@ simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLo
 	
 	`log("I was hit by something");
 	
-	if (RifleBullet(Other) != None)
+	if (Proj_RifleBullet(Other) != None)
 	{
 		`log("Deflecting bullet");
 		v = Normal(HitLocation - Location);
@@ -65,7 +65,7 @@ simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLo
 		
 		`log("Dot" @ dProduct @ "Shield Angle" @ Cos(ShieldAngle));
 		
-		if (dProduct < Cos(ShieldAngle) || Normal(RifleBullet(Other).Velocity) dot -v < 0)
+		if (dProduct < Cos(ShieldAngle) || Normal(Proj_RifleBullet(Other).Velocity) dot -v < 0)
 			return;
 		
 		`log("Deflecting bullet");
@@ -75,11 +75,11 @@ simulated function Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLo
 		
 		`log("Angle" @ angle);
 		
-		newDir = -Normal(RifleBullet(Other).Velocity) << angle;
+		newDir = -Normal(Proj_RifleBullet(Other).Velocity) << angle;
 		
-		`log("Initial dir" @ Normal(RifleBullet(Other).Velocity) @ "New dir" @ newDir);
+		`log("Initial dir" @ Normal(Proj_RifleBullet(Other).Velocity) @ "New dir" @ newDir);
 		
-		RifleBullet(Other).Init(newDir);
+		Proj_RifleBullet(Other).Init(newDir);
 	}
 }
 

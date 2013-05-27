@@ -16,8 +16,20 @@ var(Porperties) Array<string> ObjectProperties;
 
 var EnvironmentEffect ActiveEffect;
 
-/** A reference to the material that the actor uses. */
-var MaterialInstanceConstant Material;
+/** 
+ * A reference to the base material that the actor uses. 
+ */
+var MaterialInstanceConstant BaseMaterial;
+
+/** 
+ * A reference to the snow material that the actor uses. 
+ */
+var MaterialInstanceConstant SnowMaterial;
+
+/** 
+ * A reference to the water material that the actor uses. 
+ */
+var MaterialInstanceConstant RainMaterial;
 
 /**
  * Stores the level of the snow on the object, which increases when it snows and decreases when it is hot.
@@ -37,11 +49,33 @@ var bool Frozen;
 
 simulated function PostBeginPlay()
 {
+	local Texture Diffuse, Normal, Specular, Height;
+	
 	super.PostBeginPlay();
 	
-	Material = new class'MaterialInstanceConstant';
-	Material.SetParent(StaticMeshComponent.GetMaterial(0));
-	StaticMeshComponent.SetMaterial(0, Material);
+	BaseMaterial = new class'MaterialInstanceConstant';
+	BaseMaterial.SetParent(StaticMeshComponent.GetMaterial(0));
+	
+	BaseMaterial.GetTextureParameterValue('Diffuse', Diffuse);
+	BaseMaterial.GetTextureParameterValue('NormalMap', Normal);
+	BaseMaterial.GetTextureParameterValue('Specular', Specular);
+	BaseMaterial.GetTextureParameterValue('Heightmap', Height);
+	
+	SnowMaterial = new class'MaterialInstanceConstant';
+	SnowMaterial.SetParent(Material'ArenaMaterials.Materials.SnowMat');
+	SnowMaterial.SetTextureParameterValue('Diffuse', Diffuse);
+	SnowMaterial.SetTextureParameterValue('NormalMap', Normal);
+	SnowMaterial.SetTextureParameterValue('Specular', Specular);
+	SnowMaterial.SetTextureParameterValue('Heightmap', Height);
+	
+	RainMaterial = new class'MaterialInstanceConstant';
+	RainMaterial.SetParent(Material'ArenaMaterials.Materials.RainMat');
+	RainMaterial.SetTextureParameterValue('Diffuse', Diffuse);
+	RainMaterial.SetTextureParameterValue('NormalMap', Normal);
+	RainMaterial.SetTextureParameterValue('Specular', Specular);
+	RainMaterial.SetTextureParameterValue('Heightmap', Height);
+	
+	StaticMeshComponent.SetMaterial(0, BaseMaterial);
 }
 
 simulated function Tick(float delta)
@@ -66,9 +100,20 @@ simulated function Tick(float delta)
 			SnowLevel = FClamp(SnowLevel, 0.0, 1.0);
 			RainLevel = FClamp(RainLevel, 0.0, 1.0);
 			
-			Material.SetScalarParameterValue('WeatherLevel', SnowLevel > 0 ? SnowLevel : RainLevel);
-			Material.SetScalarParameterValue('Snow', SnowLevel > 0 ? 1 : 0);
-			Material.SetScalarParameterValue('Rain', (RainLevel > 0 && !Frozen) ? 1 : 0);
+			if (SnowLevel > 0)
+			{
+				StaticMeshComponent.SetMaterial(0, SnowMaterial);
+				SnowMaterial.SetScalarParameterValue('WeatherLevel', SnowLevel > 0 ? SnowLevel : RainLevel);
+			}
+			else if (RainLevel > 0)
+			{
+				StaticMeshComponent.SetMaterial(0, RainMaterial);
+				RainMaterial.SetScalarParameterValue('WeatherLevel', SnowLevel > 0 ? SnowLevel : RainLevel);
+			}
+			else
+			{
+				StaticMeshComponent.SetMaterial(0, BaseMaterial);
+			}
 		}
 	}
 	
@@ -114,7 +159,14 @@ simulated function array<string> GetProperties()
 
 simulated function bool HasProperty(string property)
 {
-	return ObjectProperties.Find(property) > -1;
+	local PhysicalMaterial mat;
+	
+	mat = StaticMeshComponent.GetMaterial(0).GetPhysicalMaterial();
+	
+	if (mat != None && ArenaPMP(mat.PhysicalMaterialProperty) != None)
+		return ObjectProperties.Find(property) > -1 || ArenaPMP(mat.PhysicalMaterialProperty).HasProperty(property);
+	else
+		return ObjectProperties.Find(property) > -1;
 }
 
 simulated function bool HasProperties(array<string> properties)
