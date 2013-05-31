@@ -16,6 +16,11 @@ var(Weapon) array<WeaponType> CompatibleTypes;
 /** Stores what type of weapon base sizes this attachment can be used with. */
 var(Weapon) array<WeaponSize> CompatibleSizes;
 
+/**
+ * A list of all the valid subclasses of this component.
+ */
+var array<class<ArenaWeaponComponent> > Subclasses;
+
 /** The mesh used to draw the component. */
 var() editinline MeshComponent Mesh;
 
@@ -64,6 +69,22 @@ simulated function AttachToBase(ArenaWeaponBase weap, name socket)
 	weap.Stats.Values[WSVWeight] += Weight;
 	weap.Stats.AddModifier(StatMod);
 }
+
+simulated function AttachToBaseSpecial(ArenaWeaponBase weap, name socket, LightEnvironmentComponent lightEnv)
+{
+	if (SkeletalMeshComponent(weap.Mesh).GetSocketByName(socket) != None)
+	{		
+		SetBase(weap, , SkeletalMeshComponent(weap.Mesh), socket);
+	}
+	
+	AttachComponent(Mesh);
+	SetHidden(false);
+	Mesh.SetLightEnvironment(lightEnv);
+	
+	weap.Stats.Values[WSVWeight] += Weight;
+	weap.Stats.AddModifier(StatMod);
+}
+
 
 /**
  * Processes any logic needed for the component when the weapon fires.

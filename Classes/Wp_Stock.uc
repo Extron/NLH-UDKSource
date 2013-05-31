@@ -7,3 +7,8 @@
 *******************************************************************************/
 
 class Wp_Stock extends ArenaWeaponComponent;
+
+defaultproperties
+{
+	Subclasses[0]=class'Arena.Wp_S_CheapStock'
+}

@@ -12,7 +12,6 @@ defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
 		SkeletalMesh=SkeletalMesh'BasicRifleBarrel.Meshes.BasicBarrelMesh'
-		FOV=85.0
 	End Object
 	
 	Begin Object Name=NewStatMod
@@ -31,4 +30,5 @@ defaultproperties
 	
 	Weight=3
 	ComponentName="Basic Rifle Barrel"
+	ComponentDescription="A simple rifled barrel made out of iron metal, it can be attached to a wide variety of projectile-based weapons, though its cheap design often leads to rust or corrosion."
 }

@@ -12,7 +12,6 @@ defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
 		SkeletalMesh=SkeletalMesh'BasicRifleBase.Meshes.RifleBaseMesh_1P'
-		FOV=85.0
 	End Object
 	
 	Begin Object Name=NewStats
@@ -35,6 +34,7 @@ defaultproperties
 	
 	ViewOffset=(X=45, Y=5, Z=-22);
 	ArenaWeaponBaseName="Basic Rifle Base"
+	BaseDescription="A relic from the Old World, this rifle base is your basic projectile-based weapon.  Surprisingly durable, it supports many components, ammo types, and firing modes."
 	Energy=0
 	Type=WTRifle
 	Size=WSRegular

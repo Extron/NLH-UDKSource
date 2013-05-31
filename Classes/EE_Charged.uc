@@ -61,10 +61,10 @@ simulated function DeactivateEffect()
 
 simulated function EmitEffect(IEnvObj envobj)
 {	
+	local vector scale;
+	
 	if (WorldInfo.NetMode != NM_DedicatedServer && ActiveTemplate_Static != None && ActiveTemplate_Dynamic != None)
 	{
-		`log("Emitting particles");
-		
 		if (DynamicEnvironmentObject(envobj) != None)
 			ActiveEffects = WorldInfo.MyEmitterPool.SpawnEmitter(ActiveTemplate_Dynamic, vect(0, 0, 0));
 		else
@@ -77,6 +77,12 @@ simulated function EmitEffect(IEnvObj envobj)
 		if (DynamicEnvironmentObject(envobj) != None)
 		{
 			ActiveEffects.SetFloatParameter('Radius', DynamicEnvironmentObject(envobj).StaticMeshComponent.Bounds.SphereRadius / DynamicEnvironmentObject(envobj).DrawScale);
+			
+			scale.x = DynamicEnvironmentObject(envobj).StaticMeshComponent.Bounds.SphereRadius / 2.0;
+			scale.y = DynamicEnvironmentObject(envobj).StaticMeshComponent.Bounds.SphereRadius / 2.0;
+			scale.z = DynamicEnvironmentObject(envobj).StaticMeshComponent.Bounds.SphereRadius / 2.0;
+		
+			ActiveEffects.SetVectorParameter('Scale', scale);
 			DynamicEnvironmentObject(envobj).AttachComponent(ActiveEffects);
 		}
 		else

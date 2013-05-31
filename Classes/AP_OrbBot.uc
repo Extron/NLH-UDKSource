@@ -305,14 +305,9 @@ state Sleeping
 {
 	simulated function Tick(float dt)
 	{
-		local vector offset;
-		
 		global.Tick(dt);
 		
 		Counter += dt;
-
-		offset.Z = 0.5 * Cos(2.0 * Counter);
-		//SetLocation(Location + offset);
 	}
 	
 Begin:

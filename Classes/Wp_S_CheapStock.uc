@@ -12,7 +12,6 @@ defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
 		SkeletalMesh=SkeletalMesh'CheapStock.Meshes.CheapStockMesh'
-		FOV=85.0
 	End Object
 	
 	Begin Object Name=NewStatMod

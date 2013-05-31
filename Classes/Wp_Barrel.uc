@@ -8,6 +8,7 @@
 
 class Wp_Barrel extends ArenaWeaponComponent;
 
+
 /**
  * The muzzle flash that the barrel emits when the weapon is fired.
  */
@@ -17,3 +18,9 @@ var ParticleSystem MuzzleFlashTemplate;
  * The light to use for the muzzle flash.
  */
 var class<UDKExplosionLight> MFLClass;
+
+
+defaultproperties
+{
+	Subclasses[0]=class'Arena.Wp_B_BasicRifleBarrel'
+}

@@ -105,7 +105,7 @@ function bool Start(optional bool StartPaused = false)
 	
 }
 
-simulated function Update(float dt)
+function Update(float dt)
 {
 	if (CurrentOverButton == "")
 	{

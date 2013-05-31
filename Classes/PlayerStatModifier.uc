@@ -8,7 +8,7 @@
 
 /* Manages player stat modification, and can be attached to any object to allow
 	that object to affect players' stats. */
-class PlayerStatModifier extends Object
+class PlayerStatModifier extends Component
 	dependson(PlayerStats);
 
 

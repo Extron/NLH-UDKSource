@@ -6,7 +6,7 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class WeaponStats extends Object;
+class WeaponStats extends Component;
 
 enum WStatValues
 {
@@ -142,7 +142,7 @@ simulated function InitValues()
 		if (Values[i] == -1 && Constants != None)
 			DefaultValues[i] = GetGGC(i);
 		else
-			DefaultValues[i] = Values[i];
+			DefaultValues[i] = Values[i];	
 	}
 }
 
@@ -188,6 +188,54 @@ simulated function float GetGGC(int i)
 		
 	case 12:
 		return Constants.GetStatDefault("ADS Accuracy");
+		
+	default:
+		return 0;
+	}
+}
+
+simulated function float GetGGCMax(int i)
+{
+	switch (i)
+	{
+	case 0:
+		return Constants.GetStatMax("Weapon Weight");
+		
+	case 1:
+		return Constants.GetStatMax("Weapon Accuracy");
+		
+	case 2:
+		return Constants.GetStatMax("Weapon Stability");
+		
+	case 3:
+		return Constants.GetStatMax("Weapon Mobility");
+		
+	case 4:
+		return Constants.GetStatMax("Weapon Recoil");
+		
+	case 5:
+		return Constants.GetStatMax("Weapon Zoom");
+		
+	case 6:
+		return Constants.GetStatMax("Weapon Rate of Fire");
+		
+	case 7:
+		return Constants.GetStatMax("Weapon Rate of Cycle");
+		
+	case 8:
+		return Constants.GetStatMax("Weapon Damage Output");
+		
+	case 9:
+		return Constants.GetStatMax("Weapon Cool Down Rate");
+		
+	case 10:
+		return Constants.GetStatMax("Weapon Overheat Delay");
+		
+	case 11:
+		return Constants.GetStatMax("Weapon Heat Cost");
+		
+	case 12:
+		return Constants.GetStatMax("ADS Accuracy");
 		
 	default:
 		return 0;

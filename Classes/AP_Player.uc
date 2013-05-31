@@ -126,7 +126,7 @@ simulated function PositionArms()
 	if (Controller != None)
 		R.Pitch = Controller.Rotation.Pitch;
 	
-	Arms.SetTranslation(ArmsTranslation);
+	Arms.SetTranslation(((ArmsTranslation - vect(0, 0, 1) * EyeHeight) >> R) + vect(0, 0, 1) * EyeHeight);
 	Arms.SetRotation(R);
 	
 	//SetBase(Holder);

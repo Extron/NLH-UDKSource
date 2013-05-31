@@ -9,9 +9,6 @@
 class ArenaPawn extends UDKPawn;
 
 
-/* The list of active effects that the player has. */
-var Array<StatusEffect> ActiveEffects;
-
 /**
  * This stores any sprint blending animation nodes used by the pawn's mesh.
  */
@@ -58,6 +55,11 @@ var InteractiveObject NearestInterObject;
 var PawnSensor Sensor;
 
 /**
+ * The sensor class that the player is using.
+ */
+var class<PawnSensor> SensorClass;
+
+/**
  * The template PS for blood splatters, which are played when damage is taken.
  */
 var ParticleSystem BloodSplatterTemplate;
@@ -68,9 +70,9 @@ var ParticleSystem BloodSplatterTemplate;
 var ParticleSystemComponent BloodSplatter;
 
 /**
- * The sensor class that the player is using.
+ * A reference to the material used on the screen to display injury.
  */
-var class<PawnSensor> SensorClass;
+var MaterialInstanceConstant HurtScreenMaterial;
 
 /**
  * The name of the skeletal control animation node that manages gun recoil.
@@ -127,10 +129,10 @@ var bool initInv;
 replication 
 { 
 	if(bNetDirty) 
-		Energy, FHealth, Stamina, Sprinting;
+		Energy, FHealth, Stamina, Sprinting, Stats;
 		
 	if (bNetInitial)
-		Stats, initInv;
+		initInv;
 }
 
 function PossessedBy(Controller C, bool bVehicleTransition)
@@ -201,6 +203,12 @@ simulated function Tick(float dt)
 	if (Health <= 0)
 		return;
 		
+	if (HurtScreenMaterial == None && ArenaPlayerController(Owner) != None)
+		SetHurtScreenMat(ArenaPlayerController(Owner));
+		
+	if (HurtScreenMaterial != None)
+		HurtScreenMaterial.SetScalarParameterValue('Health', float(Health) / float(HealthMax));
+	
 	if (NearestInterObject != None && !NearestInterObject.WithinRadius(self))
 		NearestInterObject = None;
 		
@@ -259,11 +267,6 @@ simulated function Tick(float dt)
 	if (ArenaWeapon(Weapon) != None)
 	{
 		PositionArms();
-	}
-	
-	for (i = 0; i < ActiveEffects.Length; i++)
-	{
-		ActiveEffects[i].Tick(dt);
 	}
 	
 	if (ArenaInventoryManager(InvManager) != None)
@@ -374,8 +377,15 @@ simulated function Bump(Actor other, PrimitiveComponent otherComp, Vector hitNor
 
 function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
 {	
-	ClearAllTimers();
+	ActiveEffect.DeactivateEffect();
 	
+	ClearAllTimers();
+	Stats.ClearModifiers();
+	Stats.ResetStats();
+	
+	if (ADS)
+		ArenaPlayerController(Owner).ADS();
+			
 	return super.Died(Killer, DamageType, HitLocation);
 }
 
@@ -626,6 +636,23 @@ simulated function bool IsConductive()
 	return false;
 }
 
+simulated function SetHurtScreenMat(PlayerController player)
+{
+	local MaterialEffect effect;
+	
+	if (LocalPlayer(player.Player) != None && LocalPlayer(player.Player).PlayerPostProcess != None)
+	{
+		effect = MaterialEffect(LocalPlayer(player.Player).PlayerPostProcess.FindPostProcessEffect('HurtMat'));
+		
+		if (effect != None)
+		{
+			HurtScreenMaterial = new class'MaterialInstanceConstant';
+			HurtScreenMaterial.SetParent(effect.Material);
+			effect.Material = HurtScreenMaterial;
+		}
+	}
+}
+
 simulated function EnterWeatherVolume(WeatherManager weather)
 {
 	`log("Entering weather volume.");
@@ -712,6 +739,8 @@ function ArenaWeapon CreateWeapon(WeaponSchematic schematic)
 	optics = spawn(schematic.WeaponOptics, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
 	side = spawn(schematic.WeaponSideAttachment, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
 	under = spawn(schematic.WeaponUnderAttachment, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	
+	`log("Weapon created with side" @ side);
 	
 	ArenaWeaponBase.AttachStock(stock);
 	ArenaWeaponBase.AttachBarrel(barrel);

@@ -9,5 +9,37 @@
 class GFx_Menu extends GFxMoviePlayer
 	abstract;
 
+/**
+ * Indicates that the menu is being displayed as an overlay in-game.
+ */
+var bool InGame;
 
-simulated function Update(float dt);
+
+function Update(float dt);
+
+/**
+ * This function is called on menus that run on the HUD.
+ */
+function PostRender()
+{
+}
+
+function PlayOpenAnimation()
+{
+}
+
+function PlayCloseAnimation()
+{
+	CloseAnimCompleted();
+}
+
+function CloseAnimCompleted()
+{
+	if (InGame)
+		ArenaHUD(GetPC().MyHUD).CloseOverlayMenu();
+}
+
+function bool InterceptEscape()
+{
+	return false;
+}

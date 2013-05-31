@@ -28,6 +28,11 @@ var float EnergyMax;
 /* The name of the base of the weapon. */
 var string ArenaWeaponBaseName;
 
+/**
+ * A short description of the base.
+ */
+var string BaseDescription;
+
 simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name SocketName)
 {
 	super.AttachWeaponTo(MeshCpnt, SocketName);
@@ -35,6 +40,36 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 	Stock.AttachToBase(Self, StockSock);
 	Barrel.AttachToBase(Self, BarrelSock);
 	Optics.AttachToBase(Self, OpticsSock);
+}
+
+function AttachWeapon(LightEnvironmentComponent lightEnv)
+{
+	super.AttachWeapon(lightEnv);
+	
+	Stock.AttachToBaseSpecial(Self, StockSock, lightEnv);
+	Barrel.AttachToBaseSpecial(Self, BarrelSock, lightEnv);
+	Optics.AttachToBaseSpecial(Self, OpticsSock, lightEnv);
+}
+
+simulated function Destroyed()
+{
+	if (Stock != None)
+		Stock.Destroy();
+		
+	if (Barrel != None)
+		Barrel.Destroy();
+	
+	if (Muzzle != None)
+		Muzzle.Destroy();
+
+	if (Optics != None)
+		Optics.Destroy();
+		
+	if (Side != None)
+		Side.Destroy();
+		
+	if (Under != None)
+		Under.Destroy();
 }
 
 simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
@@ -85,7 +120,7 @@ simulated function GetGripSocketLocRot(out vector l, out rotator r)
  */
 function float GetWeight()
 {
-	return Stats.Values[WSVWeight];
+	return Stats.Values[WSVWeight] + Stock.Weight + Barrel.Weight + Muzzle.Weight + Optics.Weight + Side.Weight + Under.Weight;
 }
 
 function vector GetOpticsOffset(ArenaPawn holder)
@@ -100,7 +135,19 @@ function vector GetOpticsOffset(ArenaPawn holder)
 
 function float GetZoomLevel()
 {
-	return Optics.ZoomLevel;
+	return Stats.Values[WSVZoom];
+}
+
+simulated function HideWeapon(bool hidden)
+{
+	super.HideWeapon(hidden);
+	
+	Stock.Mesh.SetHidden(hidden);	
+	Barrel.Mesh.SetHidden(hidden);	
+	Muzzle.Mesh.SetHidden(hidden);	
+	Optics.Mesh.SetHidden(hidden);	
+	Side.Mesh.SetHidden(hidden);	
+	Under.Mesh.SetHidden(hidden);
 }
 
 function AttachStock(Wp_Stock s)

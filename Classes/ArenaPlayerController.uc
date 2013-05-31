@@ -14,6 +14,11 @@ class ArenaPlayerController extends UDKPlayerController;
 var PlayerLoadout Loadout;
 
 /**
+ * The HUD settings for the player.
+ */
+var PlayerHUDSettings HUDSettings;
+
+/**
  * The class that the player is using.
  */
 var PlayerClass PClass;
@@ -78,6 +83,7 @@ function Possess(Pawn newPawn, bool bVehicleTransition)
 {
 	if (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer)
 	{
+		`log("Setting initial stats.");
 		ArenaPawn(newPawn).Stats.SetInitialStats(ArenaPawn(newPawn), ArenaGRI(WorldInfo.GRI).Constants);
 
 		PClass = new Loadout.AbilityClass;
@@ -163,8 +169,6 @@ function CheckJumpOrDuck()
 
 exec function ADS()
 {
-	local float rem;
-
 	ADSDirection *= -1;
 	
 	if (ADSDirection > 0)
@@ -189,8 +193,6 @@ exec function ADS()
 
 simulated function PlayerTick(float dt)
 {
-	local float t;
-	
 	super.PlayerTick(dt);
 	
 	if (Aiming)
@@ -212,6 +214,8 @@ simulated function ReplicatedEvent(name property)
 	{
 		if (ArenaPawn(Pawn) != None)
 		{		
+		
+			`log("Setting initial stats.");
 			ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
 				
 			PClass = new Loadout.AbilityClass;
@@ -366,6 +370,11 @@ defaultproperties
 		LoadoutName="Default Loadout"
 	End Object
 	Loadout=DefaultLoadout
+	
+	Begin Object Class=PlayerHUDSettings Name=PHS
+		NumericAmmoDisplay=true
+	End Object
+	HUDSettings=PHS
 	
 	ADSDirection=-1
 }

@@ -52,7 +52,6 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	
 	if (DamagePS != None)
 	{
-		`log("Setting damage" @ 1 - (float(Health) / float(HealthMax)));
 		DamagePS.SetFloatParameter('Health', 1 - (float(Health) / float(HealthMax)));
 	}
 }

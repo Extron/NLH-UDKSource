@@ -1,13 +1,14 @@
 /*******************************************************************************
-	Muzzle
+	PlayerHUDSettings
 
-	Creation date: 07/07/2012 14:55
-	Copyright (c) 2012, Trystan
+	Creation date: 27/05/2013 01:05
+	Copyright (c) 2013, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class Wp_Muzzle extends ArenaWeaponComponent;
+class PlayerHUDSettings extends Object;
 
-defaultproperties
-{
-}
+/**
+ * Indicates that the HUD should display ammo as numbers.
+ */
+var bool NumericAmmoDisplay;

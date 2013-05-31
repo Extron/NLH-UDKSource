@@ -12,10 +12,10 @@ defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
 		SkeletalMesh=SkeletalMesh'CheapIronSights.Meshes.IronSightsMesh'
-		FOV=85.0
 	End Object
 	
 	Begin Object Name=NewStatMod
+		ValueMods[WSVZoom]=1.25
 		ValueMods[WSVADSAccuracy]=1.5
 	End Object
 	
@@ -33,5 +33,5 @@ defaultproperties
 	
 	Weight=1
 	ComponentName="Cheap Iron Sights"
-	ZoomLevel=1.25
+	ComponentDescription="These iron sights offer the basic aim down sights ability, but with little additional enhancements like zoom and the tendancy to be misaligned, they provide little else."
 }

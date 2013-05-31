@@ -77,11 +77,13 @@ simulated function SpawnWeather(WeatherManager manager)
 			pos.x = FRand() * bounds.x * 0.5 * (FRand() > 0.5 ? 1 : -1) + Location.X;
 			pos.y = FRand() * bounds.y * 0.5 * (FRand() > 0.5 ? 1 : -1) + Location.Y;
 			pos.z = bounds.z * 0.5 + Location.z;
-			
-			rotn.Yaw = Rand(65536);
+
 			
 			if (Landscape(Trace(traceLoc, traceNorm, pos * vect(1, 1, 0) - vect(0, 0, 100), pos)) != None)
 			{
+				rotn = rotator(traceNorm cross vect(1, 0, 0));
+				rotn.Yaw = Rand(65536);
+				
 				s = Spawn(class'Arena.SnowMound', manager, , traceLoc, rotn);
 				SnowMounds.AddItem(s);
 			}

@@ -21,7 +21,7 @@ enum WeaponType
 	WTHardLightRifle,
 	WTBeamRifle,
 	WTPlasmaRifle,
-	WTRailGunk
+	WTRailGun
 };
 
 enum WeaponSize
@@ -135,6 +135,11 @@ var float CycleTime;
  */
 var float SweepRange;
 
+/**
+ * The idea range of the weapon.
+ */
+var float IdealRange;
+
 /** Indicates that the weapon is reloading. */
 var bool Reloading;
 
@@ -176,12 +181,24 @@ var int Clip;
 /** The amount of ammo that is used in one shot.  This is largely only used if the weapon is a burst fire weapon. */
 var int AmmoPerShot;
 
+var bool StatsInitialized;
 
 simulated function PostBeginPlay()
 {
 	super.PostBeginPlay();
-	
+
+	if (!StatsInitialized && Instigator != None && ArenaPawn(Instigator).Stats.Constants != None)
+	{
+		Stats.Initialize(self, ArenaPawn(Instigator).Stats.Constants);	
+		StatsInitialized = true;
+	}
+}
+
+simulated function InitializeStats()
+{
 	Stats.Initialize(self, ArenaPawn(Instigator).Stats.Constants);
+	
+	StatsInitialized = true;
 }
 
 simulated function Tick(float dt)
@@ -244,7 +261,7 @@ simulated function FireAmmunition()
 {
 	if (EndedFire)
 		return;
-		
+
 	if (Mode == FMFullAuto || (Mode == FMSemiAuto && BulletsFired < 1) || (Mode == FMBurst && BulletsFired < BurstCount) || (Mode == FMBoltAction && !Cycling))
 	{
 		FireWeapon();
@@ -405,6 +422,14 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 	}
 
 	//SetSkin(ArenaPawn(Instigator).ReplicatedBodyMaterial);
+}
+
+function AttachWeapon(LightEnvironmentComponent lightEnv)
+{
+	AttachComponent(Mesh);
+	EnsureWeaponOverlayComponentLast();
+	SetHidden(false);
+	Mesh.SetLightEnvironment(lightEnv);
 }
 
 /**
@@ -579,6 +604,11 @@ simulated function GetGripSocketLocRot(out vector l, out rotator r)
 	r = rot(0, 0, 0);
 }
 
+simulated function float GetIdealRange()
+{
+	return IdealRange;
+}
+
 simulated function FireWeapon()
 {
 	local float duration;
@@ -679,6 +709,14 @@ simulated function ReactivateWeapon()
 	EndedFire = false;
 }
 
+simulated function HideWeapon(bool hidden)
+{
+	Mesh.SetHidden(hidden);
+	
+	if (AP_Player(Instigator) != None)
+		AP_Player(Instigator).Arms.SetHidden(hidden);
+}
+
 simulated function rotator GetRecoilRotation(Pawn holder)
 {
 	local vector x, y, z;
@@ -686,6 +724,44 @@ simulated function rotator GetRecoilRotation(Pawn holder)
 	GetAxes(holder.Controller.Rotation, x, y, z);
 
 	return rotator(RecoilPos);
+}
+
+simulated function float GetAvgReloadSpeed()
+{
+	local SkeletalMeshComponent skelMesh;
+	local float average;
+	local int i;
+	
+	skelMesh = SkeletalMeshComponent(Mesh);
+	
+	for (i = 0; i < ReloadAnims.Length; i++)
+	{
+		average += skelMesh.GetAnimLength(ReloadAnims[i]);
+	}
+	
+	if (ReloadAnims.Length > 0)
+		average /= ReloadAnims.Length;
+	
+	return average * Stats.GetReloadSpeed();
+}
+
+simulated function float GetAvgEquipSpeed()
+{
+	local SkeletalMeshComponent skelMesh;
+	local float average;
+	local int i;
+	
+	skelMesh = SkeletalMeshComponent(Mesh);
+		
+	for (i = 0; i < EquipAnims.Length; i++)
+	{
+		average += skelMesh.GetAnimLength(EquipAnims[i]);
+	}
+	
+	if (EquipAnims.Length > 0)
+		average /= EquipAnims.Length;
+	
+	return average * Stats.GetEquipSpeed();
 }
 
 simulated function AddMaxAmmo()
@@ -754,6 +830,7 @@ defaultproperties
 		bCastDynamicShadow=false
 		CastShadow=false
 		bOwnerNoSee=false
+		BlockZeroExtent=true
 	End Object
 	Mesh=FirstPersonMesh
 	

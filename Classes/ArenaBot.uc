@@ -128,6 +128,7 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	LastShotAtDuration = 0;
 	
 	ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
+	ArenaWeapon(ArenaPawn(Pawn).Weapon).InitializeStats();
 	
 	WhatToDoNext();
 }
@@ -222,6 +223,8 @@ function ArenaPawn FindNearestTarget()
 	local ArenaPawn p;
 	local ArenaPawn nearest;
 	
+	nearest = None;
+	
 	foreach WorldInfo.AllPawns(class'ArenaPawn', p)
 	{
 		if (p != Pawn && !p.Invisible)
@@ -249,10 +252,12 @@ function ArenaPawn FindNearestTarget()
 
 function name GetAttack(Actor actor)
 {
-	if (AP_Bot(Pawn).HasAbility(ArenaPawn(Focus)) && CanUseAbility)
+	if (AP_Bot(Pawn).HasAbility(ArenaPawn(Focus)) && CanUseAbility && FRand() > 0.75)
 		return 'UsingAbility';
-	else
+	else if (ArenaWeapon(Pawn.Weapon) != None && VSize(Pawn.Location - Focus.Location) < ArenaWeapon(Pawn.Weapon).GetIdealRange())
 		return 'FiringWeapon';
+	else
+		return 'MoveToTarget';
 }
 
 function Evade(vector direction, Actor attacker)
@@ -293,7 +298,6 @@ function UseAbility(Actor actor)
 	
 	if (ArenaPawn(Pawn) != None && CanUseAbility && CanFire)
 	{
-		`log("Bot using ability.");
 		ArenaPawn(Pawn).StartFireAbility();
 		CanUseAbility = false;
 		CanFire = false;
@@ -545,7 +549,6 @@ Begin:
 simulated state FiringWeapon
 {
 Begin:
-
 	while(!AP_Bot(Pawn).CanShoot())
 		Sleep(0.0);
 		

@@ -8,6 +8,16 @@
 
 class SE_Electrocuted extends StatusEffect;
 
+/**
+ * The particle system template to use when the status effect is active.
+ */
+var ParticleSystem ActiveTemplate;
+
+/**
+ * The particle system to emit when the effect is active.
+ */
+var ParticleSystemComponent ActivePS;
+
 
 simulated function float GetHealthDamage(float dt)
 {
@@ -39,6 +49,45 @@ simulated function bool ApplyStaminaDamage()
 	return true;
 }
 
+
+simulated function ActivateEffect(ArenaPawn pawn)
+{
+	super.ActivateEffect(pawn);
+	
+	EmitActivePS(pawn);
+}
+
+simulated function EmitActivePS(ArenaPawn pawn)
+{	
+	local vector scale;
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && ActiveTemplate != None)
+	{
+		ActivePS = WorldInfo.MyEmitterPool.SpawnEmitter(ActiveTemplate, vect(0, 0, 0));
+			
+		ActivePS.SetAbsolute(false, false, false);
+		ActivePS.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		ActivePS.bUpdateComponentInTick = true;
+
+		ActivePS.SetFloatParameter('Radius', pawn.Mesh.Bounds.SphereRadius / pawn.DrawScale);
+		
+		scale.x = pawn.Mesh.Bounds.SphereRadius / 2.0;
+		scale.y = pawn.Mesh.Bounds.SphereRadius / 2.0;
+		scale.z = pawn.Mesh.Bounds.SphereRadius / 2.0;
+		
+		ActivePS.SetVectorParameter('Scale', scale);
+		
+		pawn.AttachComponent(ActivePS);
+	}
+}
+
+function DeactivateEffect()
+{
+	super.DeactivateEffect();
+	
+	ActivePS.DeactivateSystem();
+}
+
 defaultproperties
 {
 	Begin Object Name=NewStatMod
@@ -52,7 +101,8 @@ defaultproperties
 	Duration=5
 	DamageType=class'Arena.SDT_Electrocuted'
 	SEGroup=SEG_Electromagnetism
-	ScreenEffect=PostProcessChain'ArenaMaterials.PostProcess.ElectrocutedPPC';
+	ScreenEffect=PostProcessChain'ArenaMaterials.PostProcess.ElectrocutedPPC'
+	ActiveTemplate=ParticleSystem'ArenaParticles.Particles.ChargedDEOParticles'
 	
 	InitialHealthDamage=100
 	InitialEnergyDamage=25

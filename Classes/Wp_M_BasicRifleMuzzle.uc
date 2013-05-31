@@ -13,7 +13,6 @@ defaultproperties
 	Begin Object Name=FirstPersonMesh
 		SkeletalMesh=SkeletalMesh'BasicRifleMuzzle.Mesh.BasicRifleMuzzleMesh_1P'
 		Rotation=(Yaw=-16384)
-		FOV=85.0
 	End Object
 	
 	CompatibleTypes[0]=WTRifle

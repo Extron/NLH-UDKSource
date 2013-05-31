@@ -19,6 +19,11 @@ var GFx_BasicHUD HUDMovie;
 var GFx_PauseMenu PauseMenu;
 
 /**
+ * The currently overlayed menu.  Can be used to display any menu system needed in-game.
+ */
+var GFx_Menu OverlayMenu;
+
+/**
  * The class of the HUD to create.
  */
 var class<GFx_BasicHUD> HUDClass;
@@ -62,13 +67,17 @@ function CloseOtherMenus()
 
 exec function ShowMenu()
 {
-	`log("ShowMenu called.");
 	TogglePauseMenu();
 }
 
 function TogglePauseMenu()
 {
-    if (PauseMenu != none && PauseMenu.bMovieIsOpen)
+	if (OverlayMenu != None && OverlayMenu.bMovieIsOpen)
+	{
+		if (!OverlayMenu.InterceptEscape())
+			OverlayMenu.PlayCloseAnimation();
+	}
+    else if (PauseMenu != none && PauseMenu.bMovieIsOpen)
 	{
 		PauseMenu.PlayCloseAnimation();
 	}
@@ -81,7 +90,6 @@ function TogglePauseMenu()
         if (PauseMenu == None)
         {
 	        PauseMenu = new class'GFx_PauseMenu';
-            PauseMenu.MovieInfo = SwfMovie'ArenaUI.PauseMenu';
             PauseMenu.bEnableGammaCorrection = FALSE;
 			PauseMenu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerOwner.Player));
             PauseMenu.SetTimingMode(TM_Real);
@@ -117,16 +125,52 @@ function int GetLocalPlayerOwnerIndex()
 	return HudMovie.LocalPlayerOwnerIndex;
 }
 
+event Tick(float dt)
+{
+	super.Tick(dt);
+	
+	if (HUDMovie != none)
+		HUDMovie.UpdateHUD(dt);
+		
+	if (OverlayMenu != None && OverlayMenu.bMovieIsOpen)
+		OverlayMenu.Update(dt);
+}
+
 event PostRender()
 {
 	super.PostRender();
-
-	if (HUDMovie != none)
-		HUDMovie.UpdateHUD(0);
+	
+	if (OverlayMenu != None && OverlayMenu.bMovieIsOpen)
+		OverlayMenu.PostRender();
 }
+
+function DisplayOverlayMenu(class<GFx_Menu> overlayClass, optional bool pause = true)
+{
+	CloseOtherMenus();
+
+	PlayerOwner.SetPause(pause);
+
+	OverlayMenu = new overlayClass;
+	OverlayMenu.bEnableGammaCorrection = FALSE;
+	OverlayMenu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerOwner.Player));
+	OverlayMenu.SetTimingMode(TM_Real);
+
+	SetVisible(false);
+	OverlayMenu.Start();
+	OverlayMenu.PlayOpenAnimation();
+}
+
+function CloseOverlayMenu()
+{
+	PlayerOwner.SetPause(False);
+	OverlayMenu.Close(false);
+	SetVisible(true);
+}
+
 
 defaultproperties
 {
 	HUDClass=class'GFx_BasicHUD'
 	RebootTime=5
+	bAlwaysTick=true
 }

@@ -64,5 +64,6 @@ defaultproperties
 	Ammo=120
 	Clip=30
 	
-	BaseDamage=100
+	IdealRange=500
+	BaseDamage=50
 }

@@ -8,11 +8,6 @@
 
 class Wp_Optics extends ArenaWeaponComponent;
 
-/**
- * The degree of zoom that the optics component carries.
- */
-var float ZoomLevel;
-
 function vector GetOpticsOffset(vector l, rotator r)
 {
 	local vector socketLoc;
@@ -25,8 +20,8 @@ function vector GetOpticsOffset(vector l, rotator r)
 		{
 			v = (socketLoc - l) << r;	
 			v.x = 0;
-			v.y -= 0.7;
-			v.z += 0.75;
+			//v.y -= 0.7;
+			v.z += 1.65;
 		}
 	}
 	
@@ -35,5 +30,5 @@ function vector GetOpticsOffset(vector l, rotator r)
 
 defaultproperties
 {
-	ZoomLevel = 1;
+	Subclasses[0]=class'Arena.Wp_O_CheapIronSights'
 }

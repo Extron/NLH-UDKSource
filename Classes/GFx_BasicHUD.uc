@@ -8,8 +8,13 @@
 
 class GFx_BasicHUD extends GFxMoviePlayer;
 
+/**
+ * The settings used to configure the HUD display.
+ */
+var PlayerHUDSettings Settings;
+
 var GFxObject WeaponStats, AbilityStats;
-var GFxObject WeaponName, WeaponAmmo;
+var GFxObject WeaponName, WeaponAmmoNumeric;
 var GFxObject AbilityName, AbilityCoolDown;
 var GFxObject Reticule;
 var GFxObject RetTop, RetBot, RetLeft, RetRight;
@@ -60,14 +65,17 @@ function Init(optional LocalPlayer player)
 	super.Init(player);
 	
 	//GRI = UTGameReplicationInfo(GetPC().WorldInfo.GRI);
-		
+	
+	if (ArenaPlayerController(GetPC()) != None)
+		Settings = ArenaPlayerController(GetPC()).HUDSettings;
+	
 	Start();
     Advance(0);
 	
 	WeaponStats = GetVariableObject("_root.weapon_stat");
 	AbilityStats = GetVariableObject("_root.ability_stat");
 	WeaponName = GetVariableObject("_root.weapon_stat.weapon_name");
-	WeaponAmmo = GetVariableObject("_root.weapon_stat.weapon_ammo");
+	WeaponAmmoNumeric = GetVariableObject("_root.weapon_stat.weapon_ammo_numeric");
 	AbilityName = GetVariableObject("_root.ability_stat.ability_name");
 	AbilityCoolDown = GetVariableObject("_root.ability_stat.ability_cooldown");
 	Reticule = GetVariableObject("_root.reticule");
@@ -88,9 +96,13 @@ function Init(optional LocalPlayer player)
 	CriticalHealthBackground.SetVisible(false);
 	MainMessage.SetText("");
 	
+	`log("Weapon stat x" @ WeaponStats.GetFloat("x"));
 	AngleComponent(HealthStats);
 	AngleComponent(WeaponStats);
 	AngleComponent(AbilityStats);
+	
+	if (Settings != None && !Settings.NumericAmmoDisplay)
+		WeaponAmmoNumeric.SetVisible(false);
 }
 
 function UpdateHUD(float dt)
@@ -125,7 +137,7 @@ function UpdateHUD(float dt)
 		if (ArenaWeaponBase(pawn.Weapon) != None)
 		{
 			WeaponName.SetText("Weapon:" @ ArenaWeaponBase(pawn.Weapon).WeaponName);
-			WeaponAmmo.SetText("Clip:" @ ArenaWeaponBase(pawn.Weapon).Clip);
+			WeaponAmmoNumeric.SetText(ArenaWeaponBase(pawn.Weapon).Clip @ " | " @ (ArenaWeaponBase(pawn.Weapon).Ammo / ArenaWeaponBase(pawn.Weapon).MaxClip));
 			
 			nBloom = ArenaWeaponBase(pawn.Weapon).Bloom / ArenaWeaponBase(pawn.Weapon).Stats.Constants.GetStatMax("Bloom");
 			xL = -nBloom * ReticuleBloomXMax * NativeWidth * 0.5;

@@ -6,7 +6,7 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class PlayerStats extends Object;
+class PlayerStats extends Component;
 
 /**
  * Helps maintain a list of stat values for a player.
@@ -78,6 +78,8 @@ var array<float> DefaultValues;
  */
 simulated function SetInitialStats(ArenaPawn pawn, GlobalGameConstants gameConstants)
 {
+	`log("Initializing stats" @ gameConstants);
+	
 	Owner = pawn;
 	Constants = gameConstants;
 	
@@ -512,6 +514,11 @@ function RemoveModifier(PlayerStatModifier mod)
 	ComputeStats();
 }
 
+function ClearModifiers()
+{
+	StatModifiers.Length = 0;
+}
+
 function InitValues()
 {
 	local int i;
@@ -550,7 +557,7 @@ function ComputeStats()
 {
 	local PlayerStatModifier statMod;
 	local int i, j;
-	
+
 	ResetStats();
 
 	for (i = 0; i < StatModifiers.Length; i++)
@@ -580,9 +587,7 @@ function ComputeStats()
 		DamageInput[4] *= statMod.DamageInputMods[4];
 		
 		for (j = 0; j < Values.Length; j++)
-		{
 			Values[j] *= statMod.ValueMods[j];
-		}
 	}
 }
 

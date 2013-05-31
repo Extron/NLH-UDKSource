@@ -6,7 +6,7 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class WeaponStatModifier extends Object
+class WeaponStatModifier extends Component
 	dependson(WeaponStats);
 
 /** A list of all mods, indexed by enum, for the weapon stats. */

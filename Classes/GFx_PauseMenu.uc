@@ -60,7 +60,8 @@ function CloseAnimCompleted()
 
 defaultproperties
 {
+	MovieInfo=SwfMovie'ArenaUI.PauseMenu'
+	
     bEnableGammaCorrection=FALSE
 	bPauseGameWhileActive=TRUE
-	//bCaptureInput=true
 }

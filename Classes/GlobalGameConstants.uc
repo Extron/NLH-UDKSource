@@ -225,7 +225,7 @@ defaultproperties
 	StatValues[12]=(X=0.5,Y=1)
 	StatValues[13]=(X=0.5,Y=1)
 	StatValues[14]=(X=1,Y=5)
-	StatValues[15]=(X=1,Y=5)
+	StatValues[15]=(X=0.5,Y=1)
 	StatValues[16]=(X=1,Y=5)
 	StatValues[17]=(X=1,Y=5)
 	StatValues[18]=(X=0,Y=5)
