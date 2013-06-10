@@ -2,7 +2,7 @@
 	Ab_PedestalBoulder
 	
 	Creation date: 06/02/2013 22:59
-	Copyright (c) 2013, Owner
+	Copyright (c) 2013, Zack Diller
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 ******************************************************************************/
 

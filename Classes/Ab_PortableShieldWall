@@ -1,0 +1,10 @@
+/******************************************************************************
+	b_PortalShieldWall
+	
+	Creation date: 26/05/2013 21:28
+	Copyright (c) 2013, Owner
+	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
+******************************************************************************/
+
+class Ab_PortalShieldWall extends Ab_RockWallBoulder;
+
