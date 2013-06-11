@@ -2,7 +2,7 @@
 	Ab_RockWallBoulder
 	
 	Creation date: 13/02/2013 14:19
-	Copyright (c) 2013, Owner
+	Copyright (c) 2013, Zack Diller
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 ******************************************************************************/
 
@@ -25,7 +25,8 @@ var float MoveAmount;
 
 simulated function Initialize()
 {
-	SetDrawScale( default.DrawScale );
+	// SetDrawScale( default.DrawScale );
+	SetDrawScale3D( vect(3.0, 3.0, 3.0) );
 
 	ClearTimer('Recycle');
 	SetHidden(FALSE);

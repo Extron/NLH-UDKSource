@@ -8,7 +8,7 @@
 
 class Ab_RockWall extends ArenaAbility;
 
-/* The pedestal that the ability generates. */
+/* The wall that the ability generates. */
 var Ab_RockWallBoulder Wall;
 
 /**
@@ -61,8 +61,8 @@ simulated function SummonWall(float Dist)
 {
 	local vector traceLoc, traceNorm, loc;
 
-	//This is a neat little operator.  The << operator takes a vector and a rotation, and returns the 
-	//rotated wector.  So no need to screw around with trig, it does it for you.
+	// This is a neat little operator.  The << operator takes a vector and a rotation, and returns the 
+	// rotated wector.  So no need to screw around with trig, it does it for you.
 	loc = vect(1, 0, 0) << Instigator.Rotation;
 	
 	loc.x *= Dist;

@@ -86,6 +86,7 @@ function InitInventory()
 		}
 		
 		CreateInventory(class'Arena.Ab_ShockShort', true);
+		CreateInventory(class'Arena.Ab_PortableShield', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
@@ -211,6 +212,10 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_DoubleBubble', true);
 		break;
 		
+	case "DustCloud":
+		CreateInventory(class'Arena.Ab_DustCloud', true);
+		break;
+		
 	case "ElectromagneticField":
 		CreateInventory(class'Arena.Ab_ElectromagneticField', true);
 		break;
@@ -221,6 +226,10 @@ exec function GiveAbility(string ability)
 		
 	case "Osmosis":
 		CreateInventory(class'Arena.Ab_Osmosis', true);
+		break;
+		
+	case "PortableShield":
+		CreateInventory(class'Arena.Ab_PortableShield', true);
 		break;
 		
 	case "Repulsion":
@@ -251,6 +260,13 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_Sand', true);
 		break;
 		
+	case "Sandstorm":
+		CreateInventory(class'Arena.Ab_Sandstorm', true);
+		break;	
+		
+	case "WallLaunch":
+		CreateInventory(class'Arena.WallLaunch', true);
+		
 	case "All":
 	case "all":
 		CreateInventory(class'Arena.Ab_ShockShort', true);
@@ -264,6 +280,7 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_Pedestal', true);
 		CreateInventory(class'Arena.Ab_RockWall', true);
 		CreateInventory(class'Arena.Ab_StoneSlab', true);
+		CreateInventory(class'Arena.Ab_PortableShield', true);
 		CreateInventory(class'Arena.Ab_Bubble', true);
 		CreateInventory(class'Arena.Ab_ChargedShock', true);
 		CreateInventory(class'Arena.Ab_Deflection', true);
@@ -278,6 +295,8 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		CreateInventory(class'Arena.Ab_Osmosis', true);
 		CreateInventory(class'Arena.Ab_Sand', true);
+		CreateInventory(class'Arena.WallLaunch', true);
+		CreateInventory(class'Arena.Ab_DustCloud', true);
 		break;
 	}
 }

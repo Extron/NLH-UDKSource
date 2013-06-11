@@ -24,7 +24,7 @@ simulated function CustomFire()
 {
 	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_Fire', DamageReduction);
 	// TODO: Does not extend to extended classes?
-	playerStatMod.SetTypeDamageInputMod(class 'DamageType', DamageReduction);
+	playerStatMod.SetTypeDamageInputMod(class 'DamageType', FireDamageReduction);
 	// Test...
 	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_LightBeam', DamageReduction);
 
@@ -49,6 +49,10 @@ simulated function DestroyRockSkin()
 defaultproperties
 {
 	WeaponFireTypes(0)=EWFT_Custom
+	
+	Begin Object Class=PlayerStatModifier Name=NewMod
+	End Object
+	playerStatMod=NewMod
 	
 	CoolDown =  90
 	EnergyCost = 600
