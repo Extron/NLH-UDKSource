@@ -66,11 +66,6 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 	}
 }
 
-/*
-simulated event TakeDamage(int Damage, Controller InstigatedBy, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser) {
-
-} */
-
 function InitInventory()
 {
 	local ArenaWeapon newWeapon;
@@ -171,6 +166,14 @@ exec function GiveAbility(string ability)
 	case "LightningBolt":
 		CreateInventory(class'Arena.Ab_LightningBolt', true);
 		break;
+				
+	case "Discharge":
+		CreateInventory(class'Arena.Ab_Discharge', true);
+		break;
+						
+	case "LightningStorm":
+		CreateInventory(class'Arena.Ab_LightningStorm', true);
+		break;
 		
 	case "EMP":
 		CreateInventory(class'Arena.Ab_EMP', true);
@@ -254,6 +257,8 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_ShockMedium', true);
 		CreateInventory(class'Arena.Ab_ShockLong', true);
 		CreateInventory(class'Arena.Ab_LightningBolt', true);
+		CreateInventory(class'Arena.Ab_Discharge', true);
+		CreateInventory(class'Arena.Ab_LightningStorm', true);
 		CreateInventory(class'Arena.Ab_EMP', true);
 		CreateInventory(class'Arena.Ab_RangedEMP', true);
 		CreateInventory(class'Arena.Ab_Pedestal', true);

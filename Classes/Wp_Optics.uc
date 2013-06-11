@@ -8,6 +8,11 @@
 
 class Wp_Optics extends ArenaWeaponComponent;
 
+simulated function bool CanAttachToBase(ArenaWeaponBase baseWeap)
+{
+	return super.CanAttachToBase(baseWeap) && baseWeap.CanEquipOptics(self);
+}
+
 function vector GetOpticsOffset(vector l, rotator r)
 {
 	local vector socketLoc;
@@ -18,10 +23,9 @@ function vector GetOpticsOffset(vector l, rotator r)
 	{
 		if (SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndRotation('SightSocket', socketLoc, socketRot, 0))
 		{
-			v = (socketLoc - l) << r;	
+			v = (socketLoc - l) << r;
 			v.x = 0;
-			//v.y -= 0.7;
-			v.z += 1.65;
+			v += Wp_Barrel(WeaponBase.WeaponComponents[WCBarrel]).SightsOffset;
 		}
 	}
 	
@@ -30,5 +34,6 @@ function vector GetOpticsOffset(vector l, rotator r)
 
 defaultproperties
 {
-	Subclasses[0]=class'Arena.Wp_O_CheapIronSights'
+	Subclasses[0]=class'Arena.Wp_O_NoOptics'
+	Subclasses[1]=class'Arena.Wp_O_CheapIronSights'
 }

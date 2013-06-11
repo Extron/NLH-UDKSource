@@ -50,7 +50,8 @@ defaultproperties
 	InstantHitDamageTypes[0]=class'Arena.Dmg_LightBeam'
 	InstantHitMomentum[0]=100.0
 	
-	Mode=FMSemiAuto
+	FireModes[0]=FMSemiAuto
+	Mode=0
 	CycleTime=0.25
 	BurstCount=3
 	

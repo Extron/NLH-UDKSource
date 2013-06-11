@@ -17,8 +17,8 @@ simulated function Emit()
 	
 	if (WorldInfo.NetMode != NM_DedicatedServer && ProjTemplate != None && ArenaWeaponBase(Weapon) != None)
 	{
-		if (SkeletalMeshComponent(ArenaWeaponBase(Weapon).Barrel.Mesh).GetSocketByName('MuzzleSocket') != None)
-			SkeletalMeshComponent(ArenaWeaponBase(Weapon).Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
+		if (SkeletalMeshComponent(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel].Mesh).GetSocketByName(ArenaWeaponBase(Weapon).Sockets[WCBarrel]) != None)
+			SkeletalMeshComponent(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel].Mesh).GetSocketWorldLocationAndRotation(ArenaWeaponBase(Weapon).Sockets[WCBarrel], l, r, 0);
 	}
 	
 	//Projectile.SetVectorParameter('TracerOrigin', l);

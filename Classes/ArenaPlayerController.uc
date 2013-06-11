@@ -169,26 +169,29 @@ function CheckJumpOrDuck()
 
 exec function ADS()
 {
-	ADSDirection *= -1;
-	
-	if (ADSDirection > 0)
-		DesiredADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
-	else
-		DesiredADSOffset = vect(0, 0, 0);
+	if (ArenaWeapon(Pawn.Weapon).CanADS())
+	{
+		ADSDirection *= -1;
 		
-	//ADSOffset = DesiredADSOffset;
+		if (ADSDirection > 0)
+			DesiredADSOffset = ArenaWeaponBase(Pawn.Weapon).GetOpticsOffset(ArenaPawn(Pawn));
+		else
+			DesiredADSOffset = vect(0, 0, 0);
+			
+		//ADSOffset = DesiredADSOffset;
 
-	if (ADSCounter > 0)
-		ADSTime = ADSCounter;
-	else
-		ADSTime = ArenaPawn(Pawn).Stats.GetADSSpeed();	
-		
-	if (ADSDirection > 0)
-		SetFOVWithTime(FOVAngle / ArenaWeaponBase(Pawn.Weapon).GetZoomLevel(), ADSTime);
-	else
-		SetFOVWithTime(DefaultFOV, ADSTime);
-		
-	Aiming = true;
+		if (ADSCounter > 0)
+			ADSTime = ADSCounter;
+		else
+			ADSTime = ArenaPawn(Pawn).Stats.GetADSSpeed();	
+			
+		if (ADSDirection > 0)
+			SetFOVWithTime(FOVAngle / ArenaWeaponBase(Pawn.Weapon).GetZoomLevel(), ADSTime);
+		else
+			SetFOVWithTime(DefaultFOV, ADSTime);
+			
+		Aiming = true;
+	}
 }
 
 simulated function PlayerTick(float dt)
@@ -358,12 +361,12 @@ defaultproperties
 	Begin Object Class=PlayerLoadout Name=DefaultLoadout
 		Begin Object Class=WeaponSchematic Name=DefaultSchematic
 			ArenaWeaponBase=class'Wp_BasicRifleBase';
-			WeaponStock=class'Wp_S_CheapStock';
-			WeaponBarrel=class'Wp_B_BasicRifleBarrel';
-			WeaponMuzzle=class'Wp_M_BasicRifleMuzzle';
+			WeaponStock=class'Wp_S_WoodStock';
+			WeaponBarrel=class'Wp_B_ShortRailedBarrel';
+			WeaponMuzzle=class'Wp_M_NoMuzzle';
 			WeaponOptics=class'Wp_O_CheapIronSights';
 			WeaponSideAttachment=class'Wp_SA_NoSideAttachment';
-			WeaponUnderAttachment=class'Wp_UA_NoUnderAttachment';
+			WeaponUnderAttachment=class'Wp_UA_Shotgun';
 			WeaponName="Cheap Rifle"
 		End Object
 		Weapon=DefaultSchematic

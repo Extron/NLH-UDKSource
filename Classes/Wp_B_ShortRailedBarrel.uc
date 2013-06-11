@@ -1,21 +1,20 @@
 /*******************************************************************************
-	BasicRifleBarrel
+	Wp_B_ShortRailedBarrel
 
-	Creation date: 10/07/2012 21:10
-	Copyright (c) 2012, Trystan
+	Creation date: 07/06/2013 23:35
+	Copyright (c) 2013, Trystan
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class Wp_B_BasicRifleBarrel extends Wp_Barrel;
+class Wp_B_ShortRailedBarrel extends Wp_Barrel;
 
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'BasicRifleBarrel.Meshes.BasicBarrelMesh'
+		SkeletalMesh=SkeletalMesh'ShortRailedBarrel.Meshes.ShortRailedBarrelMesh'
 	End Object
 	
 	Begin Object Name=NewStatMod
-		ValueMods[WSVAccuracy]=0.95
 		ValueMods[WSVMobility]=1.1
 	End Object
 	
@@ -23,14 +22,13 @@ defaultproperties
 	MFLClass=class'Arena.L_RifleMuzzleFlash'
 	
 	CompatibleTypes[0]=WTRifle
-	CompatibleTypes[1]=WTHardLightRifle
 	
 	CompatibleSizes[0]=WSSmall
 	CompatibleSizes[1]=WSRegular
 	CompatibleSizes[2]=WSLarge
-
-	SightsOffset=(Z=1.65)
-	Weight=3
-	ComponentName="Basic Rifle Barrel"
-	ComponentDescription="A simple rifled barrel made out of iron metal, it can be attached to a wide variety of projectile-based weapons, though its cheap design often leads to rust or corrosion."
+	
+	SightsOffset=(Z=0.4)
+	Weight=3.5
+	ComponentName="Short Railed Barrel"
+	ComponentDescription="A bit more advanced than the basic rifle barrel, this barrel is perfect for constructing carbines to be used in small spaces.  The addition of railing allows various attachments to be added."
 }

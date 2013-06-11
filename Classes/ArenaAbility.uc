@@ -93,6 +93,12 @@ var vector SourceOffset;
 /** The name of the ability. */
 var string AbilityName;
 
+/**
+ * The base damage that the ability deals.  This will be modified by player stats before 
+ * the final damage is set.
+ */
+var float BaseDamage;
+
 /* The amount of energy using this ability requires.  For abilities that can be sustained, this is on a per-tick basis. */
 var float EnergyCost;
 
@@ -389,7 +395,8 @@ simulated function InstantFire()
 
 	EmitIHBeam(RealImpact.HitLocation);
 	
-	//InstantHitDamage[0] = BaseDamage * Stats.GetDamageModifier();
+	if (ArenaPawn(Instigator) != None)
+		InstantHitDamage[0] = ArenaPawn(Instigator).Stats.GetDamageGiven(BaseDamage, InstantHitDamageTypes[0]);
 	
 	for (Idx = 0; Idx < ImpactList.Length; Idx++)
 	{
@@ -616,6 +623,7 @@ defaultproperties
 	HoldingAnim=PlayerArmsAbilityHolding
 	HoldEndAnim=PlayerArmsAbilityHoldEnd
 	
+	InstantHitDamage[0]=0
 	
 	CanFire=true
 	//ChargedHasFired=false

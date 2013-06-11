@@ -58,6 +58,14 @@ simulated function float GetReloadSpeed()
 }
 
 /**
+ * Gets the multiplicitave factor to change the cycle speed by.
+ */
+simulated function float GetCycleSpeed()
+{
+	return 1;
+}
+
+/**
  * Gets the multiplicitave factor to change the equipping speed by.
  */
 simulated function float GetEquipSpeed()
@@ -81,14 +89,12 @@ simulated function rotator GetInaccuracyShift()
 	//that the bullet is traveling, and the y and z axes form the plane orthogonal to that trajectory.
 	//We will only ever modify y and z, since that is the only direction it makes sense to shift in.
 	
-	//yShift = FRand() - 0.5;
-	//zShift = FRand() - 0.5; It was waaaaaay too inaccurate
-	yShift = (FRand() - 0.5) * 0.02;
-	zShift = (FRand() - 0.5) * 0.02;
+	yShift = (FRand() - 0.5) * 0.2;
+	zShift = (FRand() - 0.5) * 0.2;
 	
-	factor = Constants.GetFactorMin("Accuracy Shift") * (1 - 1 / fmax(Constants.NormalizedStat("Accuracy", Values[WSVAccuracy]), 0.01)) + 
-			 Constants.GetFactorMax("Accuracy Shift") * (1 / fmax(Constants.NormalizedStat("Accuracy", Values[WSVAccuracy]), 0.01));
-			 
+	factor = Constants.GetFactorMin("Accuracy Shift") * (1 - 1 / fmax(Constants.NormalizedStat("Weapon Accuracy", Values[WSVAccuracy]), 0.001)) + 
+			 Constants.GetFactorMax("Accuracy Shift") * (1 / fmax(Constants.NormalizedStat("Weapon Accuracy", Values[WSVAccuracy]), 0.001));
+	
 	factor *= ArenaPawn(Weapon.Instigator).Stats.GetInaccuracyFactor();
 	factor += Constants.NormalizedStat("Bloom", Weapon.Bloom);
 	
@@ -106,7 +112,7 @@ simulated function float GetBloomCost()
 {
 	local float x;
 	
-	x = Constants.NormalizedStat("Stability", Values[WSVStability]);
+	x = Constants.NormalizedStat("Weapon Stability", Values[WSVStability]) * Constants.NormalizedStat("Weapon Recoil", Values[WSVRecoil]);
 
 	return ArenaPawn(Weapon.Instigator).Stats.GetBloomFactor() * (Constants.GetFactorMin("Bloom Cost") * x + Constants.GetFactorMax("Bloom Cost") * (1 - x));
 }

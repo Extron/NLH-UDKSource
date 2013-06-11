@@ -353,6 +353,9 @@ state Evading
 		
 		global.Tick(dt);
 
+		if (Controller.Focus == None)
+			return;
+			
 		if (Counter < OrbitTimer)
 		{		
 			AddVelocity(-Velocity, vect(0, 0, 0), None);

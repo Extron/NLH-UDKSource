@@ -48,12 +48,15 @@ var PointLightComponent LeftLight;
  */
 var PointLightComponent RightLight;
 
+/**
+ * The sub menu that lets players switch out weapon parts.
+ */
 var GFx_WLSubMenu Submenu;
 
 /**
  * The menu container for the weapon stats.
  */
-var GFxObject StatsContainer, ValuesContainer, NameLabel, Cursor;
+var GFxObject Cursor;
 
 /**
  * The button wrappers for the buttons.
@@ -68,17 +71,27 @@ var GFx_Tooltip PartTooltip, StatTooltip;
 /**
  * The accept and cancel buttons.
  */
-var GFxClikWidget AcceptButton, CancelButton;
+var GFxClikWidget AcceptButton, CancelButton, NameLabel, AddMuzzle, AddSide, AddUnder, AddOptics, AddStock;
 
 /**
- * A list of weapon stats menu items.
+ * The container for all stat bars that are displayed to the screen.
  */
-var array<GFx_StatBar> Stats;
+var GFx_StatBarContainer StatsContainer;
 
 /**
- * A list of weapon stats menu items.
+ * The container for all value stats that are displayed to the screen.
  */
-var array<GFx_ValueDisplay> Values;
+var GFx_ValueDisplayContainer ValuesContainer;
+
+/**
+ * The energy bar of the weapon.  Will not be visible if the weapon base has no energy amount.
+ */
+var GFx_StatBar EnergyBar;
+
+/**
+ * The drop down list to use for fire modes.
+ */
+var GFx_ValueDropdown FireModeDDL;
 
 /**
  * The materials of the various weapon parts.  This is used for highlighting selected parts.
@@ -132,6 +145,16 @@ var float HighlightPulseRate;
  */
 var int SelectedPart;
 
+/**
+ * Indicates that some aspect of the weapon has changed and that the user's weapon needs to be updated.
+ */
+var bool ChangedWeapon;
+
+var bool ChangedName;
+
+var bool ChangedFireMode;
+
+var int FireModeIndex;
 
 function bool Start(optional bool StartPaused = false)
 {	
@@ -142,10 +165,11 @@ function bool Start(optional bool StartPaused = false)
 			
     Advance(0);
 
-	StatsContainer = GetVariableObject("_root.details.stats");
-	ValuesContainer = GetVariableObject("_root.details.values");
-	NameLabel = GetVariableObject("_root.details.name_label.label");
+	StatsContainer = GFx_StatBarContainer(GetVariableObject("_root.details.stats", class'GFx_StatBarContainer'));
+	ValuesContainer = GFx_ValueDisplayContainer(GetVariableObject("_root.details.values", class'GFx_ValueDisplayContainer'));
+	NameLabel = GfxClikWidget(GetVariableObject("_root.details.name_label", class'GFxClikWidget'));
 	Cursor = GetVariableObject("_root.cursor");
+	EnergyBar = GFx_StatBar(GetVariableObject("_root.details.energy_bar", class'GFx_StatBar'));
 	
 	PartTooltip = GFx_Tooltip(GetVariableObject("_root.part_tooltip", class'GFx_Tooltip'));
 	StatTooltip = GFx_Tooltip(GetVariableObject("_root.stat_tooltip", class'GFx_Tooltip'));
@@ -159,31 +183,20 @@ function bool Start(optional bool StartPaused = false)
 	AcceptButton.AddEventListener('CLIK_click', OnPressAcceptButton);
 	CancelButton.AddEventListener('CLIK_click', OnPressCancelButton);
 	
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("weight_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("accuracy_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("stability_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("mobility_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("recoil_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("zoom_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("rof_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("roc_stat", class'Arena.GFx_StatBar')));
-	Stats.AddItem(GFx_StatBar(StatsContainer.GetObject("damage_stat", class'Arena.GFx_StatBar')));
+	AddMuzzle = GFxClikWidget(GetVariableObject("_root.add_muzzle_button", class'GFxClikWidget'));	
+	AddSide = GFxClikWidget(GetVariableObject("_root.add_side_button", class'GFxClikWidget'));	
+	AddUnder = GFxClikWidget(GetVariableObject("_root.add_under_button", class'GFxClikWidget'));
+	AddOptics = GFxClikWidget(GetVariableObject("_root.add_optics_button", class'GFxClikWidget'));
+	AddStock = GFxClikWidget(GetVariableObject("_root.add_stock_button", class'GFxClikWidget'));
 	
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("weapon_type_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("weapon_size_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("fire_mode_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("mag_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("damage_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("reload_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("equip_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("clip_size_value", class'Arena.GFx_ValueDisplay')));
-	Values.AddItem(GFx_ValueDisplay(ValuesContainer.GetObject("bloom_value", class'Arena.GFx_ValueDisplay')));
+	AddMuzzle.AddEventListener('CLIK_click', OnPressAddMuzzleButton);
+	AddSide.AddEventListener('CLIK_click', OnPressAddSideButton);
+	AddUnder.AddEventListener('CLIK_click', OnPressAddUnderButton);
+	AddOptics.AddEventListener('CLIK_click', OnPressAddOpticsButton);
+	AddStock.AddEventListener('CLIK_click', OnPressAddStockButton);
 	
 	if (ArenaPlayerController(GetPC()) != None)
-	{
-		`log("LE" @ MenuLightEnvironment);
-		
-		
+	{		
 		Viewer = ArenaPlayerController(GetPC());
 		OldViewRotation = Viewer.Rotation;
 		r.Yaw = OldViewRotation.Yaw;
@@ -202,28 +215,61 @@ function bool Start(optional bool StartPaused = false)
 		SetWeaponParameters();	
 		ArenaWeapon(Viewer.Pawn.Weapon).HideWeapon(true);
 		
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCStock] == None || Wp_S_NoStock(ArenaWeaponBase(Weapon).WeaponComponents[WCStock]) != None)
+			AddStock.SetVisible(true);
+		else
+			AddStock.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCMuzzle] == None || Wp_M_NoMuzzle(ArenaWeaponBase(Weapon).WeaponComponents[WCMuzzle]) != None)
+			AddMuzzle.SetVisible(true);
+		else
+			AddMuzzle.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCOptics] == None || Wp_O_NoOptics(ArenaWeaponBase(Weapon).WeaponComponents[WCOptics]) != None &&
+			ArenaWeaponBase(Weapon).CanEquipOptics(Wp_Optics(ArenaWeaponBase(Weapon).WeaponComponents[WCOptics])))
+			AddOptics.SetVisible(true);
+		else
+			AddOptics.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCUnderAttachment] == None || Wp_UA_NoUnderAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCUnderAttachment]) != None &&
+			Wp_Barrel(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel]).CanEquipUnderAttachment(Wp_UnderAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCUnderAttachment])))
+			AddUnder.SetVisible(true);
+		else
+			AddUnder.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCSideAttachment] == None || Wp_SA_NoSideAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCSideAttachment]) != None &&
+			Wp_Barrel(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel]).CanEquipSideAttachment(Wp_SideAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCSideAttachment])))
+			AddSide.SetVisible(true);
+		else
+			AddSide.SetVisible(false);
+			
 		Weapon.AttachComponent(UpLight);
 		Weapon.AttachComponent(LeftLight);
 		Weapon.AttachComponent(RightLight);
-
-	}
-
-	NameLabel.SetText("\"" $ Weapon.WeaponName $ "\"");
-	
-	for (i = 0; i < Stats.Length; i++)
-	{
-		Stats[i].SetStatName(GetStatName(i));
 		
-		if (i > 0)
-			Stats[i].SetStatValue(Weapon.Stats.Values[i], Weapon.Stats.GetGGCMax(i));
-		else
-			Stats[i].SetStatValue(ArenaWeaponBase(Weapon).GetWeight(), 25);
+		if (ArenaWeaponBase(Weapon).EnergyMax <= 0)
+			EnergyBar.SetVisible(false);
+
+		EnergyBar.SetStatValue(ArenaWeaponBase(Weapon).GetEnergyUsed(), ArenaWeaponBase(Weapon).EnergyMax);
 	}
 
-	for (i = 0; i < Values.Length; i++)
+	NameLabel.SetString("text", "\"" $ Weapon.WeaponName $ "\"");
+	NameLabel.AddEventListener('CLIK_click', OnTextInputClick);
+	
+	for (i = 0; i < 9; i++)
+	{		
+		if (i > 0)
+			StatsContainer.AddStatBar(GetStatName(i), Weapon.Stats.Values[i], Weapon.Stats.GetGGCMax(i));
+		else
+			StatsContainer.AddStatBar("Weight", ArenaWeaponBase(Weapon).GetWeight(), 25);
+	}
+
+	for (i = 0; i < 9; i++)
 	{
-		Values[i].SetValueName(GetValueName(i) $ ":");
-		SetValue(Values[i], i);
+		if (GetValueName(i) == "Fire Mode" && ArenaWeaponBase(Weapon).AllowedFireModes.Length > 1 && Weapon.FireModes.Length == 1)
+			ValuesContainer.AddDropdown(GetValueName(i) $ ":", GetFireModesString(), GetFireModeIndex(ArenaWeaponBase(Weapon).AllowedFireModes, Weapon.FireModes[0]));
+		else
+			ValuesContainer.AddValue(GetValueName(i) $ ":", GetValue(i));
 	}
 	
 	return true;	
@@ -263,9 +309,12 @@ function Update(float dt)
 
 function PostRender()
 {
+	local ArenaWeaponComponent iter;
 	local vector2D mousePos;
 	local vector origin, direction;
 	local vector traceLoc, traceNorm;
+	local bool hit;
+	local int index;
 	
 	if (Submenu != None && Submenu.bMovieIsOpen)
 	{
@@ -278,9 +327,6 @@ function PostRender()
 	
 	Viewer.MyHUD.Canvas.DeProject(mousePos, origin, direction);
 	
-	//`log("Origin" @ origin @ "Pawn location" @ Viewer.Pawn.Location @ "Weapon Location" @ Weapon.Location);
-	
-	//traceActor = Viewer.Trace(traceLoc, traceNorm, origin + direction * 512, origin , true);
 	ArenaWeaponBase(Weapon).Mesh.SetTraceBlocking(true, true);
 	
 	if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Mesh, origin + direction * 512, origin , , , true))
@@ -294,94 +340,38 @@ function PostRender()
 		StatTooltip.SetVisible(true);
 		SetStatTooltip(StatTooltip, Weapon.default.Stats.Values, -1);
 		
-		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).ArenaWeaponBaseName);
+		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).BaseName);
 		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).BaseDescription);
-	}
-	else if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Stock.Mesh, origin + direction * 512, origin , , , true))
-	{
-		if (SelectedPart > -1)
-			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
-			
-		SelectedPart = 1;
 		
-		PartTooltip.SetVisible(true);
-		StatTooltip.SetVisible(true);
-		SetStatTooltip(StatTooltip, ArenaWeaponBase(Weapon).Stock.StatMod.ValueMods, 1, ArenaWeaponBase(Weapon).Stock.Weight);
-		
-		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).Stock.ComponentName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).Stock.ComponentDescription);
-	}
-	else if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Barrel.Mesh, origin + direction * 512, origin , , , true))
-	{
-		if (SelectedPart > -1)
-			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
-			
-		SelectedPart = 2;
-		
-		PartTooltip.SetVisible(true);
-		StatTooltip.SetVisible(true);
-		SetStatTooltip(StatTooltip, ArenaWeaponBase(Weapon).Barrel.StatMod.ValueMods, 1, ArenaWeaponBase(Weapon).Barrel.Weight);
-		
-		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).Barrel.ComponentName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).Barrel.ComponentDescription);
-	}
-	else if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Muzzle.Mesh, origin + direction * 512, origin , , , true))
-	{
-		if (SelectedPart > -1)
-			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
-			
-		SelectedPart = 3;
-		
-		PartTooltip.SetVisible(true);
-		StatTooltip.SetVisible(true);
-		SetStatTooltip(StatTooltip, ArenaWeaponBase(Weapon).Muzzle.StatMod.ValueMods, 1, ArenaWeaponBase(Weapon).Muzzle.Weight);
-		
-		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).Muzzle.ComponentName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).Muzzle.ComponentDescription);
-	}
-	else if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Optics.Mesh, origin + direction * 512, origin , , , true))
-	{
-		if (SelectedPart > -1)
-			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
-			
-		SelectedPart = 4;
-		
-		PartTooltip.SetVisible(true);
-		StatTooltip.SetVisible(true);
-		SetStatTooltip(StatTooltip, ArenaWeaponBase(Weapon).Optics.StatMod.ValueMods, 1, ArenaWeaponBase(Weapon).Optics.Weight);
-		
-		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).Optics.ComponentName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).Optics.ComponentDescription);
-	}
-	else if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Under.Mesh, origin + direction * 512, origin , , , true))
-	{
-		if (SelectedPart > -1)
-			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
-			
-		SelectedPart = 5;
-		
-		PartTooltip.SetVisible(true);
-		StatTooltip.SetVisible(true);
-		SetStatTooltip(StatTooltip, ArenaWeaponBase(Weapon).Under.StatMod.ValueMods, 1, ArenaWeaponBase(Weapon).Under.Weight);
-		
-		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).Under.ComponentName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).Under.ComponentDescription);
-	}
-	else if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Side.Mesh, origin + direction * 512, origin , , , true))
-	{
-		if (SelectedPart > -1)
-			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
-			
-		SelectedPart = 6;
-		
-		PartTooltip.SetVisible(true);
-		StatTooltip.SetVisible(true);
-		SetStatTooltip(StatTooltip, ArenaWeaponBase(Weapon).Side.StatMod.ValueMods, 1, ArenaWeaponBase(Weapon).Side.Weight);
-		
-		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).Side.ComponentName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).Side.ComponentDescription);
+		hit = true;
 	}
 	else
+	{
+		foreach ArenaWeaponBase(Weapon).WeaponComponents(iter, index)
+		{
+			if (Viewer.TraceComponent(traceLoc, traceNorm, iter.Mesh, origin + direction * 512, origin , , , true))
+			{		
+				if (SelectedPart > -1)
+					WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
+			
+				SelectedPart = index + 1;
+				
+				PartTooltip.SetVisible(true);
+				StatTooltip.SetVisible(true);
+				SetStatTooltip(StatTooltip, iter.StatMod.ValueMods, 1, iter.Weight);
+				
+				PartTooltip.SetTooltipTitle(iter.ComponentName);
+				PartTooltip.SetTooltipBody(iter.ComponentDescription);
+				
+				hit = true;
+				
+				break;
+			}
+		}
+
+	}
+	
+	if (!hit)
 	{
 		if (SelectedPart > -1)
 			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
@@ -395,62 +385,16 @@ function PostRender()
 
 event OnMouseClick()
 {
-	if (SelectedPart > -1)
-	{
-		Submenu = new class'Arena.GFx_WLSubmenu';
-		Submenu.bEnableGammaCorrection = FALSE;
-		Submenu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(Viewer.Player));
-		Submenu.SetTimingMode(TM_Real);
-		Submenu.Parent = self;
-		Submenu.Viewer = Viewer;
-		Submenu.LightEnvironment = MenuLightEnvironment;
-		
-		switch (SelectedPart)
-		{
-		case 0:
-			Submenu.BaseClass = ArenaWeaponBase(Weapon).Class;
-			break;
-			
-		case 1:
-			Submenu.ComponentClass = ArenaWeaponBase(Weapon).Stock.Class;
-			break;
-			
-		case 2:
-			Submenu.ComponentClass = ArenaWeaponBase(Weapon).Barrel.Class;
-			break;
-			
-		case 3:
-			Submenu.ComponentClass = ArenaWeaponBase(Weapon).Muzzle.Class;
-			break;
-			
-		case 4:
-			Submenu.ComponentClass = ArenaWeaponBase(Weapon).Optics.Class;
-			break;
-			
-		case 5:
-			Submenu.ComponentClass = ArenaWeaponBase(Weapon).Under.Class;
-			break;
-			
-		case 6:
-			Submenu.ComponentClass = ArenaWeaponBase(Weapon).Side.Class;
-			break;
-			
-		}
-		
-		PartTooltip.SetVisible(false);
-		StatTooltip.SetVisible(false);
-		Cursor.SetVisible(false);
-		ArenaWeaponBase(Weapon).SetHidden(true);
-		ArenaWeaponBase(Weapon).Stock.SetHidden(true);
-		ArenaWeaponBase(Weapon).Barrel.SetHidden(true);
-		ArenaWeaponBase(Weapon).Muzzle.SetHidden(true);
-		ArenaWeaponBase(Weapon).Optics.SetHidden(true);
-		ArenaWeaponBase(Weapon).Side.SetHidden(true);
-		ArenaWeaponBase(Weapon).Under.SetHidden(true);
+	ShowSubmenu();
+}
+
+event OnTextInputClick(GFxClikWidget.EventData ev)
+{
+	if (!ChangedName)
+		NameLabel.SetString("text", Weapon.WeaponName);
 	
-		Submenu.Start();
-		Submenu.PlayOpenAnimation();
-	}
+	ChangedName = true;
+	AcceptButton.SetBool("enabled", true);
 }
 
 event OnClose()
@@ -470,12 +414,115 @@ event OnClose()
 
 function OnPressAcceptButton(GFxClikWidget.EventData ev)
 {
+	local WeaponSchematic schematic;
+	local ArenaWeapon newWeapon;
+	
+	if (ChangedWeapon)
+	{
+		schematic = new class'Arena.WeaponSchematic';
+		
+		schematic.WeaponName = Repl(NameLabel.GetString("text"), "\"", "");
+		schematic.ArenaWeaponBase = ArenaWeaponBase(Weapon).Class;
+		schematic.WeaponStock = Wp_Stock(ArenaWeaponBase(Weapon).WeaponComponents[WCStock]).Class;
+		schematic.WeaponBarrel = Wp_Barrel(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel]).Class;
+		schematic.WeaponMuzzle = Wp_Muzzle(ArenaWeaponBase(Weapon).WeaponComponents[WCMuzzle]).Class;
+		schematic.WeaponOptics = Wp_Optics(ArenaWeaponBase(Weapon).WeaponComponents[WCOptics]).Class;
+		schematic.WeaponSideAttachment = Wp_SideAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCSideAttachment]).Class;
+		schematic.WeaponUnderAttachment = Wp_UnderAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCUnderAttachment]).Class;
+		
+		if (ChangedFireMode)
+			schematic.WeaponFireModes = GetFireModes();
+		
+		newWeapon = ArenaPawn(Viewer.Pawn).CreateWeapon(schematic);
+		newWeapon.Ammo = Weapon.Ammo;
+		newWeapon.Clip = Weapon.Clip;
+		
+		ArenaPawn(Viewer.Pawn).SwapWeapon(newWeapon);
+	}
+	else if (ChangedName)
+	{
+		ArenaWeapon(Viewer.Pawn.Weapon).WeaponName = Repl(NameLabel.GetString("text"), "\"", "");
+	}
+	
+	if (ChangedFireMode && !ChangedWeapon)
+		ArenaWeapon(Viewer.Pawn.Weapon).SetFireModes(GetFireModes());
+	
     PlayCloseAnimation();
 }
 
 function OnPressCancelButton(GFxClikWidget.EventData ev)
 {
 	PlayCloseAnimation();
+}
+
+function ShowSubmenu()
+{
+	if (SelectedPart > -1 && !(Submenu != None && Submenu.bMovieIsOpen))
+	{
+		Submenu = new class'Arena.GFx_WLSubmenu';
+		Submenu.bEnableGammaCorrection = FALSE;
+		Submenu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(Viewer.Player));
+		Submenu.SetTimingMode(TM_Real);
+		Submenu.Parent = self;
+		Submenu.Viewer = Viewer;
+		Submenu.LightEnvironment = MenuLightEnvironment;
+		
+		if (SelectedPart == 0)
+			Submenu.BaseClass = ArenaWeaponBase(Weapon).Class;
+		else
+			Submenu.ComponentClass = ArenaWeaponBase(Weapon).WeaponComponents[SelectedPart - 1].Class;
+		
+		PartTooltip.SetVisible(false);
+		StatTooltip.SetVisible(false);
+		Cursor.SetVisible(false);
+		Weapon.HideWeapon(true);
+	
+		AddMuzzle.SetVisible(false);
+		AddSide.SetVisible(false);
+		AddUnder.SetVisible(false);
+		AddOptics.SetVisible(false);
+		AddStock.SetVisible(false);
+	
+		Submenu.Start();
+		Submenu.PlayOpenAnimation();
+	}
+}
+
+function OnPressAddStockButton(GFxClikWidget.EventData ev)
+{
+	SelectedPart = 1;
+	ShowSubmenu();
+}
+
+function OnPressAddMuzzleButton(GFxClikWidget.EventData ev)
+{
+	SelectedPart = 3;
+	ShowSubmenu();
+}
+
+function OnPressAddOpticsButton(GFxClikWidget.EventData ev)
+{
+	SelectedPart = 4;
+	ShowSubmenu();
+}
+
+function OnPressAddUnderButton(GFxClikWidget.EventData ev)
+{
+	SelectedPart = 5;
+	ShowSubmenu();
+}
+
+function OnPressAddSideButton(GFxClikWidget.EventData ev)
+{
+	SelectedPart = 6;
+	ShowSubmenu();
+}
+
+function OnDropdownIndexChanged(string ddlName, int index)
+{
+	ChangedFireMode = true;
+	FireModeIndex = index;
+	AcceptButton.SetBool("enabled", true);
 }
 
 function bool InterceptEscape()
@@ -487,18 +534,305 @@ function bool InterceptEscape()
 		PartTooltip.SetVisible(true);
 		StatTooltip.SetVisible(true);
 		Cursor.SetVisible(true);
-		ArenaWeaponBase(Weapon).SetHidden(false);
-		ArenaWeaponBase(Weapon).Stock.SetHidden(false);
-		ArenaWeaponBase(Weapon).Barrel.SetHidden(false);
-		ArenaWeaponBase(Weapon).Muzzle.SetHidden(false);
-		ArenaWeaponBase(Weapon).Optics.SetHidden(false);
-		ArenaWeaponBase(Weapon).Side.SetHidden(false);
-		ArenaWeaponBase(Weapon).Under.SetHidden(false);
+		Weapon.HideWeapon(false);
 		
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCStock] == None || Wp_S_NoStock(ArenaWeaponBase(Weapon).WeaponComponents[WCStock]) != None)
+			AddStock.SetVisible(true);
+		else
+			AddStock.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCMuzzle] == None || Wp_M_NoMuzzle(ArenaWeaponBase(Weapon).WeaponComponents[WCMuzzle]) != None)
+			AddMuzzle.SetVisible(true);
+		else
+			AddMuzzle.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCOptics] == None || Wp_O_NoOptics(ArenaWeaponBase(Weapon).WeaponComponents[WCOptics]) != None &&
+			ArenaWeaponBase(Weapon).CanEquipOptics(Wp_Optics(ArenaWeaponBase(Weapon).WeaponComponents[WCOptics])))
+			AddOptics.SetVisible(true);
+		else
+			AddOptics.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCUnderAttachment] == None || Wp_UA_NoUnderAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCUnderAttachment]) != None &&
+			Wp_Barrel(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel]).CanEquipUnderAttachment(Wp_UnderAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCUnderAttachment])))
+			AddUnder.SetVisible(true);
+		else
+			AddUnder.SetVisible(false);
+			
+		if (ArenaWeaponBase(Weapon).WeaponComponents[WCSideAttachment] == None || Wp_SA_NoSideAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCSideAttachment]) != None &&
+			Wp_Barrel(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel]).CanEquipSideAttachment(Wp_SideAttachment(ArenaWeaponBase(Weapon).WeaponComponents[WCSideAttachment])))
+			AddSide.SetVisible(true);
+		else
+			AddSide.SetVisible(false);
+			
 		return true;
 	}
 	
 	return false;
+}
+
+function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
+{
+	local ArenaWeaponBase base;
+	local ArenaWeaponComponent component;
+	local MaterialInstanceConstant mat;
+	local name socket;
+	local int index;
+	local int i;
+	
+	base = ArenaWeaponBase(Weapon);
+	component = base.spawn(componentClass, base, , base.Location, base.Rotation);
+	
+	if (component.IsA('Wp_Stock'))
+	{
+		base.Stats.RemoveModifier(base.WeaponComponents[WCStock].StatMod);
+		base.WeaponComponents[WCStock].Destroy();
+		base.AttachStock(Wp_Stock(component));
+		socket = base.Sockets[WCStock];
+		index = 1;
+		
+		/*
+		if (Wp_S_NoStock(component) != None)
+			AddStock.SetVisible(true);
+		else
+			AddStock.SetVisible(false);*/
+	}
+	else if (component.IsA('Wp_Barrel'))
+	{
+		base.Stats.RemoveModifier(base.WeaponComponents[WCBarrel].StatMod);
+		base.WeaponComponents[WCBarrel].Destroy();
+		base.AttachBarrel(Wp_Barrel(component));
+		socket = base.Sockets[WCBarrel];
+		index = 2;
+	}
+	else if (component.IsA('Wp_Muzzle'))
+	{
+		base.Stats.RemoveModifier(base.WeaponComponents[WCMuzzle].StatMod);
+		base.WeaponComponents[WCMuzzle].Destroy();
+		base.AttachMuzzle(Wp_Muzzle(component));
+		socket = base.Sockets[WCMuzzle];
+		index = 3;
+		/*
+		if (Wp_M_NoMuzzle(component) != None)
+			AddMuzzle.SetVisible(true);
+		else
+			AddMuzzle.SetVisible(false);*/
+	}
+	else if (component.IsA('Wp_Optics'))
+	{
+		base.Stats.RemoveModifier(base.WeaponComponents[WCOptics].StatMod);
+		base.WeaponComponents[WCOptics].Destroy();
+		base.AttachOptics(Wp_Optics(component));
+		socket = base.Sockets[WCOptics];
+		index = 4;
+		/*
+		if (Wp_O_NoOptics(component) != None)
+			AddOptics.SetVisible(true);
+		else
+			AddOptics.SetVisible(false);*/
+	}
+	else if (component.IsA('Wp_UnderAttachment'))
+	{
+		base.Stats.RemoveModifier(base.WeaponComponents[WCUnderAttachment].StatMod);
+		base.WeaponComponents[WCUnderAttachment].Destroy();
+		base.AttachUnder(Wp_UnderAttachment(component));
+		socket = base.Sockets[WCUnderAttachment];
+		index = 5;
+		
+		/*
+		if (Wp_UA_NoUnderAttachment(component) != None || 
+			!Wp_Barrel(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel]).CanEquipUnderAttachment(Wp_UnderAttachment(component)))
+			AddUnder.SetVisible(true);
+		else
+			AddUnder.SetVisible(false);*/
+	}
+	else if (component.IsA('Wp_SideAttachment'))
+	{
+		base.Stats.RemoveModifier(base.WeaponComponents[WCSideAttachment].StatMod);
+		base.WeaponComponents[WCSideAttachment].Destroy();
+		base.AttachSide(Wp_SideAttachment(component));
+		socket = base.Sockets[WCSideAttachment];
+		index = 6;
+		/*
+		if (Wp_SA_NoSideAttachment(component) != None)
+			AddSide.SetVisible(true);
+		else
+			AddSide.SetVisible(false);*/
+	}
+		
+	component.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
+	component.Mesh.SetOnlyOwnerSee(false);
+	component.SetDrawScale(WeaponScale);
+	
+	component.AttachToBaseSpecial(base, socket, MenuLightEnvironment);
+	
+	mat = new class'MaterialInstanceConstant';
+	mat.SetParent(component.Mesh.GetMaterial(0));
+	mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
+	component.Mesh.SetMaterial(0, mat);
+	
+	WeaponMaterials[index] = mat;
+	
+	for (i = 0; i < 9; i++)
+	{
+		if (i > 0)
+			StatsContainer.ChangeStat(i, Weapon.Stats.Values[i], Weapon.Stats.GetGGCMax(i));
+		else
+			StatsContainer.ChangeStat(i, ArenaWeaponBase(Weapon).GetWeight(), 25);
+	}
+
+	for (i = 0; i < 9; i++)
+		ValuesContainer.ChangeValue(i, GetValue(i));
+	
+	AcceptButton.SetBool("enabled", true);
+	ChangedWeapon = true;
+}
+
+function ChangeWeaponBase(class<ArenaWeaponBase> baseClass)
+{
+	local ArenaWeaponBase base;
+	local ArenaWeaponComponent iter, component;
+	local bool prevHadMultipleFM;
+	local int i;
+	
+	base = Weapon.Spawn(baseClass, None, , Weapon.Location, Weapon.Rotation);
+	base.WeaponName = Weapon.WeaponName;
+	
+	foreach ArenaWeaponBase(Weapon).WeaponComponents(iter)
+	{
+		if (iter.IsA('Wp_Stock'))
+		{
+			if (iter.CanAttachToBase(base))
+			{
+				component = base.spawn(Wp_Stock(iter).Class, base, , base.Location, base.Rotation);
+				base.AttachStock(Wp_Stock(component));
+			}
+			else
+			{
+				component = base.spawn(base.DefaultComponents[WCStock], base, , base.Location, base.Rotation);
+				base.AttachStock(Wp_Stock(component));
+			}
+		}
+		else if (iter.IsA('Wp_Barrel'))
+		{
+			if (iter.CanAttachToBase(base))
+			{
+				component = base.spawn(Wp_Barrel(iter).Class, base, , base.Location, base.Rotation);
+				base.AttachBarrel(Wp_Barrel(component));
+			}
+			else
+			{
+				component = base.spawn(base.DefaultComponents[WCBarrel], base, , base.Location, base.Rotation);
+				base.AttachBarrel(Wp_Barrel(component));
+			}
+		}
+		else if (iter.IsA('Wp_Muzzle'))
+		{
+			if (iter.CanAttachToBase(base))
+			{
+				component = base.spawn(Wp_Muzzle(iter).Class, base, , base.Location, base.Rotation);
+				base.AttachMuzzle(Wp_Muzzle(component));
+			}
+			else
+			{
+				component = base.spawn(base.DefaultComponents[WCMuzzle], base, , base.Location, base.Rotation);
+				base.AttachMuzzle(Wp_Muzzle(component));
+			}
+		}
+		else if (iter.IsA('Wp_Optics'))
+		{
+			if (iter.CanAttachToBase(base))
+			{
+				component = base.spawn(Wp_Optics(iter).Class, base, , base.Location, base.Rotation);
+				base.AttachOptics(Wp_Optics(component));
+			}
+			else
+			{
+				component = base.spawn(base.DefaultComponents[WCOptics], base, , base.Location, base.Rotation);
+				base.AttachOptics(Wp_Optics(component));
+			}
+		}
+		else if (iter.IsA('Wp_UnderAttachment'))
+		{
+			if (iter.CanAttachToBase(base))
+			{
+				component = base.spawn(Wp_UnderAttachment(iter).Class, base, , base.Location, base.Rotation);
+				base.AttachUnder(Wp_UnderAttachment(component));
+			}
+			else
+			{
+				component = base.spawn(base.DefaultComponents[WCUnderAttachment], base, , base.Location, base.Rotation);
+				base.AttachUnder(Wp_UnderAttachment(component));
+			}
+		}
+		else if (iter.IsA('Wp_SideAttachment'))
+		{
+			if (iter.CanAttachToBase(base))
+			{
+				component = base.spawn(Wp_SideAttachment(iter).Class, base, , base.Location, base.Rotation);
+				base.AttachSide(Wp_SideAttachment(component));
+			}
+			else
+			{
+				component = base.spawn(base.DefaultComponents[WCSideAttachment], base, , base.Location, base.Rotation);
+				base.AttachSide(Wp_SideAttachment(component));
+			}
+		}
+	}
+	
+	prevHadMultipleFM = ArenaWeaponBase(Weapon).AllowedFireModes.Length > 1;
+	
+	Weapon.DetachComponent(UpLight);
+	Weapon.DetachComponent(LeftLight);
+	Weapon.DetachComponent(RightLight);
+	
+	Weapon.Destroy();
+	WeaponMaterials.Length = 0;
+	Weapon = base;
+
+	Weapon.AttachWeapon(MenuLightEnvironment);
+	SetWeaponParameters();
+	Weapon.EnsureWeaponOverlayComponentLast();
+
+	Weapon.AttachComponent(UpLight);
+	Weapon.AttachComponent(LeftLight);
+	Weapon.AttachComponent(RightLight);
+	
+	if (ArenaWeaponBase(Weapon).EnergyMax <= 0)
+		EnergyBar.SetVisible(false);
+
+	EnergyBar.SetStatValue(ArenaWeaponBase(Weapon).GetEnergyUsed(), ArenaWeaponBase(Weapon).EnergyMax);
+	
+	Viewer.SetPause(false);
+	Counter = 0;
+	
+	for (i = 0; i < 9; i++)
+	{
+		if (i > 0)
+			StatsContainer.ChangeStat(i, Weapon.Stats.Values[i], Weapon.Stats.GetGGCMax(i));
+		else
+			StatsContainer.ChangeStat(i, ArenaWeaponBase(Weapon).GetWeight(), 25);
+	}
+
+	if (prevHadMultipleFM && base.AllowedFireModes.Length <= 1)
+	{
+		ValuesContainer.RemoveDropdown("Fire Mode:");
+		ValuesContainer.InsertValue("Fire Mode:", GetValue(2), 3);
+	}
+	else if (!prevHadMultipleFM && base.AllowedFireModes.Length > 1)
+	{
+		ValuesContainer.RemoveValue("Fire Mode:");
+		ValuesContainer.InsertDropdown("Fire Mode:", GetFireModesString(), 0, 3);
+	}
+	else if (prevHadMultipleFM && base.AllowedFireModes.Length > 1)
+	{
+		ValuesContainer.ChangeDropdown(2, GetFireModesString(), 0);
+	}
+	
+	for (i = 0; i < 9; i++)
+		ValuesContainer.ChangeValue(i, GetValue(i));
+	
+	AcceptButton.SetBool("enabled", true);
+	ChangedWeapon = true;
 }
 
 function ArenaWeapon CreateWeapon(ArenaWeapon currentWeapon)
@@ -514,14 +848,12 @@ function ArenaWeapon CreateWeapon(ArenaWeapon currentWeapon)
 	ArenaWeaponBase = currentWeapon.Spawn(ArenaWeaponBase(currentWeapon).Class, None, , Viewer.Pawn.Location + (WeaponOffset >> Viewer.Rotation), Viewer.Rotation);
 	ArenaWeaponBase.WeaponName = currentWeapon.WeaponName;
 
-	`log("Weapon Base" @ ArenaWeaponBase @ "Location" @ ArenaWeaponBase.Location);
-	
-	stock = currentWeapon.spawn(ArenaWeaponBase(currentWeapon).Stock.Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
-	barrel = currentWeapon.spawn(ArenaWeaponBase(currentWeapon).Barrel.Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
-	muzzle = currentWeapon.spawn(ArenaWeaponBase(currentWeapon).Muzzle.Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
-	optics = currentWeapon.spawn(ArenaWeaponBase(currentWeapon).Optics.Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
-	side = currentWeapon.spawn(ArenaWeaponBase(currentWeapon).Side.Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
-	under = currentWeapon.spawn(ArenaWeaponBase(currentWeapon).Under.Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	stock = currentWeapon.spawn(Wp_Stock(ArenaWeaponBase(currentWeapon).WeaponComponents[WCStock]).Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	barrel = currentWeapon.spawn(Wp_Barrel(ArenaWeaponBase(currentWeapon).WeaponComponents[WCBarrel]).Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	muzzle = currentWeapon.spawn(Wp_Muzzle(ArenaWeaponBase(currentWeapon).WeaponComponents[WCMuzzle]).Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	optics = currentWeapon.spawn(Wp_Optics(ArenaWeaponBase(currentWeapon).WeaponComponents[WCOptics]).Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	side = currentWeapon.spawn(Wp_SideAttachment(ArenaWeaponBase(currentWeapon).WeaponComponents[WCSideAttachment]).Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
+	under = currentWeapon.spawn(Wp_UnderAttachment(ArenaWeaponBase(currentWeapon).WeaponComponents[WCUnderAttachment]).Class, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
 	
 	ArenaWeaponBase.AttachStock(stock);
 	ArenaWeaponBase.AttachBarrel(barrel);
@@ -530,36 +862,26 @@ function ArenaWeapon CreateWeapon(ArenaWeapon currentWeapon)
 	ArenaWeaponBase.AttachSide(side);
 	ArenaWeaponBase.AttachUnder(under);
 	
+	ArenaWeaponBase.SetFireModes(currentWeapon.FireModes);
+	
 	return ArenaWeaponBase;
 }
 
 function SetWeaponParameters()
 {
+	local ArenaWeaponComponent iter;
 	local MaterialInstanceConstant mat;
 	
 	ArenaWeaponBase(Weapon).Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	ArenaWeaponBase(Weapon).Stock.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	ArenaWeaponBase(Weapon).Barrel.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	ArenaWeaponBase(Weapon).Muzzle.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	ArenaWeaponBase(Weapon).Optics.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	ArenaWeaponBase(Weapon).Side.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	ArenaWeaponBase(Weapon).Under.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	
-	ArenaWeaponBase(Weapon).Mesh.SetOnlyOwnerSee(false);
-	ArenaWeaponBase(Weapon).Stock.Mesh.SetOnlyOwnerSee(false);
-	ArenaWeaponBase(Weapon).Barrel.Mesh.SetOnlyOwnerSee(false);
-	ArenaWeaponBase(Weapon).Muzzle.Mesh.SetOnlyOwnerSee(false);
-	ArenaWeaponBase(Weapon).Optics.Mesh.SetOnlyOwnerSee(false);
-	ArenaWeaponBase(Weapon).Side.Mesh.SetOnlyOwnerSee(false);
-	ArenaWeaponBase(Weapon).Under.Mesh.SetOnlyOwnerSee(false);
-	
+	ArenaWeaponBase(Weapon).Mesh.SetOnlyOwnerSee(false);	
 	ArenaWeaponBase(Weapon).SetDrawScale(WeaponScale);
-	ArenaWeaponBase(Weapon).Stock.SetDrawScale(WeaponScale);
-	ArenaWeaponBase(Weapon).Barrel.SetDrawScale(WeaponScale);
-	ArenaWeaponBase(Weapon).Muzzle.SetDrawScale(WeaponScale);
-	ArenaWeaponBase(Weapon).Optics.SetDrawScale(WeaponScale);
-	ArenaWeaponBase(Weapon).Side.SetDrawScale(WeaponScale);
-	ArenaWeaponBase(Weapon).Under.SetDrawScale(WeaponScale);
+	
+	foreach ArenaWeaponBase(Weapon).WeaponComponents(iter)
+	{
+		iter.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
+		iter.Mesh.SetOnlyOwnerSee(false);
+		iter.SetDrawScale(WeaponScale);
+	}
 	
 	mat = new class'MaterialInstanceConstant';
 	mat.SetParent(ArenaWeaponBase(Weapon).Mesh.GetMaterial(0));
@@ -568,47 +890,14 @@ function SetWeaponParameters()
 	
 	WeaponMaterials.AddItem(mat);
 	
-	mat = new class'MaterialInstanceConstant';
-	mat.SetParent(ArenaWeaponBase(Weapon).Stock.Mesh.GetMaterial(0));
-	mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
-	ArenaWeaponBase(Weapon).Stock.Mesh.SetMaterial(0, mat);
-	
-	WeaponMaterials.AddItem(mat);
-	
-	mat = new class'MaterialInstanceConstant';
-	mat.SetParent(ArenaWeaponBase(Weapon).Barrel.Mesh.GetMaterial(0));
-	mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
-	ArenaWeaponBase(Weapon).Barrel.Mesh.SetMaterial(0, mat);
-	
-	WeaponMaterials.AddItem(mat);
-	
-	mat = new class'MaterialInstanceConstant';
-	mat.SetParent(ArenaWeaponBase(Weapon).Muzzle.Mesh.GetMaterial(0));
-	mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
-	ArenaWeaponBase(Weapon).Muzzle.Mesh.SetMaterial(0, mat);
-	
-	WeaponMaterials.AddItem(mat);
-	
-	mat = new class'MaterialInstanceConstant';
-	mat.SetParent(ArenaWeaponBase(Weapon).Optics.Mesh.GetMaterial(0));
-	mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
-	ArenaWeaponBase(Weapon).Optics.Mesh.SetMaterial(0, mat);
-	
-	WeaponMaterials.AddItem(mat);
-	
-	mat = new class'MaterialInstanceConstant';
-	mat.SetParent(ArenaWeaponBase(Weapon).Under.Mesh.GetMaterial(0));
-	mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
-	ArenaWeaponBase(Weapon).Under.Mesh.SetMaterial(0, mat);
-	
-	WeaponMaterials.AddItem(mat);
-	
-	mat = new class'MaterialInstanceConstant';
-	mat.SetParent(ArenaWeaponBase(Weapon).Side.Mesh.GetMaterial(0));
-	mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
-	ArenaWeaponBase(Weapon).Side.Mesh.SetMaterial(0, mat);
-	
-	WeaponMaterials.AddItem(mat);
+	foreach ArenaWeaponBase(Weapon).WeaponComponents(iter)
+	{
+		mat = new class'MaterialInstanceConstant';
+		mat.SetParent(iter.Mesh.GetMaterial(0));
+		mat.SetTextureParameterValue('Emission', Texture'ArenaUI.Textures.HighlightTex');
+		iter.Mesh.SetMaterial(0, mat);	
+		WeaponMaterials.AddItem(mat);
+	}
 }
 
 function string GetStatName(int stat)
@@ -683,7 +972,64 @@ function string GetValueName(int value)
 	}
 }
 
-function SetValue(GFx_ValueDisplay display, int value)
+function int GetFireModeIndex(array<FireMode> AllowedFireModes, FireMode currFireMode)
+{
+	local int index;
+	
+	for (index = 0; index < AllowedFireModes.Length; index++)
+	{
+		if (AllowedFireModes[index] == currFireMode)
+			return index;
+	}
+	
+	return 0;
+}
+
+function array<string> GetFireModesString()
+{
+	local array<string> modes;
+	local int i;
+
+	for (i = 0; i < ArenaWeaponBase(Weapon).AllowedFireModes.Length; i++)
+	{
+		switch (ArenaWeaponBase(Weapon).AllowedFireModes[i])
+		{
+		case FMBoltAction:
+			modes.AddItem("Bolt Action");
+			break;
+			
+		case FMSemiAuto:
+			modes.AddItem("Semi-automatic");
+			break;
+			
+		case FMBurst:
+			modes.AddItem(Weapon.BurstCount $ "-Round Burst");
+			break;
+			
+		case FMFullAuto:
+			modes.AddItem("Full-automatic");
+			break;
+			
+		case FMBeam:
+			modes.AddItem("Beam");
+			break;
+		}
+	}
+
+	
+	return modes;
+}
+
+function array<FireMode> GetFireModes()
+{
+	local array<FireMode> modes;
+
+	modes.AddItem(ArenaWeaponBase(Weapon).AllowedFireModes[FireModeIndex]);
+	
+	return modes;
+}
+
+function string GetValue(int value)
 {
 	switch (value)
 	{
@@ -691,36 +1037,28 @@ function SetValue(GFx_ValueDisplay display, int value)
 		switch (Weapon.Type)
 		{
 		case WTRifle:
-			display.SetValueString("Rifle");
-			break;
+			return "Rifle";
 			
 		case WTShotgun:
-			display.SetValueString("Shotgun");
-			break;
+			return "Shotgun";
 			
 		case WTRocketLauncher:
-			display.SetValueString("Rocket Launcher");
-			break;
+			return "Rocket Launcher";
 			
 		case WTGrenadeLauncher:
-			display.SetValueString("Grenade Launcher");
-			break;
+			return "Grenade Launcher";
 			
 		case WTHardLightRifle:
-			display.SetValueString("Photon Emitter");
-			break;
+			return "Photon Emitter";
 			
 		case WTBeamRifle:
-			display.SetValueString("Particle Beam");
-			break;
+			return "Particle Beam";
 			
 		case WTPlasmaRifle:
-			display.SetValueString("Plasma Torch");
-			break;
+			return "Plasma Torch";
 			
 		case WTRailGun:
-			display.SetValueString("Railgun");
-			break;
+			return "Railgun";
 		}
 		break;	
 		
@@ -729,75 +1067,59 @@ function SetValue(GFx_ValueDisplay display, int value)
 		switch (Weapon.Size)
 		{
 		case WSHand:
-			display.SetValueString("Handgun");
-			break;
+			return "Handgun";
 			
 		case WSSmall:
-			display.SetValueString("Small");
-			break;
+			return "Small";
 			
 		case WSRegular:
-			display.SetValueString("Regular");
-			break;
+			return "Regular";
 			
 		case WSLarge:
-			display.SetValueString("Large");
-			break;
+			return "Large";
 			
 		case WSHeavy:
-			display.SetValueString("Heavy");
-			break;
+			return "Heavy";
 		}
 		break;
 		
 	case 2:
-		switch (Weapon.Mode)
+		switch (Weapon.FireModes[Weapon.Mode])
 		{
 		case FMBoltAction:
-			display.SetValueString("Bolt Action");
-			break;
+			return "Bolt Action";
 			
 		case FMSemiAuto:
-			display.SetValueString("Semi-automatic");
-			break;
+			return "Semi-automatic";
 			
 		case FMBurst:
-			display.SetValueString(Weapon.BurstCount $ "-Round Burst");
-			break;
+			return Weapon.BurstCount $ "-Round Burst";
 			
 		case FMFullAuto:
-			display.SetValueString("Full-automatic");
-			break;
+			return "Full-automatic";
 			
 		case FMBeam:
-			display.SetValueString("Beam");
-			break;
+			return "Beam";
 		}
 		break;
 		
 	case 3:
-		display.SetValueString(ArenaWeaponBase(Weapon).GetZoomLevel() $ "x");
-		break;
+		return TruncTo(string(ArenaWeaponBase(Weapon).GetZoomLevel()), 3) $ "x";
 		
 	case 4:
-		display.SetValueNumber(Weapon.BaseDamage * Weapon.Stats.GetDamageModifier());
-		break;
+		return TruncTo(string(Weapon.BaseDamage * Weapon.Stats.GetDamageModifier()), 3);
 		
 	case 5:
-		display.SetValueString(Weapon.GetAvgReloadSpeed() @ "s");
-		break;
+		return TruncTo(string(Weapon.GetAvgReloadSpeed()), 3) @ "s";
 		
 	case 6:
-		display.SetValueString(Weapon.GetAvgEquipSpeed() @ "s");
-		break;
+		return TruncTo(string(Weapon.GetAvgEquipSpeed()), 3) @ "s";
 		
 	case 7:
-		display.SetValueString(Weapon.MaxClip @ "rounds");
-		break;
+		return Weapon.MaxClip @ "rounds";
 		
 	case 8:
-		display.SetValueNumber(Weapon.Stats.GetBloomCost());
-		break;
+		return TruncTo(string(Weapon.Stats.GetBloomCost()), 3);
 	}
 }
 
@@ -821,6 +1143,17 @@ function SetStatTooltip(GFx_Tooltip tooltip, array<float> valueList, float ignor
 	tooltip.SetTooltipBody(statString);
 }
 
+function string TruncTo(string Str, int Places)
+{
+	local int Whole;
+	local string Dec;
+
+	Whole = int(Str);
+	Dec = Left(Split(Str, ".", true), Places);
+
+	return string(Whole)$"."$Dec;
+}
+
 defaultproperties
 {
 	Begin Object Class=DynamicLightEnvironmentComponent Name=LE
@@ -828,7 +1161,7 @@ defaultproperties
 	MenuLightEnvironment=LE	
 	
 	Begin Object Class=PointLightComponent Name=UL
-		Brightness=1
+		Brightness=3
 		LightColor=(R=225,G=225,B=255,A=255)
 		Translation=(Z=25)
 		LightEnvironment=LE
@@ -837,7 +1170,7 @@ defaultproperties
 	UpLight=UL
 	
 	Begin Object Class=PointLightComponent Name=LL
-		Brightness=1
+		Brightness=3
 		LightColor=(R=255,G=255,B=225,A=255)
 		Translation=(X=-25)
 		LightEnvironment=LE
@@ -846,7 +1179,7 @@ defaultproperties
 	LeftLight=LL
 	
 	Begin Object Class=PointLightComponent Name=RL
-		Brightness=1
+		Brightness=3
 		LightColor=(R=255,G=225,B=255,A=255)
 		Translation=(X=25)
 		LightEnvironment=LE
@@ -864,6 +1197,9 @@ defaultproperties
 	HighlightPulseRate=2.5
 	SelectedPart=-1
 	InGame=true
+	bCaptureInput=true
 	bCaptureMouseInput=true
+	
+	FocusIgnoreKeys[0]=Escape
 	//bPauseGameWhileActive=true
 }

@@ -21,10 +21,21 @@ defaultproperties
 		Values[WSVDamageOutput]=0.85
 	End Object
 	
+	DefaultComponents[WCStock]=class'Arena.Wp_S_CheapStock'
+	DefaultComponents[WCBarrel]=class'Arena.Wp_B_BasicRifleBarrel'
+	DefaultComponents[WCMuzzle]=class'Arena.Wp_M_NoMuzzle'
+	DefaultComponents[WCOptics]=class'Arena.Wp_O_NoOptics'
+	DefaultComponents[WCUnderAttachment]=class'Arena.Wp_UA_NoUnderAttachment'
+	DefaultComponents[WCSideAttachment]=class'Arena.Wp_SA_NoSideAttachment'
+	
 	WeaponFireTypes(0)=EWFT_Projectile
 	InstantHitDamageTypes(0)=None
 	WeaponProjectiles(0)=class'Arena.Proj_RifleBullet'
-	Mode=FMFullAuto
+	AllowedFireModes[0]=FMFullAuto
+	AllowedFireModes[1]=FMBurst
+	AllowedFireModes[2]=FMSemiAuto
+	FireModes[0]=FMFullAuto
+	Mode=0
 	CycleTime=0.25
 	BurstCount=3
 	
@@ -33,9 +44,8 @@ defaultproperties
 	PlayerAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
 	
 	ViewOffset=(X=45, Y=5, Z=-22);
-	ArenaWeaponBaseName="Basic Rifle Base"
+	BaseName="Basic Rifle Base"
 	BaseDescription="A relic from the Old World, this rifle base is your basic projectile-based weapon.  Surprisingly durable, it supports many components, ammo types, and firing modes."
-	Energy=0
 	Type=WTRifle
 	Size=WSRegular
 	MaxAmmo=300

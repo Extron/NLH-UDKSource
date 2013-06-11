@@ -7,22 +7,15 @@
 	public class WLSubmenu extends MovieClip {
 		
 			
-	public var scroll_list:DefaultScrollingList;
-	public var scroll_bar:DefaultScrollBar;
-	public var weight_stat:MovieClip;
-	public var cost_stat:MovieClip;
-	
-	public var weight_mod:MovieClip;
-	public var accuracy_mod:MovieClip;
-	public var stability_mod:MovieClip;
-	public var mobility_mod:MovieClip;
-	public var recoil_mod:MovieClip;
-	public var zoom_mod:MovieClip;
-	public var rof_mod:MovieClip;
-	public var roc_mod:MovieClip;
-	public var damage_mod:MovieClip;
-	
-	public var cursor:MovieClip;
+	public var component_ui:s_component_ui;
+	public var library:s_library;
+	public var name_label:DefaultLabel;
+	public var description_label:DescriptionLabel;
+	public var stats:s_stats;
+	public var accept_button:s_button;
+	public var cancel_button:s_button;
+	public var tooltip:s_part_tooltip;
+	public var cursor:mouse_cursor;
 	
 		public function WLSubmenu() {
 			// constructor code

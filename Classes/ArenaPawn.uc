@@ -28,6 +28,12 @@ var DynamicLightEnvironmentComponent LightEnvironment;
 /* The player's currently equipped ability. */
 var ArenaAbility ActiveAbility; 
 
+/**
+ * This variable is used to store the currently held weapon, which may be different from the currently
+ * equipped weapon (i.e. The held weapon could have an under-barrel shotgun which is being used).
+ */
+var ArenaWeapon HeldWeapon;
+
 /* The camera animation to play when the pawn is idle (not moving). */
 var CameraAnim IdleCamAnim;
 
@@ -542,7 +548,19 @@ simulated function StopFireAbility()
 simulated function StartFire(byte mode)
 {
 	if (!Sprinting)
-		super.StartFire(mode);
+	{
+		if( bNoWeaponFIring )
+		{
+			return;
+		}
+
+		if( Weapon != None )
+		{
+			Weapon.StartFire(mode);
+		}
+		
+		//super.StartFire(mode);
+	}
 }
 
 simulated function StartSprint()
@@ -712,6 +730,64 @@ simulated function ReplicatedEvent(name property)
 	}
 }
 
+/**
+ * Swaps out the currently equipped weapon for the specified one.
+ */
+simulated function SwapWeapon(ArenaWeapon newWeapon)
+{
+	local ArenaWeapon oldWeapon;
+	
+	oldWeapon = ArenaWeapon(Weapon);
+	InvManager.RemoveFromInventory(Weapon);
+	oldWeapon.Destroy();
+	
+	InvManager.AddInventory(newWeapon);
+	InvManager.NextWeapon();
+}
+
+/**
+ * Switches the current weapon to a specified weapon, putting the current weapon in the hled weapon slot for later retrieval.
+ */
+simulated function SwitchActiveWeapon(ArenaWeapon newWeapon)
+{
+	if (HeldWeapon == None)
+	{
+		HeldWeapon = ArenaWeapon(Weapon);
+		Weapon = None;
+		InvManager.SetCurrentWeapon(newWeapon);
+		newWeapon.InvManager = InvManager;
+	}
+}
+
+/*
+simulated function StartFire(byte FireModeNum)
+{
+	if( bNoWeaponFIring )
+	{
+		return;
+	}
+
+	`log("Weapon is" @ Weapon);
+	
+	if( Weapon != None )
+	{
+		Weapon.StartFire(FireModeNum);
+	}
+}*/
+
+/**
+ * Reverts the current weapon to whatever weapon is in the held weapon slot.
+ */
+simulated function RevertActiveWeapon()
+{
+	if (HeldWeapon != None)
+	{
+		Weapon = None;
+		InvManager.SetCurrentWeapon(HeldWeapon);
+		HeldWeapon = None;
+	}
+}
+
 function InitInventory()
 {
 	if (SensorClass != None)
@@ -740,14 +816,14 @@ function ArenaWeapon CreateWeapon(WeaponSchematic schematic)
 	side = spawn(schematic.WeaponSideAttachment, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
 	under = spawn(schematic.WeaponUnderAttachment, ArenaWeaponBase, , ArenaWeaponBase.Location, ArenaWeaponBase.Rotation);
 	
-	`log("Weapon created with side" @ side);
-	
 	ArenaWeaponBase.AttachStock(stock);
 	ArenaWeaponBase.AttachBarrel(barrel);
 	ArenaWeaponBase.AttachMuzzle(muzzle);
 	ArenaWeaponBase.AttachOptics(optics);
 	ArenaWeaponBase.AttachSide(side);
 	ArenaWeaponBase.AttachUnder(under);
+	
+	ArenaWeaponBase.SetFireModes(schematic.WeaponFireModes);
 	
 	return ArenaWeaponBase;
 }

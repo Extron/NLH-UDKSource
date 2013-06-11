@@ -17,3 +17,18 @@ function SetTooltipBody(string bodyString)
 {
 	ActionScriptVoid("SetTooltipBody");
 }
+
+function SetTooltipDesc(string desc)
+{
+	ActionScriptVoid("SetTooltipDesc");
+}
+
+function AddTooltipStat(string n, float val, float diff)
+{
+	ActionScriptVoid("AddTooltipStat");
+}
+
+function ClearStats()
+{
+	ActionScriptVoid("ClearStats");
+}

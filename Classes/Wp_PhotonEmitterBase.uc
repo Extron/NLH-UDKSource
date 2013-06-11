@@ -11,23 +11,28 @@ class Wp_PhotonEmitterBase extends ArenaWeaponBase;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		//SkeletalMesh=SkeletalMesh'BasicRifleBase.Mesh.BasicRifleBaseMesh_1P'
-		Rotation=(Yaw=16384)
-		FOV=85.0
+		SkeletalMesh=SkeletalMesh'PhotonEmitterBase.Meshes.DemoBaseMesh'
 	End Object
 	
 	Begin Object Name=NewStats
-		Values[WSVWeight]=4
+		Values[WSVWeight]=6
 		Values[WSVStability]=0.25
 		Values[WSVRateOfFire]=0.1
 		Values[WSVDamageOutput]=0.85
-		Values[WSVAccuracy]=5.0
+		Values[WSVAccuracy]=0.75
 	End Object
+	
+	DefaultComponents[WCStock]=class'Arena.Wp_S_CheapStock'
+	DefaultComponents[WCBarrel]=class'Arena.Wp_B_BasicRifleBarrel'
+	DefaultComponents[WCMuzzle]=class'Arena.Wp_M_NoMuzzle'
+	DefaultComponents[WCOptics]=class'Arena.Wp_O_NoOptics'
+	DefaultComponents[WCUnderAttachment]=class'Arena.Wp_UA_NoUnderAttachment'
+	DefaultComponents[WCSideAttachment]=class'Arena.Wp_SA_NoSideAttachment'
 	
 	WeaponFireTypes[0]=EWFT_InstantHit
 	InstantHitDamageTypes[0]=class'Arena.Dmg_LightBeam'
 	InstantHitMomentum[0]=500
-	Mode=FMSemiAuto
+	FireModes[0]=FMSemiAuto
 	CycleTime=0.15
 	BurstCount=3
 	
@@ -35,8 +40,7 @@ defaultproperties
 	IHBeamTemplate=ParticleSystem'ArenaParticles.Particles.PhotonBeam'
 	
 	ViewOffset=(X=45, Y=10, Z=-22);
-	ArenaWeaponBaseName="Photon Emitter Base"
-	Energy=0
+	BaseName="Photon Emitter Base"
 	Type=WTHardLightRifle
 	Size=WSRegular
 	MaxAmmo=300

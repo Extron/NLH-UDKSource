@@ -6,7 +6,8 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class WeaponSchematic extends Object;
+class WeaponSchematic extends Object
+	dependson(ArenaWeapon);
 
 /* The base of the weapon. */
 var class<ArenaWeaponBase> ArenaWeaponBase;
@@ -32,12 +33,19 @@ var class<Wp_UnderAttachment> WeaponUnderAttachment;
 /* The name of the weapon schematic. */
 var string WeaponName;
 
+/**
+ * The fire modes to set with the weapon.
+ */
+var array<FireMode> WeaponFireModes;
+
+
 defaultproperties
 {
-	WeaponStock=class'Arena.Wp_S_CheapStock'
+	WeaponStock=class'Arena.Wp_S_WoodStock'
 	WeaponBarrel=class'Arena.Wp_B_BasicRifleBarrel'
 	WeaponMuzzle=class'Arena.Wp_M_BasicRifleMuzzle'
 	WeaponSideAttachment=class'Arena.Wp_SA_NoSideAttachment'
 	WeaponUnderAttachment=class'Arena.Wp_UA_NoUnderAttachment'
-	WeaponName="New Weapon";
+	WeaponName="New Weapon"
+	WeaponFireModes[0]=FMFullAuto
 }

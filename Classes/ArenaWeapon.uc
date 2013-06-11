@@ -46,7 +46,7 @@ enum FireMode
 var array<name> ReloadAnims;
 
 /** A list of names of animations to use when cycling the weapon's bolt. */
-var array<name> CycleBoltAnims;
+var array<name> CycleAnims;
 
 /** The animations to play when firing the weapon. */
 var array<name> FireAnims;
@@ -54,20 +54,30 @@ var array<name> FireAnims;
 /** A list of animations to play from when the weapon is being equipped. */
 var array<name> EquipAnims;
 
+/**
+ * A list of all fire modes the weapon can be in.
+ */
+var array<FireMode> FireModes;
+
 /** The type of the weapon, which determines what kind of projectile the weapon fires and what components can be used on it. */
 var WeaponType Type;
 
 /** The size of the weapon.  This determines pojectile size and power, and what components can be used on it. */
 var WeaponSize Size;
 
-/** The weapon's fire mode. */
-var FireMode Mode;
-
 /** The stats of the weapon. */
 var WeaponStats Stats;
 
 /** The sound of the ability firing. */
 var SoundCue FireSound;
+
+/**
+ * The sound to play when the weapon is cycled.
+ */
+var SoundCue CycleSound;
+
+/** The weapon's fire mode. */
+var int Mode;
 
 /**
  * The animation set for the first person player when this weapon is equipped.
@@ -85,7 +95,7 @@ var ParticleSystem IHBeamTemplate;
 var ParticleSystemComponent IHBeam;
 
 /**
- * The muzzle flash particle system.
+ * The muzzle flash particle system.  This can be overridden by muzzles if they specify it.
  */
 var ParticleSystemComponent MuzzleFlash;
 
@@ -240,7 +250,7 @@ simulated function StopFire(byte FireModeNum)
 		BulletsFired = 0;
 		EndedFire = True;
 	
-		SetTimer(CycleTime, false, nameof(ReactivateWeapon));
+		CycleWeapon();
 	}
 	
 	super.StopFire(FireModeNum);
@@ -253,7 +263,7 @@ function ConsumeAmmo(byte FireModeNum)
 	if (Clip < 0)
 	{
 		Clip = 0;
-		StopFire(Mode);
+		StopFire(FireModeNum);
 	}
 }
 
@@ -262,7 +272,7 @@ simulated function FireAmmunition()
 	if (EndedFire)
 		return;
 
-	if (Mode == FMFullAuto || (Mode == FMSemiAuto && BulletsFired < 1) || (Mode == FMBurst && BulletsFired < BurstCount) || (Mode == FMBoltAction && !Cycling))
+	if (FireModes[Mode] == FMFullAuto || (FireModes[Mode] == FMSemiAuto && BulletsFired < 1) || (FireModes[Mode] == FMBurst && BulletsFired < BurstCount) || (FireModes[Mode] == FMBoltAction && !Cycling))
 	{
 		FireWeapon();
 	
@@ -288,11 +298,11 @@ simulated function bool ShouldRefire()
 	if (EndedFire || Clip <= 0)
 		return false;
 	 
-	if (Mode == FMFullAuto)
+	if (FireModes[Mode] == FMFullAuto)
 		return true;
-	else if (Mode == FMSemiAuto || Mode == FMBoltAction)
+	else if (FireModes[Mode] == FMSemiAuto || FireModes[Mode] == FMBoltAction)
 		return false;
-	else if (Mode == FMBurst)
+	else if (FireModes[Mode] == FMBurst)
 		return BulletsFired < BurstCount;
 }
 
@@ -330,7 +340,8 @@ simulated function InstantFire()
 
 	EmitIHBeam(RealImpact.HitLocation);
 	
-	InstantHitDamage[0] = BaseDamage * Stats.GetDamageModifier();
+	if (ArenaPawn(Instigator) != None)
+		InstantHitDamage[0] = ArenaPawn(Instigator).Stats.GetDamageGiven(BaseDamage * Stats.GetDamageModifier(), InstantHitDamageTypes[0]);
 	
 	for (Idx = 0; Idx < ImpactList.Length; Idx++)
 	{
@@ -581,6 +592,14 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 }
 
 /**
+ * Determines if the weapon has any type of optics that allow aiming down sights.
+ */
+simulated function bool CanADS()
+{
+	return false;
+}
+
+/**
  * Attaches a primitive component to the weapon's muzzle.  Is designed to be overridden in subclasses.
  */
 simulated function AttachToMuzzleSocket(ActorComponent component)
@@ -589,10 +608,17 @@ simulated function AttachToMuzzleSocket(ActorComponent component)
 
 simulated function ParticleSystem GetMuzzeFlashParticleTemplate()
 {
+	return None;
 }
 
 simulated function class<UDKExplosionLight> GetMuzzleFlashLightClass()
 {
+	return None;
+}
+
+simulated function SoundCue GetFireSound()
+{
+	return FireSound;
 }
 
 /**
@@ -611,6 +637,7 @@ simulated function float GetIdealRange()
 
 simulated function FireWeapon()
 {
+	local SoundCue fs;
 	local float duration;
 	local int anim;
 	
@@ -637,10 +664,12 @@ simulated function FireWeapon()
 	RecoilAccel.Z = FRand();
 	RecoilAccel = Normal(RecoilAccel) * 1000;
 	
-	if (FireSound != None )
+	fs = GetFireSound();
+	
+	if (fs != None )
 	{
 		MakeNoise(1.0);
-		WeaponPlaySound(FireSound);
+		WeaponPlaySound(fs);
 	}
 }
 
@@ -673,6 +702,37 @@ simulated function ReloadWeapon()
 	}
 }
 
+simulated function CycleWeapon()
+{
+	local float normDuration;
+	local float actualDuration;
+	local SkeletalMeshComponent skelMesh;
+	local int anim;
+	
+	`log("Cycling weapon");
+	
+	if (CycleAnims.Length > 0)
+	{
+		anim = rand(CycleAnims.Length);
+		skelMesh = SkeletalMeshComponent(Mesh);
+		
+		normDuration = skelMesh.GetAnimLength(CycleAnims[anim]);
+		actualDuration = normDuration * Stats.GetCycleSpeed();
+		
+		if (ArenaPawn(Owner) != None)
+			actualDuration *= ArenaPawn(Owner).Stats.GetCycleSpeed();
+			
+		PlayWeaponAnimation(CycleAnims[anim], actualDuration);
+		
+		SetTimer(actualDuration, false, 'ReactivateWeapon');
+	}
+	else
+	{
+		WeaponPlaySound(CycleSound);
+		SetTimer(CycleTime, false, nameof(ReactivateWeapon));
+	}
+}
+
 simulated function EquipWeapon(ArenaPawn pawn)
 {
 	local float normDuration;
@@ -702,6 +762,30 @@ simulated function EquipWeapon(ArenaPawn pawn)
 	{
 		OnEquippingAnimEnd();
 	}
+}
+
+simulated function SetFireMode(FireMode fMode)
+{
+	FireModes.Length = 0;
+	FireModes.AddItem(fMode);
+	Mode = 0;
+}
+
+simulated function SetFireModes(array<FireMode> modes, optional int selectedMode = 0)
+{
+	local int i;
+	
+	FireModes.Length = 0;
+	
+	for (i = 0; i < modes.Length; i++)
+		FireModes.AddItem(modes[i]);
+		
+	Mode = selectedMode;
+}
+
+simulated function CycleFireMode()
+{
+	Mode = (Mode + 1) % FireModes.Length;
 }
 
 simulated function ReactivateWeapon()

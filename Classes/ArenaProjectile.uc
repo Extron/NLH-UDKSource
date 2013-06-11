@@ -69,7 +69,21 @@ simulated function HitWall(vector norm, Actor wall, PrimitiveComponent component
  
 simulated function ProcessTouch(Actor Other, Vector HitLocation, Vector HitNormal)
 {
-	super.ProcessTouch(Other, HitLocation, HitNormal);
+	local float dmg;
+	
+	if (Other != Instigator)
+	{
+		if (!Other.bStatic && DamageRadius == 0.0)
+		{
+			if (ArenaPawn(Instigator) != None && Weapon != None)
+				dmg = ArenaPawn(Instigator).Stats.GetDamageGiven(Damage * Weapon.Stats.GetDamageModifier(), MyDamageType);
+			else
+				dmg = Damage;
+				
+			Other.TakeDamage(dmg, InstigatorController, Location, MomentumTransfer * Normal(Velocity), MyDamageType,, self);
+		}
+		Explode(HitLocation, HitNormal);
+	}
 }
 
 simulated function Emit()
@@ -79,9 +93,9 @@ simulated function Emit()
 	
 	if (WorldInfo.NetMode != NM_DedicatedServer && ProjTemplate != None && ArenaWeaponBase(Weapon) != None)
 	{
-		if (SkeletalMeshComponent(ArenaWeaponBase(Weapon).Barrel.Mesh).GetSocketByName('MuzzleSocket') != None)
+		if (SkeletalMeshComponent(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel].Mesh).GetSocketByName(ArenaWeaponBase(Weapon).Sockets[WCBarrel]) != None)
 		{
-			SkeletalMeshComponent(ArenaWeaponBase(Weapon).Barrel.Mesh).GetSocketWorldLocationAndRotation('MuzzleSocket', l, r, 0);
+			SkeletalMeshComponent(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel].Mesh).GetSocketWorldLocationAndRotation(ArenaWeaponBase(Weapon).Sockets[WCBarrel], l, r, 0);
 			SetLocation(l);
 		}
 		

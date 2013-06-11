@@ -42,7 +42,7 @@ function float NormalizedStat(string statName, float statValue)
 	
 	if (i == -1)
 	{
-		`log("Couli not find constant for stat" @ statName);
+		`log("Could not find constant for stat" @ statName);
 		return 0;
 	}
 	
@@ -244,7 +244,7 @@ defaultproperties
 	FactorMap[7]="Bloom Cost"
 	FactorMap[8]="Bloom Factor"
 	
-	FactorValues[0]=(X=0.1,Y=0.5,Z=1)
+	FactorValues[0]=(X=0.05,Y=0.25,Z=1)
 	FactorValues[1]=(X=0.5,Y=1.125,Z=1)
 	FactorValues[2]=(X=0.5,Y=1.75,Z=1)
 	FactorValues[3]=(X=0.75,Y=1.75,Z=1)

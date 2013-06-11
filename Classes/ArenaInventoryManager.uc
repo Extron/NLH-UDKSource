@@ -23,7 +23,8 @@ var array<ArenaAbility> Abilities;
 simulated function PrevAbility()
 {
 	local ArenaAbility candidate, start, iter;
-
+	local int i;
+	
 	start = ArenaPawn(Instigator).ActiveAbility;
 	
 	if (PendingAbility != None )
@@ -32,22 +33,28 @@ simulated function PrevAbility()
 	}
 
 	// Get previous
-	ForEach InventoryActors(class'ArenaAbility', iter)
+	for (i = 0; i < Abilities.Length; i++)
 	{
+		iter = Abilities[i];
+		
 		if (iter == start)
 		{
 			break;
 		}
 		
-		candidate = iter;
+		if (!iter.IsPassive)
+			candidate = iter;
 	}
 
 	// if none found, get last
 	if (candidate == None)
 	{
-		ForEach InventoryActors( class'ArenaAbility', iter )
+		for (i = 0; i < Abilities.Length; i++) 
 		{
-			candidate = iter;
+			iter = Abilities[i];
+			
+			if (!iter.IsPassive)
+				candidate = iter;
 		}
 	}
 
@@ -69,7 +76,10 @@ simulated function NextAbility()
 {
 	local ArenaAbility start, candidate, iter;
 	local bool bBreakNext;
-
+	local int i;
+	
+	`log("NextAbility");
+	
 	start = ArenaPawn(Instigator).ActiveAbility;
 	
 	if (PendingAbility != None)
@@ -77,8 +87,10 @@ simulated function NextAbility()
 		start = PendingAbility;
 	}
 
-	ForEach InventoryActors(class'ArenaAbility', iter)
+	for (i = 0; i < Abilities.Length; i++)
 	{
+		iter = Abilities[i];
+		
 		if (bBreakNext || (start == None) && !iter.IsPassive)
 		{
 			candidate = iter;
@@ -92,8 +104,10 @@ simulated function NextAbility()
 
 	if (candidate == None)
 	{
-		ForEach InventoryActors(class'ArenaAbility', iter)
+		for (i = 0; i < Abilities.Length; i++)
 		{
+			iter = Abilities[i];
+			
 			if (!iter.IsPassive)
 				candidate = iter;
 				
@@ -118,6 +132,8 @@ simulated function NextAbility()
  */
 reliable client function SetCurrentAbility(ArenaAbility desired)
 {
+	`log("Setting current ability to" @ desired);
+	
 	// Switch to this weapon
 	InternalSetCurrentAbility(desired);
 
@@ -306,6 +322,37 @@ simulated function ChangedAbility()
 	}
 }
 
+simulated function bool AddInventory(Inventory NewItem, optional bool bDoNotActivate)
+{
+	if (ArenaAbility(NewItem) != None)
+	{
+		`log("Adding ability to inventory");
+		
+		if((NewItem != None) && !NewItem.bDeleteMe )
+		{
+			if (Abilities.Find(ArenaAbility(NewItem)) > 0)
+				return false;
+				
+			Abilities.AddItem(ArenaAbility(NewItem));
+			
+			NewItem.SetOwner( Instigator );
+			NewItem.Instigator = Instigator;
+			NewItem.InvManager = Self;
+			NewItem.GivenTo(Instigator, bDoNotActivate);
+
+			Instigator.TriggerEventClass(class'SeqEvent_GetInventory', NewItem);
+			return true;
+		}
+
+		return false;
+	}
+	else
+	{
+		return super.AddInventory(NewItem, bDoNotActivate);
+	}
+}
+
+/*
 simulated function Inventory CreateInventory(class<Inventory> newInvClass, optional bool bDoNotActivate)
 {
 	local Inventory inv;
@@ -316,7 +363,7 @@ simulated function Inventory CreateInventory(class<Inventory> newInvClass, optio
 		Abilities.AddItem(ArenaAbility(inv));
 		
 	return inv;
-}
+}*/
 
 /*
  * Gets the summed weight of all of the weapons in the inventory.

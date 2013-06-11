@@ -62,7 +62,8 @@ simulated function InstantFire()
 
 	EmitIHBeam(impact.HitLocation);
 	
-	//InstantHitDamage[0] = BaseDamage * Stats.GetDamageModifier();
+	if (ArenaPawn(Instigator) != None)
+		InstantHitDamage[0] = ArenaPawn(Instigator).Stats.GetDamageGiven(BaseDamage, InstantHitDamageTypes[0]);
 	
 	for (i = 0; i < impactList.Length; i++)
 	{
@@ -102,7 +103,7 @@ defaultproperties
 	
 	IHBeamTemplate=ParticleSystem'ArenaAbilities.Particles.LightningBoltPS'
 	
-	InstantHitDamage(0)=650
+	BaseDamage=650
 	WeaponRange=2048
 	CoolDown=5
 	EnergyCost=300	

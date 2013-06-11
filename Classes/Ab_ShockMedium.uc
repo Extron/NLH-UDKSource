@@ -10,7 +10,7 @@ class Ab_ShockMedium extends Ab_Shock;
 
 defaultproperties
 {
-	InstantHitDamage(0)=300
+	BaseDamage=300
 	WeaponRange=2000
 	CoolDown=10
 	EnergyCost=300

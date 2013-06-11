@@ -10,7 +10,7 @@ class Ab_ShockShort extends Ab_Shock;
 
 defaultproperties
 {
-	InstantHitDamage(0)=500
+	BaseDamage=500
 	WeaponRange=500
 	CoolDown=5
 	EnergyCost=300

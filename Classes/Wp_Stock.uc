@@ -8,7 +8,14 @@
 
 class Wp_Stock extends ArenaWeaponComponent;
 
+simulated function bool CanAttachToBase(ArenaWeaponBase baseWeap)
+{
+	return super.CanAttachToBase(baseWeap) && baseWeap.CanEquipStock(self);
+}
+
 defaultproperties
 {
-	Subclasses[0]=class'Arena.Wp_S_CheapStock'
+	Subclasses[0]=class'Arena.Wp_S_NoStock'
+	Subclasses[1]=class'Arena.Wp_S_CheapStock'
+	Subclasses[2]=class'Arena.Wp_S_WoodStock'
 }

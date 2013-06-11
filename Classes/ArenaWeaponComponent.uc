@@ -24,6 +24,11 @@ var array<class<ArenaWeaponComponent> > Subclasses;
 /** The mesh used to draw the component. */
 var() editinline MeshComponent Mesh;
 
+/**
+ * The base that this component is currently attached to.
+ */
+var ArenaWeaponBase WeaponBase;
+
 /** The stat modifier of the component. */
 var WeaponStatModifier StatMod;
 
@@ -65,6 +70,8 @@ simulated function AttachToBase(ArenaWeaponBase weap, name socket)
 	AttachComponent(Mesh);
 	SetHidden(false);
 	Mesh.SetLightEnvironment(ArenaPawn(weap.Instigator).LightEnvironment);
+	
+	WeaponBase = weap;
 	
 	weap.Stats.Values[WSVWeight] += Weight;
 	weap.Stats.AddModifier(StatMod);
@@ -170,7 +177,14 @@ simulated function AnimNodeSequence GetAnimNodeSeq()
 
 simulated function bool CanAttachToBase(ArenaWeaponBase weap)
 {
-	return CompatibleTypes.Find(weap.Type) > -1 && CompatibleSizes.Find(weap.Size) > -1 && EnergyCost <= weap.Energy;
+	return CompatibleTypes.Find(weap.Type) > -1 && CompatibleSizes.Find(weap.Size) > -1 && EnergyCost + weap.GetEnergyUsed() <= weap.EnergyMax;
+}
+
+/**
+ * Allows interactivity to be programmed into attachments.  This function is called when the player presses the designated toggle button.
+ */
+simulated function Toggle()
+{
 }
 
 defaultproperties

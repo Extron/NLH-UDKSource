@@ -19,8 +19,46 @@ var ParticleSystem MuzzleFlashTemplate;
  */
 var class<UDKExplosionLight> MFLClass;
 
+/**
+ * Since barrels may have iron sight posts, this allows them to specify an offset to line up the post and aperature with.
+ */
+var vector SightsOffset;
+
+
+simulated function bool CanAttachToBase(ArenaWeaponBase baseWeap)
+{
+	return super.CanAttachToBase(baseWeap) && baseWeap.CanEquipBarrel(self);
+}
+
+/**
+ * As some barrels will not be able to feasibly support muzzles, check that we can attach
+ * a muzzle to the barrel.
+ */
+simulated function bool CanEquipMuzzle(Wp_Muzzle muzzle)
+{
+	return true;
+}
+
+/**
+ * As some barrels will not be able to feasibly support attachments, check that we can attach
+ * an under-barrel attachment to the barrel.
+ */
+simulated function bool CanEquipUnderAttachment(Wp_UnderAttachment attachment)
+{
+	return true;
+}
+
+/**
+ * As some barrels will not be able to feasibly support attachments, check that we can attach
+ * a side-barrel attachment to the barrel.
+ */
+simulated function bool CanEquipSideAttachment(Wp_SideAttachment attachment)
+{
+	return true;
+}
 
 defaultproperties
 {
 	Subclasses[0]=class'Arena.Wp_B_BasicRifleBarrel'
+	Subclasses[1]=class'Arena.Wp_B_ShortRailedBarrel'
 }

@@ -256,7 +256,7 @@ function float GetADSSpeed()
 	
 	if (Constants != None)
 	{
-		x = Constants.NormalizedStat("WeaponWeight", ArenaWeaponBase(Owner.Weapon).GetWeight()) / (fmax(Constants.NormalizedStat("Mobility", Values[PSVMobility]), 0.2));
+		x = Constants.NormalizedStat("Weapon Weight", ArenaWeaponBase(Owner.Weapon).GetWeight()) / (2.0 * fmax(Constants.NormalizedStat("Mobility", Values[PSVMobility]), 0.2));
 
 		if (Owner != None && ArenaWeaponBase(Owner.Weapon) != None)
 		{		
@@ -279,6 +279,17 @@ function float GetADSSpeed()
  * @returns Returns the factor to change the reload speed by.
  */
 function float GetReloadSpeed()
+{
+	//TODO: Add in the equation to compute this.
+	return 1;
+}
+
+/**
+ * Gets the multiplicitave factor to change the cycle speed by.
+ *
+ * @returns Returns the factor to change the cycle speed by.
+ */
+function float GetCycleSpeed()
 {
 	//TODO: Add in the equation to compute this.
 	return 1;
@@ -358,6 +369,11 @@ function float GetDamageTaken(float initialDamage, class<DamageType> damageType)
 	
 	`log("Damages" @ initialDamage @ Values[PSVGlobalDamageInput] @ GetTypeDamageInput(damageType));
 	return initialDamage * Values[PSVGlobalDamageInput] * GetTypeDamageInput(damageType);
+}
+
+function float GetDamageGiven(float initialDamage, class<DamageType> damageType)
+{
+	return initialDamage * Values[PSVGlobalDamageOutput] * GetTypeDamageOutput(damageType);
 }
 
 function float GetRegenHealthDelay()

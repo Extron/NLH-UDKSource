@@ -100,6 +100,54 @@ simulated exec function NextAbility()
 	}
 }
 
+simulated exec function ToggleStock()
+{
+	if (ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon) != None)
+		ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon).ToggleComponent(0);
+	else if (ArenaWeaponBase(Pawn.Weapon) != None)
+		ArenaWeaponBase(Pawn.Weapon).ToggleComponent(0);
+}
+
+simulated exec function ToggleBarrel()
+{
+	if (ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon) != None)
+		ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon).ToggleComponent(1);
+	else if (ArenaWeaponBase(Pawn.Weapon) != None)
+		ArenaWeaponBase(Pawn.Weapon).ToggleComponent(1);
+}
+
+simulated exec function ToggleMuzzle()
+{
+	if (ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon) != None)
+		ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon).ToggleComponent(2);
+	else if (ArenaWeaponBase(Pawn.Weapon) != None)
+		ArenaWeaponBase(Pawn.Weapon).ToggleComponent(2);
+}
+
+simulated exec function ToggleOptics()
+{
+	if (ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon) != None)
+		ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon).ToggleComponent(3);
+	else if (ArenaWeaponBase(Pawn.Weapon) != None)
+		ArenaWeaponBase(Pawn.Weapon).ToggleComponent(3);
+}
+
+simulated exec function ToggleUnder()
+{
+	if (ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon) != None)
+		ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon).ToggleComponent(4);
+	else if (ArenaWeaponBase(Pawn.Weapon) != None)
+		ArenaWeaponBase(Pawn.Weapon).ToggleComponent(4);
+}
+
+simulated exec function ToggleSide()
+{
+	if (ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon) != None)
+		ArenaWeaponBase(ArenaPawn(Pawn).HeldWeapon).ToggleComponent(5);
+	else if (ArenaWeaponBase(Pawn.Weapon) != None)
+		ArenaWeaponBase(Pawn.Weapon).ToggleComponent(5);
+}
+
 function AdjustMouseSensitivity(float FOVScale)
 {
 	if (ArenaPawn(Pawn) != None)

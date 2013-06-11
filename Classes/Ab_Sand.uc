@@ -16,7 +16,7 @@ defaultproperties
 	
 	IHBeamTemplate=ParticleSystem'ArenaAbilities.Particles.SandStreamPS'
 	
-	InstantHitDamage(0)=0
+	BaseDamage=0
 	WeaponRange=128
 	CoolDown=10
 	EnergyCost=200
