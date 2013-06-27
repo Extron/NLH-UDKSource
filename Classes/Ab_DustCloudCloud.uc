@@ -19,6 +19,10 @@ var ParticleSystemComponent Shield;
 /** The mesh used to draw the component. */
 var() editinline MeshComponent Mesh;
 
+var float ShieldTimer;
+
+var float DamageReduction;
+
 simulated function Tick(float dt)
 {
 	SetLocation(Instigator.Location);

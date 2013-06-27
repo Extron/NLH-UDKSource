@@ -15,7 +15,7 @@ defaultproperties
 {
 	PlayerControllerClass=class'Arena.ArenaPlayerController'
 	DefaultPawnClass=class'Arena.AP_Specter'
-	HUDType=None
+	HUDType=class'Arena.MenuHUD'
 	GameReplicationInfoClass=class'Arena.ArenaGRI'
 	PlayerReplicationInfoClass=class'Arena.ArenaPRI'
 	//bDelayedStart=true

@@ -41,6 +41,7 @@ defaultproperties
 	
 	ViewOffset=(X=45, Y=10, Z=-22);
 	BaseName="Photon Emitter Base"
+	BaseDescription="An advanced weapon from the Old World, a photon emitter emits a coherent beam of light with enough energy to damage organics.  Running off of batteries, these seemingly fragile weapons are surprisingly durable."
 	Type=WTHardLightRifle
 	Size=WSRegular
 	MaxAmmo=300

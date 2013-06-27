@@ -9,6 +9,11 @@
 class AP_Player extends ArenaPawn;
 
 /**
+ * The sound cue to play when the player is near death.
+ */
+var AudioComponent NearDeathHeartbeat;
+
+/**
  * The arms used for first person animations are kept separate from the rest of the 
  * pawn's mesh for simplicity.
  */
@@ -43,6 +48,23 @@ simulated event TickSpecial(float dt)
 		ArenaWeapon(Weapon).GetGripSocketLocRot(gripLoc, gripRot);
 		LeftArmControl.EffectorLocation = gripLoc;
 	}
+	
+	if (NearDeathHeartbeat != None)
+	{
+		if (Health < HealthMax / 4 && !NearDeathHeartbeat.IsPlaying() && !NearDeathHeartbeat.IsFadingIn())
+			NearDeathHeartbeat.FadeIn(0.05, 1.0);
+		else if (Health >= HealthMax / 4 && NearDeathHeartbeat.IsPlaying() && !NearDeathHeartbeat.IsFadingOut())
+			NearDeathHeartbeat.FadeOut(0.05, 0.0);
+	}
+		
+}
+
+function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
+{	
+	if (NearDeathHeartbeat != None)
+		NearDeathHeartbeat.Stop();
+		
+	return super.Died(Killer, DamageType, HitLocation);
 }
 
 simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
@@ -86,7 +108,6 @@ function InitInventory()
 		}
 		
 		CreateInventory(class'Arena.Ab_ShockShort', true);
-		CreateInventory(class'Arena.Ab_PortableShield', true);
 
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
@@ -265,7 +286,16 @@ exec function GiveAbility(string ability)
 		break;	
 		
 	case "WallLaunch":
-		CreateInventory(class'Arena.WallLaunch', true);
+		CreateInventory(class'Arena.Ab_WallLaunch', true);
+		break;
+		
+	case "Earthquake":
+		CreateInventory(class'Arena.Ab_Earthquake', true);
+		break;
+		
+	case "TremblingEarth":
+		CreateInventory(class'Arena.Ab_TremblingEarth', true);
+		break;
 		
 	case "All":
 	case "all":
@@ -295,8 +325,10 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_ThunderRush', true);
 		CreateInventory(class'Arena.Ab_Osmosis', true);
 		CreateInventory(class'Arena.Ab_Sand', true);
-		CreateInventory(class'Arena.WallLaunch', true);
+		CreateInventory(class'Arena.Ab_WallLaunch', true);
 		CreateInventory(class'Arena.Ab_DustCloud', true);
+		CreateInventory(class'Arena.Ab_Earthquake', true);
+		CreateInventory(class'Arena.Ab_TremblingEarth', true);
 		break;
 	}
 }
@@ -338,7 +370,7 @@ exec function GiveAmmo()
 
 defaultproperties
 {
-	Begin Object Class=SkeletalMeshComponent Name=ArmsMesh
+	Begin Object Class=UDKSkeletalMeshComponent Name=ArmsMesh
 		SkeletalMesh=SkeletalMesh'AC_Player.Meshes.PlayerArmsMesh'
 		PhysicsAsset=PhysicsAsset'AC_Player.Physics.PlayerArmsMeshPhysics'
 		Scale=0.95
@@ -370,6 +402,13 @@ defaultproperties
 	End Object 
 	Arms=ArmsMesh
 	Components.Add(ArmsMesh)
+	
+	Begin Object Class=AudioComponent Name=NDHB
+		SoundCue=SoundCue'AC_Player.Audio.HeartbeatSC'
+        bAutoPlay=false
+	End Object
+	Components.Add(NDHB)
+	NearDeathHeartbeat=NDHB
 	
 	Begin Object Class=RainCylinder Name=RC
 	End Object

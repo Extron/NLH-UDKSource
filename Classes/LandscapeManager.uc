@@ -6,7 +6,7 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class LandscapeManager extends Object;
+class LandscapeManager extends Actor;
 
 /**
  * The level's landscape.

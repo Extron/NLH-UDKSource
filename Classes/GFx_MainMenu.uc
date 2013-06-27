@@ -8,37 +8,88 @@
 
 class GFx_MainMenu extends GFx_Menu;
 
+
 const NativeWidth = 1600;
 const NativeHeight = 900;
+const ButtonWidth = 256;
+const ButtonHeight = 48;
+const ExpandedWidth = 512;
+const ExpandedHeight = 240;
 const AspectRatio = 1.777777778;
 const Far = 100;
 const Near = 1;
 
-var GFxObject Buttons, SPBW, BBBW, MPBW, OBW, EBW;
-var GFxClikWidget SPButton, BBButton, MPButton, OButton, EButton;
+var GFxObject Buttons, BotBattleGroup, SinglePlayerGroup, MultiplayerGroup, OptionsGroup, ExitGroup;
+var GFxClikWidget SPButton, BBSoloButton, BBCoopButton, MPButton, OButton, EButton;
 
+
+/**
+ * The Duk cube that is used as a display prop for the menu.
+ */
 var SkeletalMeshComponent Cube;
 
+/**
+ * The local pawn that is viewing the menu.
+ */
 var AP_Specter Pawn;
 
-var rotator RandRot;
-
+/**
+ * Various rotation variables to help rotate the Dek cube.
+ */
 var rotator OrigRot;
 
-var rotator DesiredRot;
+/**
+ * The previous mouse position.
+ */
+var vector OldMousePos;
 
+/**
+ * The counter for rotations and timers on the nemu.
+ */
 var float Counter;
+
+/**
+ * The currently active timer.  A -1 indicates no active timer.
+ */
+var float Timer;
+
+/**
+ * The duration of the current random rotation.
+ */
+var float RotationDuration;
 
 /**
  * The button that is currently being hovered on.  Will be empty if no button is.
  */
 var string CurrentOverButton;
 
+/**
+ * Indicates whether or not certain buttons are expanded or not.
+ */
+var bool SPExpanded, MPExpanded, BBExpanded, OExpanded;
+
+/**
+ * Indicates that the menu tick will ignore button states.
+ */
+var bool IgnoreButtons;
+
+/**
+ * Indicates that the menu is playing the closing animation.
+ */
+var bool Closing;
+
+var bool Rotating;
+
+/**
+ * The delegate to call when the menu closes.
+ */
+delegate OnClose();
+
+
 function bool Start(optional bool StartPaused = false)
 {
-	local vector btnPos;
-	
 	local SkeletalMeshActor iter;
+	local AN_BlendByState node;
 	
 	super.Start(StartPaused);
 			
@@ -50,94 +101,112 @@ function bool Start(optional bool StartPaused = false)
 		Pawn.SetMenu(self);
 	}
 		
-	Buttons = GetVariableObject("_root.buttons");
-	
-	SPBW = GetVariableObject("_root.buttons.single_player_button");
-	BBBW = GetVariableObject("_root.buttons.bot_battle_button");
-	MPBW = GetVariableObject("_root.buttons.multiplayer_button");
-	OBW = GetVariableObject("_root.buttons.options_button");
-	EBW = GetVariableObject("_root.buttons.exit_button");
+	Buttons = GetVariableObject("_root.buttons");	
+	SinglePlayerGroup = GetVariableObject("_root.buttons.singlePlayerButtons");	
+	MultiplayerGroup = GetVariableObject("_root.buttons.multiplayerButtons");
+	BotBattleGroup = GetVariableObject("_root.buttons.botBattleButtons");	
+	OptionsGroup = GetVariableObject("_root.buttons.optionsButtons");	
+	ExitGroup = GetVariableObject("_root.buttons.exitButtons");
 
-	SPButton = GFxClikWidget(SPBW.GetObject("button", class'GFxClikWidget'));
-	BBButton = GFxClikWidget(BBBW.GetObject("button", class'GFxClikWidget'));
-	MPButton = GFxClikWidget(MPBW.GetObject("button", class'GFxClikWidget'));
-	OButton = GFxClikWidget(OBW.GetObject("button", class'GFxClikWidget'));
-	EButton = GFxClikWidget(EBW.GetObject("button", class'GFxClikWidget'));
-	
-	SPButton.SetString("label", "Campaign");
-	MPButton.SetString("label", "Multiplayer");
-	BBButton.SetString("label", "Bot Battle");
-	OButton.SetString("label", "Options");
-	EButton.SetString("label", "Exit");
-	
-	SPButton.GotoAndPlay("up");
-	MPButton.GotoAndPlay("up");
-	BBButton.GotoAndPlay("up");
-	OButton.GotoAndPlay("up");
-	EButton.GotoAndPlay("up");
+	SPButton = GFxClikWidget(SinglePlayerGroup.GetObject("singlePlayerButton", class'GFxClikWidget'));
+	BBSoloButton = GFxClikWidget(BotBattleGroup.GetObject("singlePlayer", class'GFxClikWidget'));
+	BBCoopButton = GFxClikWidget(BotBattleGroup.GetObject("multiplayer", class'GFxClikWidget'));
+	MPButton = GFxClikWidget(MultiplayerGroup.GetObject("multiplayerButton", class'GFxClikWidget'));
+	OButton = GFxClikWidget(OptionsGroup.GetObject("optionsButton", class'GFxClikWidget'));
+	EButton = GFxClikWidget(ExitGroup.GetObject("exitButton", class'GFxClikWidget'));
 	
 	foreach Pawn.AllActors(class'SkeletalMeshActor', iter)
 	{
 		if (iter.Tag == 'DekCube')
 		{
 			Cube = iter.SkeletalMeshComponent;
-			btnPos = ProjectPosition(iter.Location);
-			btnPos.x += NativeWidth * 0.5;
-			btnPos.y -= NativeHeight * 0.5;
-			
-			`log("CubePos" @ iter.Location @ "BtnPos" @ btnPos);
 			break;
 		}
 	}	
 	
-	Buttons.SetFloat("x", btnPos.x);
-	Buttons.SetFloat("y", -btnPos.y - 64);
-	
+	Cube.Owner.SetPhysics(PHYS_Rotating);
 
-	PositionButtons();
+	foreach Cube.AllAnimNodes(class'AN_BlendByState', node)
+		node.SetState("MainMenu");
 	
-	RandRot.Yaw = Rand(65536);
-	RandRot.Pitch = Rand(65536);
-	RandRot.Roll = Rand(65536);
-	OrigRot = Cube.GetRotation();
-		
+	PositionButtons();
+
 	return true;
 	
 }
 
 function Update(float dt)
 {
-	if (CurrentOverButton == "")
+	Counter += dt;
+	
+	if (CurrentOverButton == "" && Rotating)
 	{
-		if (Counter > 10.0)
+		if (Cube.Owner.RotationRate.Pitch < 4 && Cube.Owner.RotationRate.Yaw < 4 && Cube.Owner.RotationRate.Roll < 4)
 		{
-			Counter = 0.0;
-			OrigRot = RandRot;
-			RandRot.Yaw = Rand(65536);
-			RandRot.Pitch = Rand(65536);
-			RandRot.Roll = Rand(65536);
+			Rotating = false;
 		}
+		
+		Cube.Owner.RotationRate.Pitch *= 0.95;
+		Cube.Owner.RotationRate.Yaw *= 0.95;
+		Cube.Owner.RotationRate.Roll *= 0.95;
+		
+		PositionButtons();
+		
+	}
+	else if (CurrentOverButton == "" && !(SPExpanded || MPExpanded || BBExpanded || OExpanded) && !Rotating)
+	{
+		Cube.Owner.RotationRate.Pitch += 64 * Cos(Counter);
+		Cube.Owner.RotationRate.Yaw += 64 * Cos(2.5 * Counter);
+		Cube.Owner.RotationRate.Roll += 64 * Cos(0.75 * Counter);
 
-		Counter += dt;
-		
-		Cube.SetRotation(RLerp(OrigRot, RandRot, Counter / 10, true));
-		
 		PositionButtons();
 	}
-	/*
+	else if (Closing)
+	{
+		Cube.Owner.SetRotation(RLerp(OrigRot, rot(0, -16384, 0), Counter / RotationDuration, true));
+	}
 	else
 	{
-		if (Counter > 1.0)
-		{
-			OrigRot = DesiredRot;
-		}
+		Cube.Owner.RotationRate.Pitch = 0;
+		Cube.Owner.RotationRate.Yaw = 0;
+		Cube.Owner.RotationRate.Roll = 0;
+	}
+}
 
-		Counter += dt;
+function OnMouseMove(float x, float y, bool mouseDown)
+{
+	local vector mousePos, d;
+	
+	mousePos.x = x;
+	mousePos.y = y;
+
+	if (mouseDown && !(SPExpanded || MPExpanded || BBExpanded || OExpanded))
+	{
+		d = mousePos - OldMousePos;
 		
-		Cube.SetRotation(RLerp(OrigRot, DesiredRot, Counter, true));
-		
-		PositionButtons();
-	}*/
+		if (VSize(d) > 5)
+		{
+			`log("Rotating");
+			
+			Rotating = true;
+			
+			Cube.Owner.RotationRate.Pitch = 0;
+			Cube.Owner.RotationRate.Yaw = -d.x * 1024;
+			Cube.Owner.RotationRate.Roll = d.y * 1024;
+		}
+	}
+	
+	OldMousePos = mousePos;
+}
+
+function CloseMenu()
+{
+	ActionScriptVoid("_root.CloseMenu");
+}
+
+function CloseAnimCompleted()
+{
+	OnClose();
 }
 
 function PositionButtons()
@@ -154,55 +223,97 @@ function PositionButtons()
 		{
 			Cube.GetSocketWorldLocationAndRotation('SinglePlayerSocket', v, r, 0);
 
+			if (SPExpanded)
+			{
+				SinglePlayerGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
+				SinglePlayerGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
+			}
+			else
+			{
+				SinglePlayerGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
+				SinglePlayerGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
+			}
+			
 			v = ProjectPosition(v);
 			
-			SPBW.SetFloat("x", v.x * scale);
-			SPBW.SetFloat("y", v.y * scale);
-			//SPBW.SetFloat("z", v.x * 4);
+			SinglePlayerGroup.SetFloat("x", v.x * scale);
+			SinglePlayerGroup.SetFloat("y", v.y * scale);
 		}
 		
 		if (Cube.GetSocketByName('MultiplayerSocket') != None)
 		{
 			Cube.GetSocketWorldLocationAndRotation('MultiplayerSocket', v, r, 0);
 			
+			if (MPExpanded)
+			{
+				MultiplayerGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
+				MultiplayerGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
+			}
+			else
+			{
+				MultiplayerGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
+				MultiplayerGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
+			}
+			
 			v = ProjectPosition(v);
 			
-			MPBW.SetFloat("x", v.x * scale);
-			MPBW.SetFloat("y", v.y * scale);
-			//MPBW.SetFloat("z", v.x * 4);
+			MultiplayerGroup.SetFloat("x", v.x * scale);
+			MultiplayerGroup.SetFloat("y", v.y * scale);
 		}
 		
 		if (Cube.GetSocketByName('BotBattleSocket') != None)
 		{
 			Cube.GetSocketWorldLocationAndRotation('BotBattleSocket', v, r, 0);
 			
+			if (BBExpanded)
+			{
+				BotBattleGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
+				BotBattleGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
+			}
+			else
+			{
+				BotBattleGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
+				BotBattleGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
+			}
+			
 			v = ProjectPosition(v);
 			
-			BBBW.SetFloat("x", v.x * scale);
-			BBBW.SetFloat("y", v.y * scale);
-			//BBBW.SetFloat("z", v.x * 4);
+			BotBattleGroup.SetFloat("x", v.x * scale);
+			BotBattleGroup.SetFloat("y", v.y * scale);
 		}
 		
 		if (Cube.GetSocketByName('OptionsSocket') != None)
 		{
 			Cube.GetSocketWorldLocationAndRotation('OptionsSocket', v, r, 0);
 			
+			if (OExpanded)
+			{
+				OptionsGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
+				OptionsGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
+			}
+			else
+			{
+				OptionsGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
+				OptionsGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
+			}
+			
 			v = ProjectPosition(v);
 			
-			OBW.SetFloat("x", v.x * scale);
-			OBW.SetFloat("y", v.y * scale);
-			//EBW.SetFloat("z", v.x * 4);
+			OptionsGroup.SetFloat("x", v.x * scale);
+			OptionsGroup.SetFloat("y", v.y * scale);
 		}
 		
 		if (Cube.GetSocketByName('ExitSocket') != None)
 		{
 			Cube.GetSocketWorldLocationAndRotation('ExitSocket', v, r, 0);
 			
+			ExitGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
+			ExitGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
+			
 			v = ProjectPosition(v);
 			
-			EBW.SetFloat("x", v.x * scale);
-			EBW.SetFloat("y", v.y * scale);
-			//EBW.SetFloat("z", v.x * 4);
+			ExitGroup.SetFloat("x", v.x * scale);
+			ExitGroup.SetFloat("y", v.y * scale);
 		}
 	}
 }
@@ -229,36 +340,72 @@ function vector ProjectPosition(vector pos)
 
 function ButtonUp(string label)
 {
-	`log("Button" @ label @ "is up.");
-	
 	if (CurrentOverButton == label)
 	{
 		CurrentOverButton = "";
-		//OrigRot = RLerp(OrigRot, DesiredRot, Counter, true);
-		//Counter = 0.0;
 	}
 }
 
 function ButtonOver(string label)
 {
-	`log("Button" @ label @ "is hovered.");
 	CurrentOverButton = label;
-	
-	if (label == "Campaign")
-	{
-		DesiredRot = rot(8192, 24576, 0);
-	}
-	else
-	{
-		DesiredRot = RLerp(OrigRot, RandRot, Counter, true);
-	}
-	
-	//OrigRot = RLerp(OrigRot, RandRot, Counter, true);
-	//Counter = 0.0;
 }
 
 function ButtonClicked(string label)
 {
 	if (label == "Exit")
 		ConsoleCommand("exit");
+	else if (label == "Options")
+		OExpanded = !OExpanded;
+	else if (label == "Campaign")
+		SPExpanded = !SPExpanded;
+	else if (label == "Muliplayer")
+		MPExpanded = !MPExpanded;
+	else if (label == "Bot Battle")
+		BBExpanded = !BBExpanded;
+	else if (label == "Solo")
+		OnSoloBotBattleClicked();
+}
+
+function OnSoloBotBattleClicked()
+{
+	Closing = true;
+	IgnoreButtons = true;
+	
+	Cube.Owner.RotationRate = rot(0, 0, 0);
+	Cube.Owner.SetPhysics(PHYS_None);
+	OrigRot = Cube.Owner.Rotation;
+	Counter = 0;
+	RotationDuration = 0.35;
+	
+	OnClose = GotoSoloBotBattle;
+	
+	CloseMenu();
+}
+
+function GotoSoloBotBattle()
+{
+	local GFx_SoloBotBattle menu;
+	
+	menu = new class'Arena.GFx_SoloBotBattle';
+	menu.bEnableGammaCorrection = FALSE;
+	menu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerController(Pawn.Controller).Player));
+	menu.SetTimingMode(TM_Real);
+
+	Cube.Owner.SetRotation(rot(0, -16384, 0));
+
+	menu.Start();
+	menu.PlayOpenAnimation();
+	
+	Pawn.SetMenu(menu);
+
+	Close();
+}
+
+defaultproperties
+{
+	MovieInfo=SwfMovie'ArenaUI.MainMenu'
+	
+	RotationDuration=10
+	Timer=-1
 }

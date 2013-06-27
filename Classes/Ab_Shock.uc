@@ -16,6 +16,8 @@ defaultproperties
 	InstantHitMomentum(0)=+0.0
 	
 	IHBeamTemplate=ParticleSystem'ArenaParticles.Particles.ShockBeam'
+	DLClass=class'Arena.L_ShockLight'
+	SLClass=class'Arena.L_ShockLight'
 	
 	CanHold=false
 	IsPassive=false

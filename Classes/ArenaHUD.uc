@@ -8,6 +8,13 @@
 
 class ArenaHUD extends UDKHUD;
 
+
+
+var array<string> AlertQueue;
+
+var array<float> AlertTimers;
+
+
 /**
  * A reference to the movie to use for the HUD.
  */
@@ -167,6 +174,37 @@ function CloseOverlayMenu()
 	SetVisible(true);
 }
 
+/**
+ * Queues up an alert to be sent to the HUD, with a specified time displayed.
+ */
+function QueueAlert(string alert, float time)
+{
+	if (AlertQueue.Length == 0)
+	{
+		SetTimer(time, false, 'RemoveAlert');
+		HUDMovie.AlertMessageBox.SendAlert(alert);
+	}
+	
+	AlertQueue.AddItem(alert);
+	AlertTimers.AddItem(time);
+}
+
+function RemoveAlert()
+{
+	AlertQueue.Remove(0, 1);
+	AlertTimers.Remove(0, 1);
+	
+	if (AlertQueue.Length > 0)
+	{
+		HUDMovie.AlertMessageBox.SendAlert(AlertQueue[0]);
+		SetTimer(AlertTimers[0], false, 'RemoveAlert');
+	}
+	else
+	{
+		HUDMovie.AlertMessageBox.SendAlert("");
+		HUDMovie.QueuedAlerts = false;
+	}
+}
 
 defaultproperties
 {

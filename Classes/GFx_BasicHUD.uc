@@ -8,19 +8,22 @@
 
 class GFx_BasicHUD extends GFxMoviePlayer;
 
+var string AlertMessage;
+
 /**
  * The settings used to configure the HUD display.
  */
 var PlayerHUDSettings Settings;
 
+var GFx_DamageRing DamageRing;
+var GFx_HealthDisplay HealthDisplay;
+var GFx_HUDMessageBox LeftMessageBox, RightMessageBox;
+var GFx_HUDAlertBox AlertMessageBox;
 var GFxObject WeaponStats, AbilityStats;
 var GFxObject WeaponName, WeaponAmmoNumeric;
 var GFxObject AbilityName, AbilityCoolDown;
 var GFxObject Reticule;
 var GFxObject RetTop, RetBot, RetLeft, RetRight;
-var GFxObject HealthStats;
-var GFxObject HeadIcon, BodyIcon, LeftArmIcon, RightArmIcon, LeftLegIcon, RightLegIcon;
-var GFxObject CriticalHealthBackground;
 var GFxObject MainMessage;
 
 /**
@@ -60,6 +63,11 @@ var float ReticuleBloomYMax;
  */
 var bool Hidden;
 
+/**
+ * Indicates that there are messages that are queued to be displayed to the alert message box.
+ */
+var bool QueuedAlerts;
+
 function Init(optional LocalPlayer player)
 {	
 	super.Init(player);
@@ -72,6 +80,12 @@ function Init(optional LocalPlayer player)
 	Start();
     Advance(0);
 	
+	DamageRing = GFx_DamageRing(GetVariableObject("_root.damage_ring", class'Arena.GFx_DamageRing'));
+	HealthDisplay = GFx_HealthDisplay(GetVariableObject("_root.healthDisplay", class'Arena.GFx_HealthDisplay'));
+	LeftMessageBox = GFx_HUDMessageBox(GetVariableObject("_root.left_message_box", class'Arena.GFx_HUDMessageBox'));
+	RightMessageBox = GFx_HUDMessageBox(GetVariableObject("_root.right_message_box", class'Arena.GFx_HUDMessageBox'));
+	AlertMessageBox = GFx_HUDAlertBox(GetVariableObject("_root.alertMessageBox", class'Arena.GFx_HUDAlertBox'));
+	
 	WeaponStats = GetVariableObject("_root.weapon_stat");
 	AbilityStats = GetVariableObject("_root.ability_stat");
 	WeaponName = GetVariableObject("_root.weapon_stat.weapon_name");
@@ -83,21 +97,15 @@ function Init(optional LocalPlayer player)
 	RetBot = GetVariableObject("_root.reticule.tick_bottom");
 	RetLeft = GetVariableObject("_root.reticule.tick_left");
 	RetRight = GetVariableObject("_root.reticule.tick_right");
-	HealthStats = GetVariableObject("_root.health_stats");
-	HeadIcon = GetVariableObject("_root.health_stats.body_stats.head_icon");
-	BodyIcon = GetVariableObject("_root.health_stats.body_stats.body_icon");
-	LeftArmIcon = GetVariableObject("_root.health_stats.body_stats.left_arm_icon");
-	RightArmIcon = GetVariableObject("_root.health_stats.body_stats.right_arm_icon");
-	LeftLegIcon = GetVariableObject("_root.health_stats.body_stats.left_leg_icon");
-	RightLegIcon = GetVariableObject("_root.health_stats.body_stats.right_leg_icon");
-	CriticalHealthBackground = GetVariableObject("_root.health_stats.critical_background");
 	MainMessage = GetVariableObject("_root.hud_main_message.hud_message");
 	
-	CriticalHealthBackground.SetVisible(false);
+	HealthDisplay.SetHealth(1);
 	MainMessage.SetText("");
+	AlertMessageBox.SendAlert("");
+	LeftMessageBox.SetMessage("");
+	RightMessageBox.SetMessage("");
 	
-	`log("Weapon stat x" @ WeaponStats.GetFloat("x"));
-	AngleComponent(HealthStats);
+	AngleComponent(HealthDisplay);
 	AngleComponent(WeaponStats);
 	AngleComponent(AbilityStats);
 	
@@ -119,6 +127,8 @@ function UpdateHUD(float dt)
 		
 	if (pawn != None && pawn.Health > 0)
 	{
+		DamageRing.RotateRing(pawn.Controller.Rotation);
+		
 		if (pawn.ActiveAbility != None)
 		{
 			AbilityName.SetText("Ability:" @ pawn.ActiveAbility.AbilityName);		
@@ -139,7 +149,7 @@ function UpdateHUD(float dt)
 			WeaponName.SetText("Weapon:" @ ArenaWeaponBase(pawn.Weapon).WeaponName);
 			WeaponAmmoNumeric.SetText(ArenaWeaponBase(pawn.Weapon).Clip @ " | " @ (ArenaWeaponBase(pawn.Weapon).Ammo / ArenaWeaponBase(pawn.Weapon).MaxClip));
 			
-			nBloom = ArenaWeaponBase(pawn.Weapon).Bloom / ArenaWeaponBase(pawn.Weapon).Stats.Constants.GetStatMax("Bloom");
+			nBloom = ArenaWeaponBase(pawn.Weapon).Bloom / class'GlobalGameConstants'.static.GetStatMax("Bloom");
 			xL = -nBloom * ReticuleBloomXMax * NativeWidth * 0.5;
 			xR = nBloom * (ReticuleBloomXMax * NativeWidth * 0.5);
 			yT = -nBloom * ReticuleBloomYMax * NativeHeight * 0.5;
@@ -152,16 +162,13 @@ function UpdateHUD(float dt)
 			
 		}
 		
-		if (pawn.Health < pawn.HealthMax / 2.0)
-			CriticalHealthBackground.SetVisible(true);
-		else
-			CriticalHealthBackground.SetVisible(false);
+		HealthDisplay.SetHealth(float(pawn.Health) / float(pawn.HealthMax));
 			
 		if (pawn.NearestInterObject != None)
 			MainMessage.SetText(pawn.NearestInterObject.GetMessage());
 		else
 			MainMessage.SetText("");
-
+			
 		Reticule.SetVisible(!pawn.ADS && !ArenaPlayerController(pawn.Owner).Aiming);
 		/*
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.8);
@@ -171,6 +178,11 @@ function UpdateHUD(float dt)
 		Canvas.SetPos(Canvas.ClipX * 0.75, Canvas.ClipY * 0.9);
 		Canvas.DrawText("Energy:" @ ArenaPawn(pc.Pawn).Energy);*/
 	}
+}
+
+function AddHitIndicator(vector direction)
+{
+	DamageRing.IndicateHit(direction);
 }
 
 function AngleComponent(GFxObject component)
@@ -191,7 +203,7 @@ function HideAllComponents()
 	WeaponStats.SetVisible(false);
 	AbilityStats.SetVisible(false);
 	Reticule.SetVisible(false);
-	HealthStats.SetVisible(false);
+	HealthDisplay.SetVisible(false);
 	MainMessage.SetVisible(false);
 	Hidden = true;
 }
@@ -201,7 +213,7 @@ function UnhideAllComponents()
 	WeaponStats.SetVisible(true);
 	AbilityStats.SetVisible(true);
 	Reticule.SetVisible(true);
-	HealthStats.SetVisible(true);
+	HealthDisplay.SetVisible(true);
 	MainMessage.SetVisible(true);
 	Hidden = false;
 }

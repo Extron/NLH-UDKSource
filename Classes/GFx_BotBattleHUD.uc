@@ -8,26 +8,12 @@
 
 class GFx_BotBattleHUD extends GFx_BasicHUD;
 
-
-var GFxObject ScoreModule, Score, Wave, Time;
-
-function Init(optional LocalPlayer player)
-{	
-	super.Init(player);
-	
-	ScoreModule = GetVariableObject("_root.score_module");
-	Score = GetVariableObject("_root.score_module.score.label");
-	Wave = GetVariableObject("_root.score_module.wave.label");
-	Time = GetVariableObject("_root.score_module.time.label");
-	
-	AngleComponent(ScoreModule);
-}
-
 function UpdateHUD(float dt)
 {
 	local ArenaPawn pawn;
 	local GRI_BotBattle gri;
-	local ArenaPRI pri;
+	local PRI_BotBattle pri;
+	local string leftMsg;
 	
 	super.UpdateHUD(dt);
 	
@@ -37,26 +23,24 @@ function UpdateHUD(float dt)
 	if (ArenaPawn(GetPC().Pawn) != None)
 		pawn = ArenaPawn(GetPC().Pawn);
 		
+	leftMsg = "";
+	
 	if (pawn != None && pawn.Health > 0)
 	{
-		pri = ArenaPRI(pawn.PlayerReplicationInfo);
+		pri = PRI_BotBattle(pawn.PlayerReplicationInfo);
 		gri = GRI_BotBattle(pawn.WorldInfo.GRI);
 		
 		if (pri != None)
 		{
-			Score.SetText("Score:" @ pri.Score);	
+			leftMsg $= "Score:" @ pri.Score $ "\n\n";
+			leftMsg $= "Tokens:" @ pri.Tokens $ "\n\n";
 		}
 		
 		if (gri != None)
 		{
-			Wave.SetText("Wave:" @ gri.CurrentWave);
+			leftMsg $= "Wave:" @ gri.CurrentWave $ "\n";
 		}
-		
-		Time.SetText("");
 	}
-}
-
-defaultproperties
-{
-	MovieInfo=SwfMovie'ArenaUI.BotBattleHUD'
+	
+	LeftMessageBox.SetMessage(leftMsg);
 }

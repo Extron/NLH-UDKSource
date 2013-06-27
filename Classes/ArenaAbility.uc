@@ -85,6 +85,36 @@ var ParticleSystem ChargeParticlesTemplate;
 var ParticleSystemComponent ChargeParticles;
 
 /**
+ * The template to use for particles for when the ability hits something.
+ */
+var ParticleSystem SparkParticlesTemplate;
+
+/**
+ * The instance of the spark particle system.
+ */
+var ParticleSystemComponent SparkParticles;
+
+/**
+ * The light class to use for the spark light.
+ */
+var class<UDKExplosionLight> SLClass;
+
+/**
+ * The light to spawn when firing the ability.
+ */
+var UDKExplosionLight SparkLight;
+
+/**
+ * The light class to use for the discharge light.
+ */
+var class<UDKExplosionLight> DLClass;
+
+/**
+ * The light to spawn when firing the ability.
+ */
+var UDKExplosionLight DischargeLight;
+
+/**
  * The ability-specific offset of the source location of the ability.
  * This can be thought as the displacement from the player's firing hand.
  */
@@ -291,6 +321,7 @@ simulated function FireAmmunition()
 	if (CoolDown > 0 && !CanHold)
 	{
 		AbilityPlaySound(FireSound);
+		EmitDischargeLight();
 		CanFire = false;
 		ClearPendingFire(0);
 		SetTimer(ArenaPawn(Instigator).Stats.GetCooldownTime(CoolDown), false, 'ReactivateAbility');
@@ -394,6 +425,7 @@ simulated function InstantFire()
 	}
 
 	EmitIHBeam(RealImpact.HitLocation);
+	EmitSparks(RealImpact.HitLocation, RealImpact.HitActor);
 	
 	if (ArenaPawn(Instigator) != None)
 		InstantHitDamage[0] = ArenaPawn(Instigator).Stats.GetDamageGiven(BaseDamage, InstantHitDamageTypes[0]);
@@ -531,6 +563,36 @@ simulated function EmitIHBeam(vector hitLocation)
 	}
 }
 
+simulated function EmitSparks(vector hitLocation, Actor hitActor)
+{
+	if (WorldInfo.NetMode != NM_DedicatedServer && SparkParticlesTemplate != None && hitActor != None)
+	{
+		SparkParticles = WorldInfo.MyEmitterPool.SpawnEmitter(SparkParticlesTemplate, hitLocation);
+		SparkParticles.SetAbsolute(false, false, false);
+		SparkParticles.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		SparkParticles.bUpdateComponentInTick = true;
+		
+		
+	}
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && hitActor != None && !hitActor.bStatic)
+	{
+		if (SparkLight != None)
+		{
+			SparkLight.ResetLight();
+			SparkLight.SetTranslation(hitLocation - hitActor.Location);
+			hitActor.AttachComponent(SparkLight);	
+		}
+		else if (SLClass != None)
+		{
+			`log("Creating spark light");
+			SparkLight = new(Outer) SLClass;
+			SparkLight.SetTranslation(hitLocation - hitActor.Location);
+			hitActor.AttachComponent(SparkLight);			
+		}
+	}
+}
+
 /**
  * Emits the particle system used for ability charging.
  */
@@ -542,7 +604,7 @@ simulated function EmitChargeParticles()
 	if (WorldInfo.NetMode != NM_DedicatedServer && ChargeParticlesTemplate != None)
 	{
 		if (ArenaPawn(Instigator) != None)
-			ArenaPawn(Instigator).GetAbilitySourceOffset(l, r);// + SourceOffset) >> );r
+			ArenaPawn(Instigator).GetAbilitySourceOffset(l, r);
 		
 		r = Instigator.Controller.Rotation;
 		l = l + (SourceOffset >> r);
@@ -553,18 +615,23 @@ simulated function EmitChargeParticles()
 		if (ArenaPawn(Instigator) != None)
 			ArenaPawn(Instigator).AttachToAbilitySource(ChargeParticles);
 			
-		//AttachToMuzzleSocket(MuzzleFlash);
-		
 		ChargeParticles.SetTemplate(ChargeParticlesTemplate);
 		ChargeParticles.ActivateSystem();
+	}
+}
+
+simulated function EmitDischargeLight()
+{
+	if (DischargeLight != None)
+	{
+		DischargeLight.ResetLight();
+	}
+	else if (DLClass != None)
+	{
+		DischargeLight = new(Outer) DLClass;
 		
-		//ChargeParticles = WorldInfo.MyEmitterPool.SpawnEmitter(ChargeParticlesTemplate, l);
-		//ChargeParticles.SetAbsolute(false, false, false);
-		//ChargeParticles.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
-		//ChargeParticles.bUpdateComponentInTick = true;
-		
-		//if (ArenaPawn(Instigator) != None)
-			//ArenaPawn(Instigator).AttachToAbilitySource(ChargeParticles);
+		if (ArenaPawn(Instigator) != None)
+			ArenaPawn(Instigator).AttachToAbilitySource(DischargeLight);
 	}
 }
 

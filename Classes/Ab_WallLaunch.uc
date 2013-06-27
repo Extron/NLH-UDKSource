@@ -8,11 +8,6 @@
 
 class Ab_WallLaunch extends Ab_PortableShield;
 
-/**
- * The class to use for the boulder.  This can be overridden in subclasses to change what kind of wall is generated.
- */
-var class<Ab_WallLaunchBoulder> WallClass;
-
 defaultproperties
 {
 	WeaponFireTypes(0)=EWFT_Custom

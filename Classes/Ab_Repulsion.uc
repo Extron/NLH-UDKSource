@@ -116,6 +116,8 @@ defaultproperties
 {
 	WeaponFireTypes(0)=EWFT_Custom
 	
+	FireSound=SoundCue'ArenaAbilities.Audio.RepulseSC'
+	
 	AbilityName="Repulse"
 	CoolDown=5
 	EnergyCost=350

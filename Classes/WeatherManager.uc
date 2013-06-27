@@ -217,6 +217,8 @@ simulated function PostBeginPlay()
 		volume.SpawnWeather(self);
 	}
 	
+	Landscape = Spawn(class'Arena.LandscapeManager', self);
+	
 	foreach AllActors(class'Landscape', iter)
 	{
 		Landscape.Initialize(iter);
@@ -357,6 +359,11 @@ simulated function Tick(float dt)
 	Landscape.Update(self, dt);
 }
 
+function Destroyed()
+{
+	Landscape.Destroy();
+}
+
 function float GetNoise(float value, int octave, float persistance)
 {
 	local int frequency;
@@ -445,10 +452,6 @@ function DisableLight()
 
 defaultproperties
 {
-	Begin Object Class=Arena.LandscapeManager Name=Lscp
-	End Object
-	Landscape=Lscp
-	
 	LightningBoltTemplate=ParticleSystem'ArenaParticles.Particles.Lightning'
 	
 	ThunderstormSound=SoundCue'ArenaWeather.Audio.ThunderstormLoop'

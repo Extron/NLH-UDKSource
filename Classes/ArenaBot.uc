@@ -127,7 +127,7 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	
 	LastShotAtDuration = 0;
 	
-	ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
+	ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn));
 	ArenaWeapon(ArenaPawn(Pawn).Weapon).InitializeStats();
 	
 	WhatToDoNext();

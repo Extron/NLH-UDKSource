@@ -197,16 +197,16 @@ simulated function PostBeginPlay()
 {
 	super.PostBeginPlay();
 
-	if (!StatsInitialized && Instigator != None && ArenaPawn(Instigator).Stats.Constants != None)
+	if (!StatsInitialized && Instigator != None)
 	{
-		Stats.Initialize(self, ArenaPawn(Instigator).Stats.Constants);	
+		Stats.Initialize(self);	
 		StatsInitialized = true;
 	}
 }
 
 simulated function InitializeStats()
 {
-	Stats.Initialize(self, ArenaPawn(Instigator).Stats.Constants);
+	Stats.Initialize(self);
 	
 	StatsInitialized = true;
 }
@@ -599,6 +599,18 @@ simulated function bool CanADS()
 	return false;
 }
 
+simulated function bool OnlyAlterWeaponFOV()
+{
+	return false;
+}
+
+/**
+ * Allows weapon optics to modify things like depth of field when the player aims down sights.
+ */
+simulated function BlurADS(UberPostProcessEffect effect)
+{
+}
+
 /**
  * Attaches a primitive component to the weapon's muzzle.  Is designed to be overridden in subclasses.
  */
@@ -651,9 +663,9 @@ simulated function FireWeapon()
 	
 	Bloom += Stats.GetBloomCost();
 	
-	if (Bloom > Stats.Constants.GetStatMax("Bloom"))
+	if (Bloom > class'GlobalGameConstants'.static.GetStatMax("Bloom"))
 	{
-		Bloom = Stats.Constants.GetStatMax("Bloom");
+		Bloom = class'GlobalGameConstants'.static.GetStatMax("Bloom");
 	}
 
 	if (ArenaPawn(Instigator) != None)
@@ -799,6 +811,14 @@ simulated function HideWeapon(bool hidden)
 	
 	if (AP_Player(Instigator) != None)
 		AP_Player(Instigator).Arms.SetHidden(hidden);
+}
+
+simulated function SetWeaponFOV(float angle)
+{
+	if (AP_Player(Instigator) != None)
+		UDKSkeletalMeshComponent(AP_Player(Instigator).Arms).SetFOV(angle);
+		
+	UDKSkeletalMeshComponent(Mesh).SetFOV(angle);
 }
 
 simulated function rotator GetRecoilRotation(Pawn holder)

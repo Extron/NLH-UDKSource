@@ -37,14 +37,10 @@ var array<float> DefaultValues;
 /** The weapon that these stats belong to. */
 var ArenaWeapon Weapon;
 
-/** The game's global constants. */
-var GlobalGameConstants constants;
 
-
-simulated function Initialize(ArenaWeapon weap, GlobalGameConstants gameConstants)
+simulated function Initialize(ArenaWeapon weap)
 {
 	Weapon = weap;
-	constants = gameConstants;
 	InitValues();
 	ComputeStats();
 }
@@ -92,11 +88,11 @@ simulated function rotator GetInaccuracyShift()
 	yShift = (FRand() - 0.5) * 0.2;
 	zShift = (FRand() - 0.5) * 0.2;
 	
-	factor = Constants.GetFactorMin("Accuracy Shift") * (1 - 1 / fmax(Constants.NormalizedStat("Weapon Accuracy", Values[WSVAccuracy]), 0.001)) + 
-			 Constants.GetFactorMax("Accuracy Shift") * (1 / fmax(Constants.NormalizedStat("Weapon Accuracy", Values[WSVAccuracy]), 0.001));
+	factor = class'GlobalGameConstants'.static.GetFactorMin("Accuracy Shift") * (1 - 1 / fmax(class'GlobalGameConstants'.static.NormalizedStat("Weapon Accuracy", Values[WSVAccuracy]), 0.001)) + 
+			 class'GlobalGameConstants'.static.GetFactorMax("Accuracy Shift") * (1 / fmax(class'GlobalGameConstants'.static.NormalizedStat("Weapon Accuracy", Values[WSVAccuracy]), 0.001));
 	
 	factor *= ArenaPawn(Weapon.Instigator).Stats.GetInaccuracyFactor();
-	factor += Constants.NormalizedStat("Bloom", Weapon.Bloom);
+	factor += class'GlobalGameConstants'.static.NormalizedStat("Bloom", Weapon.Bloom);
 	
 	if (ArenaPawn(Weapon.Instigator).ADS)
 		factor *= Values[WSVADSAccuracy]; // I actually think this should be dependant on the type of optics that is used.
@@ -112,9 +108,9 @@ simulated function float GetBloomCost()
 {
 	local float x;
 	
-	x = Constants.NormalizedStat("Weapon Stability", Values[WSVStability]) * Constants.NormalizedStat("Weapon Recoil", Values[WSVRecoil]);
+	x = class'GlobalGameConstants'.static.NormalizedStat("Weapon Stability", Values[WSVStability]) * class'GlobalGameConstants'.static.NormalizedStat("Weapon Recoil", Values[WSVRecoil]);
 
-	return ArenaPawn(Weapon.Instigator).Stats.GetBloomFactor() * (Constants.GetFactorMin("Bloom Cost") * x + Constants.GetFactorMax("Bloom Cost") * (1 - x));
+	return ArenaPawn(Weapon.Instigator).Stats.GetBloomFactor() * (class'GlobalGameConstants'.static.GetFactorMin("Bloom Cost") * x + class'GlobalGameConstants'.static.GetFactorMax("Bloom Cost") * (1 - x));
 }
 
 /**
@@ -145,7 +141,7 @@ simulated function InitValues()
 	
 	for (i = 0; i < Values.Length; i++)
 	{
-		if (Values[i] == -1 && Constants != None)
+		if (Values[i] == -1)
 			DefaultValues[i] = GetGGC(i);
 		else
 			DefaultValues[i] = Values[i];	
@@ -157,43 +153,43 @@ simulated function float GetGGC(int i)
 	switch (i)
 	{
 	case 0:
-		return Constants.GetStatDefault("Weapon Weight");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Weight");
 		
 	case 1:
-		return Constants.GetStatDefault("Weapon Accuracy");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Accuracy");
 		
 	case 2:
-		return Constants.GetStatDefault("Weapon Stability");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Stability");
 		
 	case 3:
-		return Constants.GetStatDefault("Weapon Mobility");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Mobility");
 		
 	case 4:
-		return Constants.GetStatDefault("Weapon Recoil");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Recoil");
 		
 	case 5:
-		return Constants.GetStatDefault("Weapon Zoom");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Zoom");
 		
 	case 6:
-		return Constants.GetStatDefault("Weapon Rate of Fire");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Rate of Fire");
 		
 	case 7:
-		return Constants.GetStatDefault("Weapon Rate of Cycle");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Rate of Cycle");
 		
 	case 8:
-		return Constants.GetStatDefault("Weapon Damage Output");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Damage Output");
 		
 	case 9:
-		return Constants.GetStatDefault("Weapon Cool Down Rate");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Cool Down Rate");
 		
 	case 10:
-		return Constants.GetStatDefault("Weapon Overheat Delay");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Overheat Delay");
 		
 	case 11:
-		return Constants.GetStatDefault("Weapon Heat Cost");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weapon Heat Cost");
 		
 	case 12:
-		return Constants.GetStatDefault("ADS Accuracy");
+		return class'GlobalGameConstants'.static.GetStatDefault("ADS Accuracy");
 		
 	default:
 		return 0;
@@ -205,43 +201,43 @@ simulated function float GetGGCMax(int i)
 	switch (i)
 	{
 	case 0:
-		return Constants.GetStatMax("Weapon Weight");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Weight");
 		
 	case 1:
-		return Constants.GetStatMax("Weapon Accuracy");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Accuracy");
 		
 	case 2:
-		return Constants.GetStatMax("Weapon Stability");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Stability");
 		
 	case 3:
-		return Constants.GetStatMax("Weapon Mobility");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Mobility");
 		
 	case 4:
-		return Constants.GetStatMax("Weapon Recoil");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Recoil");
 		
 	case 5:
-		return Constants.GetStatMax("Weapon Zoom");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Zoom");
 		
 	case 6:
-		return Constants.GetStatMax("Weapon Rate of Fire");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Rate of Fire");
 		
 	case 7:
-		return Constants.GetStatMax("Weapon Rate of Cycle");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Rate of Cycle");
 		
 	case 8:
-		return Constants.GetStatMax("Weapon Damage Output");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Damage Output");
 		
 	case 9:
-		return Constants.GetStatMax("Weapon Cool Down Rate");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Cool Down Rate");
 		
 	case 10:
-		return Constants.GetStatMax("Weapon Overheat Delay");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Overheat Delay");
 		
 	case 11:
-		return Constants.GetStatMax("Weapon Heat Cost");
+		return class'GlobalGameConstants'.static.GetStatMax("Weapon Heat Cost");
 		
 	case 12:
-		return Constants.GetStatMax("ADS Accuracy");
+		return class'GlobalGameConstants'.static.GetStatMax("ADS Accuracy");
 		
 	default:
 		return 0;

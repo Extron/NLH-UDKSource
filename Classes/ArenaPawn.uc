@@ -299,7 +299,7 @@ function bool DoJump(bool bUpdating)
 		if (!bIsWalking)
 			Velocity.Z = JumpZ * Stats.GetJumpZ();
 			
-		nJump = Stats.GetJumpZ() / Stats.Constants.GetFactorMax("Jump Z");
+		nJump = Stats.GetJumpZ() / class'GlobalGameConstants'.static.GetFactorMax("Jump Z");
 		
 		if (Base != None && !Base.bWorldGeometry && Base.Velocity.Z > 0.f)
 		{
@@ -324,6 +324,9 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	
 	if (!Invincible)
 	{
+		if (PlayerController(Controller) != None && ArenaHUD(PlayerController(Controller).MyHUD) != None && ArenaHUD(PlayerController(Controller).MyHUD).HUDMovie != None && HitLocation != Location)
+			ArenaHUD(PlayerController(Controller).MyHUD).HUDMovie.AddHitIndicator(Normal(HitLocation - Location));
+			
 		if (class<AbilityDamageType>(DamageType) != None && (ArenaPlayerController(EventInstigator) != None || ArenaBot(EventInstigator) != None))
 		{
 			`log("You were hit by an ability.");

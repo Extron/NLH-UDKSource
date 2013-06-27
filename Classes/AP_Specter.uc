@@ -17,16 +17,10 @@ class AP_Specter extends ArenaPawn;
  */
 var GFx_Menu CurrentMenu;
 
-
-simulated function Tick(float dt)
-{
-	super.Tick(dt);
-	
-	if (CurrentMenu != None)
-		CurrentMenu.Update(dt);
-}
-
 simulated function SetMenu(GFx_Menu menu)
 {
 	CurrentMenu = menu;
+	
+	if (MenuHUD(PlayerController(Controller).MyHUD) != None)
+		MenuHUD(PlayerController(Controller).MyHUD).Menu = menu;
 }

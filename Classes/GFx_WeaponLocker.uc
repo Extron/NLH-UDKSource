@@ -328,8 +328,30 @@ function PostRender()
 	Viewer.MyHUD.Canvas.DeProject(mousePos, origin, direction);
 	
 	ArenaWeaponBase(Weapon).Mesh.SetTraceBlocking(true, true);
+
+	foreach ArenaWeaponBase(Weapon).WeaponComponents(iter, index)
+	{
+		if (Viewer.TraceComponent(traceLoc, traceNorm, iter.Mesh, origin + direction * 512, origin , , , true))
+		{		
+			if (SelectedPart > -1)
+				WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
+		
+			SelectedPart = index + 1;
+			
+			PartTooltip.SetVisible(true);
+			StatTooltip.SetVisible(true);
+			SetStatTooltip(StatTooltip, iter.StatMod.ValueMods, 1, iter.Weight);
+			
+			PartTooltip.SetTooltipTitle(iter.ComponentName);
+			PartTooltip.SetTooltipBody(iter.ComponentDescription);
+			
+			hit = true;
+			
+			break;
+		}
+	}
 	
-	if (Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Mesh, origin + direction * 512, origin , , , true))
+	if (!hit && Viewer.TraceComponent(traceLoc, traceNorm, ArenaWeaponBase(Weapon).Mesh, origin + direction * 512, origin , , , true))
 	{
 		if (SelectedPart > -1)
 			WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
@@ -344,31 +366,6 @@ function PostRender()
 		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).BaseDescription);
 		
 		hit = true;
-	}
-	else
-	{
-		foreach ArenaWeaponBase(Weapon).WeaponComponents(iter, index)
-		{
-			if (Viewer.TraceComponent(traceLoc, traceNorm, iter.Mesh, origin + direction * 512, origin , , , true))
-			{		
-				if (SelectedPart > -1)
-					WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', 0);
-			
-				SelectedPart = index + 1;
-				
-				PartTooltip.SetVisible(true);
-				StatTooltip.SetVisible(true);
-				SetStatTooltip(StatTooltip, iter.StatMod.ValueMods, 1, iter.Weight);
-				
-				PartTooltip.SetTooltipTitle(iter.ComponentName);
-				PartTooltip.SetTooltipBody(iter.ComponentDescription);
-				
-				hit = true;
-				
-				break;
-			}
-		}
-
 	}
 	
 	if (!hit)
@@ -589,12 +586,6 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 		base.AttachStock(Wp_Stock(component));
 		socket = base.Sockets[WCStock];
 		index = 1;
-		
-		/*
-		if (Wp_S_NoStock(component) != None)
-			AddStock.SetVisible(true);
-		else
-			AddStock.SetVisible(false);*/
 	}
 	else if (component.IsA('Wp_Barrel'))
 	{
@@ -611,11 +602,6 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 		base.AttachMuzzle(Wp_Muzzle(component));
 		socket = base.Sockets[WCMuzzle];
 		index = 3;
-		/*
-		if (Wp_M_NoMuzzle(component) != None)
-			AddMuzzle.SetVisible(true);
-		else
-			AddMuzzle.SetVisible(false);*/
 	}
 	else if (component.IsA('Wp_Optics'))
 	{
@@ -624,11 +610,6 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 		base.AttachOptics(Wp_Optics(component));
 		socket = base.Sockets[WCOptics];
 		index = 4;
-		/*
-		if (Wp_O_NoOptics(component) != None)
-			AddOptics.SetVisible(true);
-		else
-			AddOptics.SetVisible(false);*/
 	}
 	else if (component.IsA('Wp_UnderAttachment'))
 	{
@@ -637,13 +618,6 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 		base.AttachUnder(Wp_UnderAttachment(component));
 		socket = base.Sockets[WCUnderAttachment];
 		index = 5;
-		
-		/*
-		if (Wp_UA_NoUnderAttachment(component) != None || 
-			!Wp_Barrel(ArenaWeaponBase(Weapon).WeaponComponents[WCBarrel]).CanEquipUnderAttachment(Wp_UnderAttachment(component)))
-			AddUnder.SetVisible(true);
-		else
-			AddUnder.SetVisible(false);*/
 	}
 	else if (component.IsA('Wp_SideAttachment'))
 	{
@@ -652,11 +626,6 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 		base.AttachSide(Wp_SideAttachment(component));
 		socket = base.Sockets[WCSideAttachment];
 		index = 6;
-		/*
-		if (Wp_SA_NoSideAttachment(component) != None)
-			AddSide.SetVisible(true);
-		else
-			AddSide.SetVisible(false);*/
 	}
 		
 	component.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
@@ -829,7 +798,12 @@ function ChangeWeaponBase(class<ArenaWeaponBase> baseClass)
 	}
 	
 	for (i = 0; i < 9; i++)
-		ValuesContainer.ChangeValue(i, GetValue(i));
+	{
+		if (prevHadMultipleFM && base.AllowedFireModes.Length <= 1 && i > 0)
+			ValuesContainer.ChangeValue(i, GetValue(i - 1));
+		else
+			ValuesContainer.ChangeValue(i, GetValue(i - 1));
+	}
 	
 	AcceptButton.SetBool("enabled", true);
 	ChangedWeapon = true;

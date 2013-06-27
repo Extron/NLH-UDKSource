@@ -8,6 +8,16 @@
 
 class Wp_O_CheapIronSights extends Wp_Optics;
 
+/**
+ * Allows weapon optics to modify things like depth of field when the player aims down sights.
+ */
+simulated function BlurADS(UberPostProcessEffect effect)
+{
+	effect.FocusDistance = 192;
+	effect.FocusInnerRadius = 128;
+	effect.MaxNearBlurAmount = 0.85;
+}
+
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
@@ -34,4 +44,6 @@ defaultproperties
 	Weight=1
 	ComponentName="Cheap Iron Sights"
 	ComponentDescription="These iron sights offer the basic aim down sights ability, but with little additional enhancements like zoom and the tendancy to be misaligned, they provide little else."
+	LineUpPost=true
+	OnlyZoomWeapon=false
 }

@@ -19,6 +19,13 @@ var ParticleSystem ActiveTemplate_Dynamic;
 /** The particle system of the activated effect. */
 var ParticleSystemComponent ActiveEffects;
 
+var class<LightComponent> LightClass;
+
+/**
+ * Add a light component to whatever was hit.
+ */
+var LightComponent Light;
+
 var float SpreadTime;
 
 var bool CanSpread;
@@ -43,6 +50,16 @@ simulated function UpdateEffect(float dt)
 			}
 		}
 	}
+	
+	if (Light != None)
+	{
+		if (FRand() > 0.5)
+		{
+			Light.SetLightProperties(Lerp(15, 64, FRand()));
+			
+			Light.UpdateColorAndBrightness();
+		}		
+	}
 }
 
 simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player, bool isBase)
@@ -56,6 +73,7 @@ simulated function DeactivateEffect()
 {
 	super.DeactivateEffect();
 	
+	Actor(Affectee).DetachComponent(Light);
 	ActiveEffects.DeactivateSystem();
 }
 
@@ -90,6 +108,19 @@ simulated function EmitEffect(IEnvObj envobj)
 			ActiveEffects.SetActorParameter('EnvObjMesh', Actor(envobj));
 		}
 	}
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && (DynamicEnvironmentObject(envobj) != None || EnvironmentObject(envobj) != None))
+	{
+		if (Light != None)
+		{
+			Actor(envobj).AttachComponent(Light);	
+		}
+		else if (LightClass != None)
+		{
+			Light = new(Outer) LightClass;
+			Actor(envobj).AttachComponent(Light);			
+		}
+	}
 }
 
 defaultproperties
@@ -100,6 +131,8 @@ defaultproperties
 	
 	ActiveTemplate_Static=ParticleSystem'ArenaParticles.Particles.ChargedParticles'
 	ActiveTemplate_Dynamic=ParticleSystem'ArenaParticles.Particles.ChargedDEOParticles'
+	LightClass=class'Arena.L_ChargedLight'
+	
 	EffectName="Charged"
 	Duration=15
 	CanSpread=false

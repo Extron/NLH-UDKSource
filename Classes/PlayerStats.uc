@@ -58,9 +58,6 @@ var Array<float> TypeDamageOutput;
 /* A list of factors that modify the damage taken by the player per damage type. */
 var Array<float> TypeDamageInput;
 
-/* A reference to the game's constants. */
-var GlobalGameConstants Constants;
-
 /* A list of damage reductions for a player's body parts. */
 var float DamageInput[5];
 
@@ -76,12 +73,9 @@ var array<float> DefaultValues;
  * 
  * @param pawn - The pawn to set the stats for.
  */
-simulated function SetInitialStats(ArenaPawn pawn, GlobalGameConstants gameConstants)
+simulated function SetInitialStats(ArenaPawn pawn)
 {
-	`log("Initializing stats" @ gameConstants);
-	
 	Owner = pawn;
-	Constants = gameConstants;
 	
 	InitValues();
 	ComputeStats();
@@ -106,16 +100,11 @@ function float GetMovementSpeed()
 {
 	local float x;
 
-	if (Constants != None)
-	{
-		x = Constants.NormalizedStat("Movement", Values[PSVMovement]) * Constants.NormalizedStat("Mobility", Values[PSVMobility]) / (Constants.NormalizedStat("Weight", Values[PSVWeight]));
-	
-		return Constants.GetFactorMin("Movement Speed") * (1 - Constants.GetFactorConstant("Movement Speed") * x) + Constants.GetFactorMax("Movement Speed") * Constants.GetFactorConstant("Movement Speed") * x;
-	}
-	else
-	{
-		return 1;
-	}
+	x = class'GlobalGameConstants'.static.NormalizedStat("Movement", Values[PSVMovement]) * class'GlobalGameConstants'.static.NormalizedStat("Mobility", Values[PSVMobility]) / 
+		(class'GlobalGameConstants'.static.NormalizedStat("Weight", Values[PSVWeight]));
+
+	return class'GlobalGameConstants'.static.GetFactorMin("Movement Speed") * (1 - class'GlobalGameConstants'.static.GetFactorConstant("Movement Speed") * x) + 
+		   class'GlobalGameConstants'.static.GetFactorMax("Movement Speed") * class'GlobalGameConstants'.static.GetFactorConstant("Movement Speed") * x;
 }
 
 /**
@@ -126,17 +115,12 @@ function float GetMovementSpeed()
 function float GetSprintSpeed()
 {
 	local float x;
-	
-	if (Constants != None)
-	{
-		x = Constants.NormalizedStat("Movement", Values[PSVMovement]) * Constants.NormalizedStat("Mobility", Values[PSVMobility]) * Constants.NormalizedStat("Health", Owner.FHealth) / (Constants.NormalizedStat("Weight", Values[PSVWeight]));
-	
-		return Constants.GetFactorMin("Sprint Speed") * (1 - Constants.GetFactorConstant("Sprint Speed") * x) + Constants.GetFactorMax("Sprint Speed") * Constants.GetFactorConstant("Sprint Speed") * x;
-	}
-	else
-	{
-		return 1;
-	}
+
+	x = class'GlobalGameConstants'.static.NormalizedStat("Movement", Values[PSVMovement]) * class'GlobalGameConstants'.static.NormalizedStat("Mobility", Values[PSVMobility]) * 
+		class'GlobalGameConstants'.static.NormalizedStat("Health", Owner.FHealth) / (class'GlobalGameConstants'.static.NormalizedStat("Weight", Values[PSVWeight]));
+
+	return class'GlobalGameConstants'.static.GetFactorMin("Sprint Speed") * (1 - class'GlobalGameConstants'.static.GetFactorConstant("Sprint Speed") * x) + 
+		   class'GlobalGameConstants'.static.GetFactorMax("Sprint Speed") * class'GlobalGameConstants'.static.GetFactorConstant("Sprint Speed") * x;
 }
 
 /**
@@ -254,18 +238,13 @@ function float GetADSSpeed()
 {
 	local float x;
 	
-	if (Constants != None)
-	{
-		x = Constants.NormalizedStat("Weapon Weight", ArenaWeaponBase(Owner.Weapon).GetWeight()) / (2.0 * fmax(Constants.NormalizedStat("Mobility", Values[PSVMobility]), 0.2));
+	x = class'GlobalGameConstants'.static.NormalizedStat("Weapon Weight", ArenaWeaponBase(Owner.Weapon).GetWeight()) / 
+		(2.0 * fmax(class'GlobalGameConstants'.static.NormalizedStat("Mobility", Values[PSVMobility]), 0.2));
 
-		if (Owner != None && ArenaWeaponBase(Owner.Weapon) != None)
-		{		
-			return Constants.GetFactorMax("ADS Speed") * Constants.GetFactorConstant("ADS Speed") * x + Constants.GetFactorMin("ADS Speed") * (1 - Constants.GetFactorConstant("ADS Speed") * x);
-		}
-		else
-		{
-			return 0.25;
-		}
+	if (Owner != None && ArenaWeaponBase(Owner.Weapon) != None)
+	{		
+		return class'GlobalGameConstants'.static.GetFactorMax("ADS Speed") * class'GlobalGameConstants'.static.GetFactorConstant("ADS Speed") * x + 
+			   class'GlobalGameConstants'.static.GetFactorMin("ADS Speed") * (1 - class'GlobalGameConstants'.static.GetFactorConstant("ADS Speed") * x);
 	}
 	else
 	{
@@ -308,50 +287,38 @@ function float GetInaccuracyFactor()
 {
 	local float x;
 	
-	x = Constants.GetFactorConstant("Accuracy Factor") * (1 / fmax(Values[PSVAccuracy], 0.01));
+	x = class'GlobalGameConstants'.static.GetFactorConstant("Accuracy Factor") * (1 / fmax(Values[PSVAccuracy], 0.01));
 	
-	return Constants.GetFactorMin("Accuracy Factor") * x + Constants.GetFactorMax("Accuracy Factor") * x;
+	return class'GlobalGameConstants'.static.GetFactorMin("Accuracy Factor") * x + class'GlobalGameConstants'.static.GetFactorMax("Accuracy Factor") * x;
 }
 
 function float GetBloomFactor()
 {
 	local float x;
 	
-	x = Constants.NormalizedStat("Stability", Values[PSVStability]);
+	x = class'GlobalGameConstants'.static.NormalizedStat("Stability", Values[PSVStability]);
 	
-	return Constants.GetFactorMin("Bloom Factor") * x + Constants.GetFactorMax("Bloom Factor") * (1 - x);
+	return class'GlobalGameConstants'.static.GetFactorMin("Bloom Factor") * x + class'GlobalGameConstants'.static.GetFactorMax("Bloom Factor") * (1 - x);
 }
 
 function float GetLookFactor()
 {
-	if (Constants != None)
-	{
-		return Constants.GetFactorMin("Look Factor") * (1 - Constants.GetFactorConstant("Look Factor") * Values[PSVMobility]) + 
-			   Constants.GetFactorMax("Look Factor") * Constants.GetFactorConstant("Look Factor") * Values[PSVMobility];
-	}
-	else
-	{
-		return 1;
-	}
+	return class'GlobalGameConstants'.static.GetFactorMin("Look Factor") * (1 - class'GlobalGameConstants'.static.GetFactorConstant("Look Factor") * Values[PSVMobility]) + 
+		   class'GlobalGameConstants'.static.GetFactorMax("Look Factor") * class'GlobalGameConstants'.static.GetFactorConstant("Look Factor") * Values[PSVMobility];
 }
 
 function float GetJumpZ()
 {
 	local float x;
 
-	if (Constants != None)
+	x = class'GlobalGameConstants'.static.NormalizedStat("Mobility", Values[PSVMobility]) * class'GlobalGameConstants'.static.NormalizedStat("Jump", Values[PSVJump]) * 
+		class'GlobalGameConstants'.static.NormalizedStat("Health", Owner.FHealth) * class'GlobalGameConstants'.static.NormalizedStat("Stamina", Owner.Stamina) / 
+		class'GlobalGameConstants'.static.NormalizedStat("Weight", Values[PSVWeight]);
+	
+	if (Owner != None)
 	{
-		x = Constants.NormalizedStat("Mobility", Values[PSVMobility]) * Constants.NormalizedStat("Jump", Values[PSVJump]) * Constants.NormalizedStat("Health", Owner.FHealth) *
-			Constants.NormalizedStat("Stamina", Owner.Stamina) / Constants.NormalizedStat("Weight", Values[PSVWeight]);
-		
-		if (Owner != None)
-		{
-			return Constants.GetFactorMax("Jump Z") * Constants.GetFactorConstant("Jump Z") * x + Constants.GetFactorMin("Jump Z") * (1 - Constants.GetFactorConstant("Jump Z") * x);
-		}
-		else
-		{
-			return 1;
-		}
+		return class'GlobalGameConstants'.static.GetFactorMax("Jump Z") * class'GlobalGameConstants'.static.GetFactorConstant("Jump Z") * x + 
+			   class'GlobalGameConstants'.static.GetFactorMin("Jump Z") * (1 - class'GlobalGameConstants'.static.GetFactorConstant("Jump Z") * x);
 	}
 	else
 	{
@@ -541,7 +508,7 @@ function InitValues()
 	
 	for (i = 0; i < Values.Length; i++)
 	{
-		if (Values[i] == -1 && Constants != None && GetGGC(i) != -1)
+		if (Values[i] == -1 && GetGGC(i) != -1)
 			DefaultValues[i] = GetGGC(i);
 		else
 			DefaultValues[i] = Values[i];
@@ -612,31 +579,31 @@ simulated function float GetGGC(int i)
 	switch (i)
 	{
 	case 0:
-		return Constants.GetStatDefault("Weight");
+		return class'GlobalGameConstants'.static.GetStatDefault("Weight");
 		
 	case 1:
-		return Constants.GetStatDefault("Mobility");
+		return class'GlobalGameConstants'.static.GetStatDefault("Mobility");
 		
 	case 2:
-		return Constants.GetStatDefault("Accuracy");
+		return class'GlobalGameConstants'.static.GetStatDefault("Accuracy");
 		
 	case 3:
-		return Constants.GetStatDefault("Stability");
+		return class'GlobalGameConstants'.static.GetStatDefault("Stability");
 		
 	case 4:
-		return Constants.GetStatDefault("Movement");
+		return class'GlobalGameConstants'.static.GetStatDefault("Movement");
 		
 	case 5:
-		return Constants.GetStatDefault("Jump");
+		return class'GlobalGameConstants'.static.GetStatDefault("Jump");
 		
 	case 6:
-		return Constants.GetStatDefault("Health");
+		return class'GlobalGameConstants'.static.GetStatDefault("Health");
 		
 	case 7:
-		return Constants.GetStatDefault("Energy");
+		return class'GlobalGameConstants'.static.GetStatDefault("Energy");
 		
 	case 8:
-		return Constants.GetStatDefault("Stamina");
+		return class'GlobalGameConstants'.static.GetStatDefault("Stamina");
 		
 	default:
 		return -1;

@@ -84,7 +84,7 @@ function Possess(Pawn newPawn, bool bVehicleTransition)
 	if (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer)
 	{
 		`log("Setting initial stats.");
-		ArenaPawn(newPawn).Stats.SetInitialStats(ArenaPawn(newPawn), ArenaGRI(WorldInfo.GRI).Constants);
+		ArenaPawn(newPawn).Stats.SetInitialStats(ArenaPawn(newPawn));
 
 		PClass = new Loadout.AbilityClass;
 		PClass.Owner = self;
@@ -125,7 +125,10 @@ function AdjustFOV(float DeltaTime )
 		}
 	}
 	
-	FOV(FOVAngle);
+	if ((Aiming || ArenaPawn(Pawn).ADS) && ArenaWeapon(Pawn.Weapon).OnlyAlterWeaponFOV())
+		ArenaWeapon(Pawn.Weapon).SetWeaponFOV(FOVAngle);
+	else
+		FOV(FOVAngle);
 }
 
 simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
@@ -169,6 +172,9 @@ function CheckJumpOrDuck()
 
 exec function ADS()
 {
+	local UberPostProcessEffect UberEffect;
+	local LocalPlayer PC;
+	
 	if (ArenaWeapon(Pawn.Weapon).CanADS())
 	{
 		ADSDirection *= -1;
@@ -186,9 +192,37 @@ exec function ADS()
 			ADSTime = ArenaPawn(Pawn).Stats.GetADSSpeed();	
 			
 		if (ADSDirection > 0)
+		{
 			SetFOVWithTime(FOVAngle / ArenaWeaponBase(Pawn.Weapon).GetZoomLevel(), ADSTime);
+			
+			PC = LocalPlayer(Player);
+	
+			if(PC != none && PC.PlayerPostProcess != none && ArenaWeapon(Pawn.Weapon) != None)
+			{
+				UberEffect = UberPostProcessEffect(PC.PlayerPostProcess.FindPostProcessEffect('Uber'));
+				
+				if(UberEffect != none)
+					ArenaWeapon(Pawn.Weapon).BlurADS(UberEffect);
+			}
+		}
 		else
+		{
 			SetFOVWithTime(DefaultFOV, ADSTime);
+			
+			PC = LocalPlayer(Player);
+	
+			if(PC != none && PC.PlayerPostProcess != none)
+			{
+				UberEffect = UberPostProcessEffect(PC.PlayerPostProcess.FindPostProcessEffect('Uber'));
+				
+				if(UberEffect != none)
+				{
+					UberEffect.FocusDistance = 0;
+					UberEffect.MaxNearBlurAmount = 0;
+					UberEffect.MaxFarBlurAmount = 0;
+				}
+			}
+		}
 			
 		Aiming = true;
 	}
@@ -219,7 +253,7 @@ simulated function ReplicatedEvent(name property)
 		{		
 		
 			`log("Setting initial stats.");
-			ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
+			ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn));
 				
 			PClass = new Loadout.AbilityClass;
 			PClass.Owner = self;
@@ -238,7 +272,7 @@ reliable server function ServerInitializePlayerStats()
 {
 	if (ArenaPawn(Pawn) != None)
 	{
-		ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn), ArenaGRI(WorldInfo.GRI).Constants);
+		ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn));
 	}
 }
 

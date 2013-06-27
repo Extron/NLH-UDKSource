@@ -8,7 +8,7 @@
 
 class GFx_StatModDisplay extends GFxObject;
 
-function SetDisplay(WeaponStatModifier mod)
+function SetComponentDisplay(WeaponStatModifier mod)
 {
 	local GFxObject modObj;
 	
@@ -27,8 +27,36 @@ function SetDisplay(WeaponStatModifier mod)
 	SetStatMod(modObj);
 }
 
+function SetBaseDisplay(WeaponStats stat)
+{
+	local GFxObject modObj;
+	
+	modObj = CreateObject("Object");
+	
+	modObj.SetFloat("Weight", (stat.Values[WSVWeight] > -1.0) ? stat.Values[WSVWeight] : stat.GetGGC(0));
+	modObj.SetFloat("Accuracy", (stat.Values[WSVAccuracy] > -1.0) ? stat.Values[WSVAccuracy] : stat.GetGGC(1));	
+	modObj.SetFloat("Stability", (stat.Values[WSVStability] > -1.0) ? stat.Values[WSVStability] : stat.GetGGC(2));	
+	modObj.SetFloat("Mobility", (stat.Values[WSVMobility] > -1.0) ? stat.Values[WSVMobility] : stat.GetGGC(3));	
+	modObj.SetFloat("Recoil", (stat.Values[WSVRecoil] > -1.0) ? stat.Values[WSVRecoil] : stat.GetGGC(4));
+	modObj.SetFloat("AccuracyMax", stat.GetGGCMax(1));	
+	modObj.SetFloat("StabilityMax", stat.GetGGCMax(2));	
+	modObj.SetFloat("MobilityMax", stat.GetGGCMax(3));	
+	modObj.SetFloat("RecoilMax", stat.GetGGCMax(4));	
+	modObj.SetFloat("Magnification", (stat.Values[WSVZoom] > -1.0) ? stat.Values[WSVZoom] : stat.GetGGC(5));	
+	modObj.SetFloat("RateOfFire", (stat.Values[WSVRateOfFire] > -1.0) ? stat.Values[WSVRateOfFire] : stat.GetGGC(6));	
+	modObj.SetFloat("RateOfCycle", (stat.Values[WSVRateOfCycle] > -1.0) ? stat.Values[WSVRateOfCycle] : stat.GetGGC(7));	
+	modObj.SetFloat("Damage", (stat.Values[WSVDamageOutput] > -1.0) ? stat.Values[WSVDamageOutput] : stat.GetGGC(8));
+	
+	SetStat(modObj);
+}
+
 
 function SetStatMod(GFxObject modObj)
 {
 	ActionScriptVoid("SetStatMod");
+}
+
+function SetStat(GFxObject modObj)
+{
+	ActionScriptVoid("SetStat");
 }

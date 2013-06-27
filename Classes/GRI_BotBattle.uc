@@ -8,10 +8,12 @@
 
 class GRI_BotBattle extends ArenaGRI;
 
+var float IntermissionTime;
+
 var int CurrentWave;
 
 replication
 {
 	if (bNetDirty)
-		CurrentWave;
+		CurrentWave, IntermissionTime;
 }

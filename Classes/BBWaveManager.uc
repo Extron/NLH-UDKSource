@@ -42,6 +42,8 @@ simulated function Tick(float dt)
 			
 			Intermission = true;
 			
+			Parent.WaveComplete(Waves[CurrentWave]);
+			
 			if (AutoBegin)
 				SetTimer(IntermissionTime, false, 'SpawnNextWave');
 		}
@@ -72,6 +74,7 @@ simulated function SpawnNextWave()
 			`log("Spawning new wave.");
 			
 			Waves[CurrentWave].SpawnWave();
+			Parent.WaveSpawned(Waves[CurrentWave]);
 		}
 	}
 }

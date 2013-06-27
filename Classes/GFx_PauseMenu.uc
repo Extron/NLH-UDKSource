@@ -38,7 +38,7 @@ function OnPressResumeButton(GFxClikWidget.EventData ev)
 
 function OnPressExitButton(GFxClikWidget.EventData ev)
 {
-	ConsoleCommand("exit");
+	ConsoleCommand("open Initial?Game=Arena.GI_Menus -log");
 }
 
 function PlayOpenAnimation()

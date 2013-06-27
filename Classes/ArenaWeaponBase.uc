@@ -160,6 +160,19 @@ simulated function bool CanADS()
 	return WeaponComponents[WCOptics] != None && Wp_O_NoOptics(WeaponComponents[WCOptics]) == None;
 }
 
+simulated function bool OnlyAlterWeaponFOV()
+{
+	return Wp_Optics(WeaponComponents[WCOptics]).OnlyZoomWeapon;
+}
+
+/**
+ * Allows weapon optics to modify things like depth of field when the player aims down sights.
+ */
+simulated function BlurADS(UberPostProcessEffect effect)
+{
+	Wp_Optics(WeaponComponents[WCOptics]).BlurADS(effect);
+}
+
 /*
  * Gets the total weight of the weapon.
  *
@@ -220,6 +233,20 @@ simulated function HideWeapon(bool hidden)
 			iter.Mesh.SetHidden(hidden);
 	}
 }
+
+simulated function SetWeaponFOV(float angle)
+{
+	local ArenaWeaponComponent iter;
+	
+	super.SetWeaponFOV(angle);
+
+	foreach WeaponComponents(iter)
+	{
+		if (iter != None)
+			UDKSkeletalMeshComponent(iter.Mesh).SetFOV(angle);
+	}
+}
+
 
 function AttachStock(Wp_Stock s)
 {

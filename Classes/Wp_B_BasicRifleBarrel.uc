@@ -8,6 +8,23 @@
 
 class Wp_B_BasicRifleBarrel extends Wp_Barrel;
 
+/**
+ * This barrel has no railing to allow attachments.
+ */
+simulated function bool CanEquipUnderAttachment(Wp_UnderAttachment attachment)
+{
+	return false;
+}
+
+
+/**
+ * This barrel has no railing to allow attachments.
+ */
+simulated function bool CanEquipSideAttachment(Wp_SideAttachment attachment)
+{
+	return false;
+}
+
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh

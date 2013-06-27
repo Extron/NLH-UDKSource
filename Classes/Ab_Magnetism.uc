@@ -80,6 +80,8 @@ simulated function Magnetize()
 
 defaultproperties
 {
+	FireSound=SoundCue'ArenaAbilities.Audio.MagnetizeSC'
+
 	AbilityName="Magnetism"
 	CurrentCharge=1
 }

@@ -34,11 +34,11 @@ simulated function Initialize()
 	SetFactorConstant("Accuracy Factor", (1 - GetFactorMin("Accuracy Factor")) / ((1 / GetStatNormalizedDefault("Accuracy")) * GetFactorRange("Accuracy Factor")));
 }
 
-function float NormalizedStat(string statName, float statValue)
+function static float NormalizedStat(string statName, float statValue)
 {
 	local int i;
 	
-	i = StatMap.Find(statName);
+	i = default.StatMap.Find(statName);
 	
 	if (i == -1)
 	{
@@ -46,91 +46,91 @@ function float NormalizedStat(string statName, float statValue)
 		return 0;
 	}
 	
-	return statValue / StatValues[i].Y;
+	return statValue / default.StatValues[i].Y;
 }
 
-function float GetStatDefault(string statName)
+function static float GetStatDefault(string statName)
 {
 	local int i;
 	
-	i = StatMap.Find(statName);
+	i = default.StatMap.Find(statName);
 	
 	if (i == -1)
 		return 0;
 		
-	return StatValues[i].X;
+	return default.StatValues[i].X;
 }
 
-function float GetStatMax(string statName)
+function static float GetStatMax(string statName)
 {
 	local int i;
 	
-	i = StatMap.Find(statName);
+	i = default.StatMap.Find(statName);
 	
 	if (i == -1)
 		return 0;
 		
-	return StatValues[i].Y;
+	return default.StatValues[i].Y;
 }
 
-function float GetStatNormalizedDefault(string statName)
+function static float GetStatNormalizedDefault(string statName)
 {
 	local int i;
 	
-	i = StatMap.Find(statName);
+	i = default.StatMap.Find(statName);
 	
 	if (i == -1)
 		return 0;
 		
-	return StatValues[i].X / StatValues[i].Y;
+	return default.StatValues[i].X / default.StatValues[i].Y;
 }
 
-function float GetFactorMin(string factorName)
+function static float GetFactorMin(string factorName)
 {
 	local int i;
 	
-	i = FactorMap.Find(factorName);
+	i = default.FactorMap.Find(factorName);
 	
 	if (i == -1)
 		return 0;
 		
-	return FactorValues[i].X;
+	return default.FactorValues[i].X;
 }
 
-function float GetFactorMax(string factorName)
+function static float GetFactorMax(string factorName)
 {
 	local int i;
 	
-	i = FactorMap.Find(factorName);
+	i = default.FactorMap.Find(factorName);
 	
 	if (i == -1)
 		return 0;
 		
-	return FactorValues[i].Y;
+	return default.FactorValues[i].Y;
 }
 
-function float GetFactorConstant(string factorName)
+function static float GetFactorConstant(string factorName)
 {
 	local int i;
 	
-	i = FactorMap.Find(factorName);
+	i = default.FactorMap.Find(factorName);
 	
 	if (i == -1)
 		return 0;
 		
-	return FactorValues[i].Z;
+	return default.FactorValues[i].Z;
 }
 
-function float GetFactorRange(string factorName)
+function static float GetFactorRange(string factorName)
 {
 	local int i;
 	
-	i = FactorMap.Find(factorName);
+	i = default.FactorMap.Find(factorName);
 	
 	if (i == -1)
 		return 0;
 		
-	return FactorValues[i].Y - FactorValues[i].X;
+	return default.FactorValues[i].Y - default.FactorValues[i].X;
 }
 
 function SetFactorMin(string factorName, float factorMin)
@@ -246,7 +246,7 @@ defaultproperties
 	
 	FactorValues[0]=(X=0.05,Y=0.25,Z=1)
 	FactorValues[1]=(X=0.5,Y=1.125,Z=1)
-	FactorValues[2]=(X=0.5,Y=1.75,Z=1)
+	FactorValues[2]=(X=0.25,Y=1.25,Z=0.75)
 	FactorValues[3]=(X=0.75,Y=1.75,Z=1)
 	FactorValues[4]=(X=1.5,Y=3.75,Z=1)
 	FactorValues[5]=(X=0,Y=0.1,Z=1)

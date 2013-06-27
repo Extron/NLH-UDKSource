@@ -8,11 +8,6 @@
 
 class Ab_PortableShield extends Ab_RockWall;
 
-/**
- * The class to use for the boulder.  This can be overridden in subclasses to change what kind of wall is generated.
- */
-var class<Ab_PortableShieldBoulder> WallClass;
-
 defaultproperties
 {
 	WeaponFireTypes(0)=EWFT_Custom

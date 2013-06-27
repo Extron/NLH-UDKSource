@@ -15,11 +15,13 @@ var ArenaPlayerController Viewer;
 
 var GFx_WeaponLocker Parent;
 
-var GFxObject NameLabel, Cursor, ComponentUI, AcceptBW, CancelBW, StatsContainer;
+var GFxObject NameLabel, BaseNameLabel, Cursor, BaseUI, ComponentUI, AcceptBW, CancelBW, StatsContainer;
 
-var GFx_StatModDisplay ComponentStatMod;
+var GFx_StatModDisplay ComponentStatMod, BaseStatMod;
 
 var GFx_WeapDescription ComponentDescription;
+
+var GFx_BaseDescription BaseDescription;
 
 var GFx_Library ComponentLibrary;
 
@@ -58,6 +60,7 @@ var bool ChangedSelection;
 
 function bool Start(optional bool StartPaused = false)
 {	
+	local ArenaWeaponBase currBase;
 	local int i;
 	
 	super.Start(StartPaused);
@@ -66,8 +69,10 @@ function bool Start(optional bool StartPaused = false)
 	
 	NameLabel = GetVariableObject("_root.name_label");
 	Cursor = GetVariableObject("_root.cursor");
+	BaseUI = GetVariableObject("_root.base_ui");
 	ComponentUI = GetVariableObject("_root.component_ui");
 	StatsContainer = GetVariableObject("_root.stats");
+	BaseNameLabel = BaseUI.GetObject("base_name_label");
 	
 	AcceptBW = GetVariableObject("_root.accept_button");
 	CancelBW = GetVariableObject("_root.cancel_button");
@@ -79,6 +84,8 @@ function bool Start(optional bool StartPaused = false)
 	CancelButton.AddEventListener('CLIK_click', OnPressCancelButton);
 	
 	Tooltip = GFx_Tooltip(GetVariableObject("_root.tooltip", class'GFx_Tooltip'));
+	BaseStatMod = GFx_StatModDisplay(BaseUI.GetObject("base_stats", class'Arena.GFx_StatModDisplay'));
+	BaseDescription = GFx_BaseDescription(BaseUI.GetObject("base_description", class'Arena.GFx_BaseDescription'));
 	ComponentStatMod = GFx_StatModDisplay(ComponentUI.GetObject("component_stats", class'Arena.GFx_StatModDisplay'));
 	ComponentDescription = GFx_WeapDescription(ComponentUI.GetObject("component_description", class'Arena.GFx_WeapDescription'));
 	ComponentLibrary = GFx_Library(GetVariableObject("_root.library", class'Arena.GFx_Library'));
@@ -99,32 +106,48 @@ function bool Start(optional bool StartPaused = false)
 	Stats.AddItem(GFx_StatBarComparer(StatsContainer.GetObject("rof_stat", class'Arena.GFx_StatBarComparer')));
 	Stats.AddItem(GFx_StatBarComparer(StatsContainer.GetObject("roc_stat", class'Arena.GFx_StatBarComparer')));
 	Stats.AddItem(GFx_StatBarComparer(StatsContainer.GetObject("damage_stat", class'Arena.GFx_StatBarComparer')));
-	
-	for (i = 0; i < Stats.Length; i++)
-	{
-		Stats[i].SetStatName(GetStatName(i));
-		
-		if (i > 0)
-			Stats[i].SetStatValue(Parent.Weapon.Stats.Values[i], Parent.Weapon.Stats.GetGGCMax(i), Parent.Weapon.Stats.Values[i]);
-		else
-			Stats[i].SetStatValue(ArenaWeaponBase(Parent.Weapon).GetWeight(), 25, ArenaWeaponBase(Parent.Weapon).GetWeight());
-	}
+
 	
 	if (BaseClass != None)
 	{
 		SpawnNewBase(BaseClass);
-		NameLabel.SetText(Base.BaseName);
-		
+		BaseNameLabel.SetText(Base.BaseName);
+				
+		BaseStatMod.SetBaseDisplay(Base.Stats);
+		BaseDescription.SetDisplay(Base);
 		ComponentUI.SetVisible(false);
+		NameLabel.SetVisible(false);
+		
 		ComponentLibrary.BuildBaseLibrary(Base);
+		ComponentLibrary.ScrollList.AddEventListener('CLIK_itemRollOver', OnMouseHover);
+		ComponentLibrary.ScrollList.AddEventListener('CLIK_itemRollOut', OnMouseLeave);
 		ComponentLibrary.ScrollList.AddEventListener('CLIK_itemClick', OnItemClicked);
+		
+		currBase = ArenaWeaponBase(Parent.Weapon);
+		
+		for (i = 0; i < Stats.Length; i++)
+		{
+			Stats[i].SetStatValue(Base.Stats.Values[i] > -1 ? Base.Stats.Values[i] : Base.Stats.GetGGC(i), Parent.Weapon.Stats.GetGGCMax(i), currBase.Stats.DefaultValues[i] > -1 ? currBase.Stats.DefaultValues[i] : Base.Stats.GetGGC(i));
+		}
 	}
 	else if (ComponentClass != None)
-	{
+	{	
+		for (i = 0; i < Stats.Length; i++)
+		{
+			Stats[i].SetStatName(GetStatName(i));
+			
+			if (i > 0)
+				Stats[i].SetStatValue(Parent.Weapon.Stats.Values[i], Parent.Weapon.Stats.GetGGCMax(i), Parent.Weapon.Stats.Values[i]);
+			else
+				Stats[i].SetStatValue(ArenaWeaponBase(Parent.Weapon).GetWeight(), 25, ArenaWeaponBase(Parent.Weapon).GetWeight());
+		}
+		
 		SpawnNewComponent(ComponentClass);
 		NameLabel.SetText(Component.ComponentName);
 		
-		ComponentStatMod.SetDisplay(Component.StatMod);
+		BaseUI.SetVisible(false);
+		
+		ComponentStatMod.SetComponentDisplay(Component.StatMod);
 		ComponentDescription.SetDisplay(Component);
 		
 		ComponentLibrary.BuildComponentLibrary(ArenaWeaponBase(Parent.Weapon), Component);
@@ -181,6 +204,8 @@ function OnPressCancelButton(GFxClikWidget.EventData ev)
 
 function OnMouseHover(GFxClikWidget.EventData ev)
 {
+	local class<ArenaWeaponBase> selectedBase;
+	local ArenaWeaponBase currBase;
 	local ArenaWeaponComponent baseComponent;
 	local GFxObject item;
 	local float diff;
@@ -192,7 +217,30 @@ function OnMouseHover(GFxClikWidget.EventData ev)
 	item = ev._this;
 	index = item.GetInt("index");
 
-	if (Component != None)
+	if (Base != None)
+	{
+		currBase = ArenaWeaponBase(Parent.Weapon);
+		selectedBase = ComponentLibrary.ValidBases[ComponentLibrary.CurrentType].Bases[index];
+		
+		Tooltip.SetTooltipDesc(selectedBase.default.BaseDescription);
+		Tooltip.ClearStats();
+		
+		for (i = 0; i < 9; i++)
+		{
+			if (selectedBase.default.Stats.Values[i] != Base.Stats.Values[i])
+			{
+				diff = selectedBase.default.Stats.Values[i] - Base.Stats.Values[i];
+				
+				Tooltip.AddTooltipStat(GetStatName(i), selectedBase.default.Stats.Values[i], diff);
+			}
+		}
+		
+		for (i = 0; i < Stats.Length; i++)
+		{
+			Stats[i].SetStatValue(selectedBase.default.Stats.Values[i] > -1 ? selectedBase.default.Stats.Values[i] : Base.Stats.GetGGC(i), Base.Stats.GetGGCMax(i), currBase.Stats.DefaultValues[i] > -1 ? currBase.Stats.DefaultValues[i] : Base.Stats.GetGGC(i));
+		}
+	}
+	else if (Component != None)
 	{
 		baseComponent = GetBaseComponent(Component);
 		
@@ -221,12 +269,22 @@ function OnMouseHover(GFxClikWidget.EventData ev)
 
 function OnMouseLeave(GFxClikWidget.EventData ev)
 {
+	local ArenaWeaponBase currBase;
 	local ArenaWeaponComponent baseComponent;
 	local int i;
 	
 	Tooltip.SetVisible(false);
 	
-	if (Component != None)
+	if (Base != None)
+	{
+		currBase = ArenaWeaponBase(Parent.Weapon);
+		
+		for (i = 0; i < Stats.Length; i++)
+		{
+			Stats[i].SetStatValue(Base.Stats.Values[i] > -1 ? Base.Stats.Values[i] : Base.Stats.GetGGC(i), Parent.Weapon.Stats.GetGGCMax(i), currBase.Stats.DefaultValues[i] > -1 ? currBase.Stats.DefaultValues[i] : Base.Stats.GetGGC(i));
+		}
+	}
+	else if (Component != None)
 	{
 		baseComponent = GetBaseComponent(Component);
 		
@@ -251,8 +309,11 @@ function OnItemClicked(GFxClikWidget.EventData ev)
 		Base.Destroy();
 		
 		SpawnNewBase(ComponentLibrary.ValidBases[ComponentLibrary.CurrentType].Bases[index]);
-		NameLabel.SetText(Base.BaseName);
+		BaseNameLabel.SetText(Base.BaseName);
 		
+		BaseStatMod.SetBaseDisplay(Base.Stats);
+		BaseDescription.SetDisplay(Base);
+				
 		AcceptButton.SetBool("enabled", true);
 		ChangedSelection = true;		
 	}
@@ -263,7 +324,7 @@ function OnItemClicked(GFxClikWidget.EventData ev)
 		SpawnNewComponent(ComponentLibrary.ValidComponents[index]);
 		NameLabel.SetText(Component.ComponentName);
 		
-		ComponentStatMod.SetDisplay(Component.StatMod);
+		ComponentStatMod.SetComponentDisplay(Component.StatMod);
 		ComponentDescription.SetDisplay(Component);
 		
 		AcceptButton.SetBool("enabled", true);
