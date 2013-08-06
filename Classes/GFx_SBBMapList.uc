@@ -30,24 +30,29 @@ var GFx_SoloBotBattle Parent;
 var GFxObject Cursor;
 
 /**
- * The tri panel prop used in this menu.
+ * The scroll list that displays the list of maps.
  */
-var SkeletalMeshComponent TriPanel;
+var GFxClikWidget ScrollList;
 
 /**
  * The currently selected index in the map list.
  */
 var int SelectedIndex;
 
+
 function bool Start(optional bool StartPaused = false)
 {
-	local SkeletalMeshActor iter;
+	local GFxObject itemList;
 	
 	super.Start(StartPaused);
 	
 	Advance(0);
 
 	Cursor = GetVariableObject("_root.cursor");
+	itemList = GetVariableObject("_root.itemList");
+	ScrollList = GFxClikWidget(itemList.GetObject("itemList", class'GFxClikWidget'));
+	
+	ScrollList.AddEventListener('CLIK_itemClick', OnItemClicked);
 	
 	if (AP_Specter(GetPC().Pawn) != None)
 	{
@@ -55,20 +60,13 @@ function bool Start(optional bool StartPaused = false)
 		Pawn.SetMenu(self);
 	}
 	
-	foreach Pawn.AllActors(class'SkeletalMeshActor', iter)
-	{
-		if (iter.Tag == 'TriPanel')
-		{
-			TriPanel = iter.SkeletalMeshComponent;
-			break;
-		}
-	}
-	
-	TriPanel.Owner.SetHidden(false);
-	
 	CreateMapList();
 	
 	return true;
+}
+
+function Update(float dt)
+{
 }
 
 function FillList(array<string> items, string sel)
@@ -76,30 +74,19 @@ function FillList(array<string> items, string sel)
 	ActionScriptVoid("_root.FillList");
 }
 
+function SetMapViewer(string ttl, string desc, string imgSrc)
+{
+	ActionScriptVoid("_root.SetMapViewer");
+}
+
 function CloseMenu()
 {
 	ActionScriptVoid("_root.CloseMenu");
 }
 
-function PlayOpenAnimation()
+function SwapMapViewer(string newTitle, string newDesc, string newImgSrc)
 {
-	local AN_BlendByState node;
-	
-	foreach TriPanel.AllAnimNodes(class'AN_BlendByState', node)
-		node.SetState("Open");
-		
-	PlayTriPanelAnimation('OpenTriPanelAnim');
-}
-
-
-function PlayCloseAnimation()
-{
-	local AN_BlendByState node;
-	
-	foreach TriPanel.AllAnimNodes(class'AN_BlendByState', node)
-		node.SetState("Closed");
-		
-	PlayTriPanelAnimation('CloseTriPanelAnim');
+	ActionScriptVoid("_root.SwapMapViewer");
 }
 
 function CloseAnimCompleted()
@@ -107,34 +94,28 @@ function CloseAnimCompleted()
 	Back();
 }
 
-simulated function PlayTriPanelAnimation(name sequence)
-{
-	local AnimNodePlayCustomAnim node;
-
-	node = AnimNodePlayCustomAnim(AnimTree(TriPanel.Animations).Children[0].Anim);
-
-	node.PlayCustomAnim(sequence, 1.0, , , false);
-}
-
 function ButtonClicked(string label)
 {
 	if (label == "Cancel")
 	{
 		CloseMenu();
-		PlayCloseAnimation();
 	}
 	else if (label == "Accept")
 	{
 		Parent.CurrentMap = Maps[SelectedIndex];
 		CloseMenu();
-		PlayCloseAnimation();
 	}
+}
+
+function OnItemClicked(GFxClikWidget.EventData ev)
+{
+	SelectedIndex = ev._this.GetInt("index");
+	SwapMapViewer(Maps[SelectedIndex].DisplayName, Maps[SelectedIndex].Description, "img://" $ Maps[SelectedIndex].PreviewImageMarkup);
 }
 
 function Back()
 {
 	Pawn.SetMenu(Parent);
-	TriPanel.Owner.SetHidden(true);
 	Close();
 }
 
@@ -164,6 +145,8 @@ function CreateMapList()
     }
 	
 	FillList(DisplayList, DisplayList[SelectedIndex]);
+	
+	SetMapViewer(Maps[SelectedIndex].DisplayName, Maps[SelectedIndex].Description, "img://" $ Maps[SelectedIndex].PreviewImageMarkup);
 }
 
 defaultproperties
@@ -171,4 +154,5 @@ defaultproperties
 	MovieInfo=SwfMovie'ArenaUI.SBBMapList'
 	
 	bCaptureMouseInput=true
+	bCaptureInput=true
 }

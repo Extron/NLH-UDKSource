@@ -25,6 +25,11 @@ var SkeletalMeshComponent Cube;
 var AP_Specter Pawn;
 
 /**
+ * The game settings to use for the bot battle.
+ */
+var GISettings_BotBattle Settings;
+
+/**
  * The current overlay of the menu.
  */
 var GFx_Menu Overlay;
@@ -43,6 +48,11 @@ var GFx_PanelButton StartBtn, Map, Gametype, Options;
  * The original material of the Dek cube.
  */
 var MaterialInterface OrigMat;
+
+/** 
+ * The current material on the cube.
+ */
+var MaterialInstanceConstant Material;
 
 /**
  * The current map selected.
@@ -76,6 +86,7 @@ function bool Start(optional bool StartPaused = false)
 	local MaterialInstanceConstant newMat;
 	
 	super.Start(StartPaused);
+	Advance(0);
 	
 	StartBtn = new class'Arena.GFx_PanelButton';
 	StartBtn.RenderTexture = TextureRenderTarget2D'ArenaUI.Textures.StartGFxTarget';
@@ -100,8 +111,6 @@ function bool Start(optional bool StartPaused = false)
 	Options.SetTimingMode(TM_Real);
 	Options.Init();
 	Options.Start();
-	
-	Advance(0);
 
 	Cursor = GetVariableObject("_root.cursor");
 	
@@ -122,6 +131,7 @@ function bool Start(optional bool StartPaused = false)
 	
 	newMat = new class'MaterialInstanceConstant';
 	newMat.SetParent(Material'ArenaUI.Materials.DekCubeSBBMat');
+	Material = newMat;
 	
 	OrigMat = Cube.GetMaterial(0);
 	Cube.SetMaterial(0, newMat);
@@ -132,6 +142,8 @@ function bool Start(optional bool StartPaused = false)
 	CurrentMap.DisplayName = "Alpha Testing";
 	CurrentMap.GameType = "Bot Battle";
 		
+	Settings = new class'Arena.GISettings_BotBattle';
+	
 	return true;
 }
 
@@ -141,7 +153,12 @@ function Update(float dt)
 	
 	StartBtn.SetLabel("Start");
 	Map.SetLabel("Map");
+	Map.SetDescription(CurrentMap.DisplayName);
+	Material.SetTextureParameterValue('MapPreview', Texture(FindObject(CurrentMap.PreviewImageMarkup, class'Texture')));
+	
 	Options.SetLabel("Options");
+	Options.SetDescription(GetSettingsDesc());
+	
 	Gametype.SetLabel("Game type");
 	
 	if (Open)
@@ -222,6 +239,66 @@ function PostRender()
 	}
 }
 
+function string GetSettingsDesc()
+{
+	local string desc;
+	
+	desc = "";
+	
+	if (Settings.StartTime < 0)
+		desc $= "Time: ?\n";
+	else
+		desc $= "Time: " $ string(int(Settings.StartTime * 24 % 12 + (Settings.StartTime * 24 % 12 == 0) ? 12 : 0)) $ ":00" @ ((Settings.StartTime >= 0.5) ? "pm" : "am") $ "\n";
+		
+	if (Settings.StartTemperature < 0)
+		desc $= "Temperature: ?\n";
+	else
+		desc $= "Temperature: " $ string(FFloor(Settings.StartTemperature * 100)) $ "° F\n";
+		
+	desc $= "Weather: ";
+	
+	if (Settings.StartCloudCoverage < 0)
+	{
+		desc $= "?";
+	}
+	else if (Settings.StartCloudCoverage > 0.5)
+	{
+		if (Settings.StartTemperature <= 0.32)
+		{
+			if (Settings.StartWeatherIntensity <= 0)
+				desc $= "Chance of snow";
+			else if (Settings.StartWeatherIntensity < 0.5)
+				desc $= "Light snow";
+			else
+				desc $= "Heavy snow";
+				
+		}
+		else if (Settings.StartTemperature >= 0.60 && Settings.StartTemperature <= 0.80)
+		{
+			if (Settings.StartWeatherIntensity <= 0)
+				desc $= "Chance of rain";
+			else if (Settings.StartWeatherIntensity < 0.5)
+				desc $= "Light rain";
+			else
+				desc $= "Heavy rain";
+		}
+		else
+		{
+			desc $= "Overcast";
+		}
+	}
+	else if (Settings.StartCloudCoverage > 0.25)
+	{
+		desc $= "Partial clouds";
+	}
+	else
+	{
+		desc $= "Sunny";
+	}
+	
+	return desc;
+}
+
 function OnMouseDown()
 {
 	switch (CurrentPanel)
@@ -255,6 +332,7 @@ function OnMouseClick()
 		
 	case 'Bottom':
 		Options.Release();
+		OpenOptions();
 		break;
 		
 	case 'Front':
@@ -368,7 +446,7 @@ function StartGame()
 {
 	if (CurrentMap != None)
 	{
-		ConsoleCommand("open" @ CurrentMap.MapName $ "?listen?GoalScore=0?TimeLimit=0?Game=Arena.GI_BotBattle -log");
+		ConsoleCommand("open" @ CurrentMap.MapName $ "?listen?GoalScore=0?TimeLimit=0?Game=Arena.GI_BotBattle?Settings=" $ Settings.Serialize() @ "-log");
 	}
 }
 
@@ -391,7 +469,28 @@ function OpenMapList()
 	Overlay = menu;
 }
 
+function OpenOptions()
+{
+	local GFx_SBBOptions menu;
+	
+	menu = new class'Arena.GFx_SBBOptions';
+	menu.bEnableGammaCorrection = FALSE;
+	menu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerController(Pawn.Controller).Player));
+	menu.SetTimingMode(TM_Real);
+	
+	menu.Parent = self;
+	
+	menu.Start();
+	menu.PlayOpenAnimation();
+	
+	Pawn.SetMenu(menu);
+
+	Overlay = menu;
+}
+
 defaultproperties
 {
 	MovieInfo=SwfMovie'ArenaUI.SoloBotBattleMenu'
+	
+	bCaptureInput=true
 }

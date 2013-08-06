@@ -141,7 +141,7 @@ function Update(float dt)
 	
 	if (CurrentOverButton == "" && Rotating)
 	{
-		if (Cube.Owner.RotationRate.Pitch < 4 && Cube.Owner.RotationRate.Yaw < 4 && Cube.Owner.RotationRate.Roll < 4)
+		if (Abs(Cube.Owner.RotationRate.Pitch) < 4 && Abs(Cube.Owner.RotationRate.Yaw) < 4 && Abs(Cube.Owner.RotationRate.Roll) < 4)
 		{
 			Rotating = false;
 		}
@@ -186,8 +186,6 @@ function OnMouseMove(float x, float y, bool mouseDown)
 		
 		if (VSize(d) > 5)
 		{
-			`log("Rotating");
-			
 			Rotating = true;
 			
 			Cube.Owner.RotationRate.Pitch = 0;
@@ -354,17 +352,45 @@ function ButtonOver(string label)
 function ButtonClicked(string label)
 {
 	if (label == "Exit")
+	{
 		ConsoleCommand("exit");
+	}
 	else if (label == "Options")
+	{
 		OExpanded = !OExpanded;
+		SPExpanded = false;
+		MPExpanded = false;
+		BBExpanded = false;
+	}
 	else if (label == "Campaign")
+	{
 		SPExpanded = !SPExpanded;
+		OExpanded = false;
+		MPExpanded = false;
+		BBExpanded = false;
+	}
 	else if (label == "Muliplayer")
+	{
 		MPExpanded = !MPExpanded;
+		SPExpanded = false;
+		OExpanded = false;
+		BBExpanded = false;
+	}
 	else if (label == "Bot Battle")
+	{
 		BBExpanded = !BBExpanded;
+		SPExpanded = false;
+		MPExpanded = false;
+		OExpanded = false;
+	}
 	else if (label == "Solo")
+	{
 		OnSoloBotBattleClicked();
+	}
+	else if (label == "Controls")
+	{
+		OnControlsClicked();
+	}
 }
 
 function OnSoloBotBattleClicked()
@@ -379,6 +405,22 @@ function OnSoloBotBattleClicked()
 	RotationDuration = 0.35;
 	
 	OnClose = GotoSoloBotBattle;
+	
+	CloseMenu();
+}
+
+function OnControlsClicked()
+{
+	Closing = true;
+	IgnoreButtons = true;
+	
+	Cube.Owner.RotationRate = rot(0, 0, 0);
+	Cube.Owner.SetPhysics(PHYS_None);
+	OrigRot = Cube.Owner.Rotation;
+	Counter = 0;
+	RotationDuration = 0.35;
+	
+	OnClose = GotoControlsBattle;
 	
 	CloseMenu();
 }
@@ -402,10 +444,31 @@ function GotoSoloBotBattle()
 	Close();
 }
 
+function GotoControlsBattle()
+{
+	local GFx_Controls menu;
+	
+	menu = new class'Arena.GFx_Controls';
+	menu.bEnableGammaCorrection = FALSE;
+	menu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerController(Pawn.Controller).Player));
+	menu.SetTimingMode(TM_Real);
+
+	Cube.Owner.SetRotation(rot(0, -16384, 0));
+
+	menu.Start();
+	menu.PlayOpenAnimation();
+	
+	Pawn.SetMenu(menu);
+
+	Close();
+}
+
 defaultproperties
 {
 	MovieInfo=SwfMovie'ArenaUI.MainMenu'
 	
 	RotationDuration=10
 	Timer=-1
+	
+	bCaptureInput=true
 }

@@ -156,6 +156,8 @@ defaultproperties
 	PlayerReplicationInfoClass=class'Arena.PRI_BotBattle'
 	//bDelayedStart=true
 	
+	SettingsClass=class'Arena.GISettings_BotBattle'
+	
 	RespawnTime=3
 	AllowFastRespawn=false
 	CanRespawn=true

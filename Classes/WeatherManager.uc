@@ -85,6 +85,11 @@ var interp float DayRate;
 var interp float WeatherRate;
 
 /**
+ * The rate of decay of the weather from starting values to randomness.
+ */
+var float WeatherDecayRate;
+
+/**
  * The tempurature.
  */
 var interp float Temperature;
@@ -103,6 +108,21 @@ var interp float CloudSharpness;
  * The intensity of the weather effects.
  */
 var interp float WeatherIntensity;
+
+/**
+ * If natural weather progression is used, then the actual cloud coverage is computed as a decay from this value into a random value.
+ */
+var float StartCloudCoverage; 
+
+/**
+ * If natural weather progression is used, then the actual temperature is computed as a decay from this value into a random value.
+ */
+var float StartTemperature;
+
+/**
+ * If natural weather progression is used, then the actual weather intensity is computed as a decay from this value into a random value.
+ */
+var float StartWeatherIntensity;
 
 /**
  * This stores the value that the cloud coverage needs to be lower than to start weather effects.
@@ -211,6 +231,14 @@ simulated function PostBeginPlay()
 		WhiteNoise[i] = FRand();
 	}
 	
+	StartCloudCoverage = FRand();
+	StartWeatherIntensity = FRand();
+	StartTemperature = FRand();
+	
+	CloudCoverage = StartCloudCoverage;
+	WeatherIntensity = StartWeatherIntensity;
+	Temperature = StartTemperature;
+	
 	foreach AllActors(class'WeatherVolume', volume)
 	{
 		Volumes.AddItem(volume);
@@ -228,12 +256,12 @@ simulated function PostBeginPlay()
 
 function SetWeather(SeqAct_SetWeather action)
 {
-	`log("Setting weather.");
+	`log("Setting weather through seqact.");
 	
 	Wind = action.Wind;
-	CloudCoverage = action.CloudCoverage;
-	Temperature = action.Temperature;
-	WeatherIntensity = action.WeatherIntensity;
+	StartCloudCoverage = action.CloudCoverage;
+	StartTemperature = action.Temperature;
+	StartWeatherIntensity = action.WeatherIntensity;
 }
 
 function SetTimeOfDay(SeqAct_SetTimeOfDay action)
@@ -254,6 +282,7 @@ function SetProgressDay(SeqAct_SetProgressDay action)
 simulated function Tick(float dt)
 {
 	local float time;
+	local float rand;
 	local float windSpeed;
 	local float windAngle;
 	
@@ -262,16 +291,16 @@ simulated function Tick(float dt)
 		
 	if (TimeOfDay > Pi)
 		TimeOfDay = 0;
-
-		
+	
 	if (TickWeather)
 	{
 		WeatherCounter += dt * WeatherRate;
-		Temperature = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-		Temperature = (Temperature - 0.5) * 1.5;
 		
-		CloudCoverage = GetNoise(WeatherCounter * 0.5, 0, 0.5) + GetNoise(WeatherCounter * 0.5, 1, 0.5) + GetNoise(WeatherCounter * 0.5, 2, 0.5) + GetNoise(WeatherCounter * 0.5, 3, 0.5);
-		CloudCoverage = (CloudCoverage - 0.5) * 1.5;
+		rand = (GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25) - 0.5) * 1.5;
+		Temperature = ExpDecay(StartTemperature, rand, WeatherCounter, WeatherDecayRate);
+		
+		rand = (GetNoise(WeatherCounter * 0.5, 0, 0.5) + GetNoise(WeatherCounter * 0.5, 1, 0.5) + GetNoise(WeatherCounter * 0.5, 2, 0.5) + GetNoise(WeatherCounter * 0.5, 3, 0.5) - 0.5) * 1.5;
+		CloudCoverage = ExpDecay(StartCloudCoverage, rand, WeatherCounter, WeatherDecayRate);
 
 		windSpeed = GetNoise(WeatherCounter * 0.673, 0, 0.15) + GetNoise(WeatherCounter * 0.673, 1, 0.15) + GetNoise(WeatherCounter * 0.673, 2, 0.15) + GetNoise(WeatherCounter * 0.673, 3, 0.15);
 		windSpeed = (windSpeed - 0.5) * 1.5;
@@ -343,16 +372,16 @@ simulated function Tick(float dt)
 	{
 		if (TickWeather)
 		{
-			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+			rand = FClamp((GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25) - 0.5) * 1.5, 0.0, 1.0);
+			WeatherIntensity = ExpDecay(StartWeatherIntensity, rand, WeatherCounter, WeatherDecayRate);
 		}
 	}
 	else if (Raining)
 	{
 		if (TickWeather)
 		{
-			WeatherIntensity = GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25);
-			WeatherIntensity = FClamp((WeatherIntensity - 0.5) * 1.5, 0.0, 1.0);
+			rand = FClamp((GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25) - 0.5) * 1.5, 0.0, 1.0);
+			WeatherIntensity = ExpDecay(StartWeatherIntensity, rand, WeatherCounter, WeatherDecayRate);
 		}
 	}
 	
@@ -411,6 +440,11 @@ function float Interpolate(float f1, float f2, float a)
 	return  f1 * (1 - x) + f2 * x;
 }
 
+function float ExpDecay(float initial, float random, float time, float rate)
+{
+	return Lerp(initial, random, 1 - Exp(-rate * time));
+}
+
 function LightningStrike()
 {
 	local ParticleSystemComponent lightning;
@@ -458,7 +492,8 @@ defaultproperties
 	
 	TimeOfDay=0
 	DayRate=0.01
-	WeatherRate=0.1
+	WeatherRate=0.05
+	WeatherDecayRate=0.05
 	CloudCoverage=0
 	WeatherIntensity=0
 	CloudSharpness=0.001

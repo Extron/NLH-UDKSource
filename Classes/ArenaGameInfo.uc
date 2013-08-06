@@ -18,6 +18,16 @@ var array<ArenaTeamInfo> Teams;
 /** The class of the team info to use for the teams. */
 var class<ArenaTeamInfo> TeamInfoClass;
 
+/**
+ * The settings to use for the game.  These are generally piped in from the UI or a server.
+ */
+var GISettings GameSettings;
+
+/**
+ * The class of the settings to use for this game type.
+ */
+var class<GISettings> SettingsClass;
+
 /** The respawn time for all players during this gametype. */
 var float RespawnTime;
 
@@ -44,6 +54,20 @@ function PostBeginPlay()
 	SetGameReplicationInfo();
 }
 
+event InitGame(string options, out string errorMessage)
+{
+    local string settings;
+    super.InitGame(options, errorMessage);
+
+    settings = ParseOption(Options, "settings");
+	
+    if (settings != "")
+    {
+		GameSettings = new SettingsClass;
+		GameSettings.Deserialize(settings);
+	}
+}
+
 /**
  * This sets the GRI variables to be consistent with the game info variables every tick.
  */
@@ -55,6 +79,7 @@ function SetGameReplicationInfo()
 		ArenaGRI(GameReplicationInfo).AllowFastRespawn = AllowFastRespawn;
 		ArenaGRI(GameReplicationInfo).CanRespawn = CanRespawn;
 		ArenaGRI(GameReplicationInfo).ForceRespawn = ForceRespawn;
+		ArenaGRI(GameReplicationInfo).GameSettings = GameSettings;
 	}
 }
 
@@ -79,7 +104,8 @@ defaultproperties
 	GameReplicationInfoClass=class'Arena.ArenaGRI'
 	PlayerReplicationInfoClass=class'Arena.ArenaPRI'
 	//bDelayedStart=true
-	
+
+	SettingsClass=class'Arena.GISettings'
 	RespawnTime=3
 	AllowFastRespawn=false
 	CanRespawn=true

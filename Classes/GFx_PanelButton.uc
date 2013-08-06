@@ -8,16 +8,15 @@
 
 class GFx_PanelButton extends GFxMoviePlayer;
 
-function bool Start(optional bool StartPaused = false)
-{
-	`log("Starting panel button");
-	
-	return super.Start(StartPaused);
-}
 
 function SetLabel(string l)
 {
 	ActionScriptVoid("_root.SetLabel");
+}
+
+function SetDescription(string desc)
+{
+	ActionScriptVoid("_root.SetDescription");
 }
 
 function Hover()
