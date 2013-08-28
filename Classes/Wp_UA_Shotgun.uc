@@ -55,6 +55,7 @@ defaultproperties
 	CompatibleSizes[2]=WSLarge
 	
 	Weight=4
+	Cost=20
 	ComponentName="Shotgun"
 	ComponentDescription="An under barrel shotgun that can provide additional firepower to the user, but will lower mobiliy of the weapon."
 }

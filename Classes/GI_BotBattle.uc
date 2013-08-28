@@ -32,9 +32,7 @@ function PostBeginPlay()
 	Teams[0].TeamIndex = 0;
 	
 	if (WaveManager != None)
-	{		
-		`log("Initializing waves.");
-		
+	{
 		WaveManager.Initialize(self);
 		
 		for (i = 0; i < WaveManager.Waves.Length; i++)
@@ -47,11 +45,7 @@ function PostBeginPlay()
 		}
 		
 		if (WaveManager.AutoBegin)
-		{
-			`log("Beginning the first wave in" @ WaveManager.IntermissionTime @ "seconds.");
-			
 			SetTimer(WaveManager.IntermissionTime, false, 'SpawnWave');
-		}
 	}
 }
 
@@ -69,9 +63,13 @@ function Tick(float dt)
 
 function Killed( Controller Killer, Controller KilledPlayer, Pawn KilledPawn, class<DamageType> damageType )
 {
+	local array<string> killMessage;
+	local array<int> messageColors;
+	local array<string> effects;
 	local BotKillDisplay display;
 	local float points;
 	local int tokens;
+	local int i;
 	
     super.Killed(Killer, KilledPlayer, KilledPawn, DamageType);
 	
@@ -79,9 +77,39 @@ function Killed( Controller Killer, Controller KilledPlayer, Pawn KilledPawn, cl
 	{
 		display = Spawn(class'Arena.BotKillDisplay', None, , KilledPawn.Location);
 		
-		ComputePointsAndTokens(AP_Bot(KilledPawn), damageType, points, tokens);
+		ComputePointsAndTokens(AP_Bot(KilledPawn), class<ArenaDamageType>(damageType), points, tokens);
 		
-		display.KillDisplay.SetDisplay("Bot killed", points, tokens);
+		if (class<ArenaDamageType>(damageType) != None)
+		{
+			killMessage.AddItem("Bot" @ class<ArenaDamageType>(damageType).default.ActionString);
+			messageColors.AddItem(class<ArenaDamageType>(damageType).default.DisplayColor);
+		}
+		else
+		{
+			killMessage.AddItem("Bot killed");
+			messageColors.AddItem(0xFFFFFF);
+		}
+		
+		if (AP_Bot(KilledPawn).ActiveEffect != None)
+		{
+			if (AP_Bot(KilledPawn).ActiveEffect.Combinations > 1)
+			{
+				killMessage.AddItem("Effect Combo!");
+				messageColors.AddItem(0xFFFF00);
+			}
+			
+			effects = SplitString(AP_Bot(KilledPawn).ActiveEffect.EffectName, "+");
+			
+			for (i = 0; i < effects.length; i++)
+			{
+				killMessage.AddItem("+" @ effects[i]);
+				messageColors.AddItem(AP_Bot(KilledPawn).ActiveEffect.DisplayColors[i]);
+			}
+		}
+		
+		`log("Points" @ points @ "Tokens" @ tokens);
+		
+		display.KillDisplay.SetDisplay(killMessage, messageColors, points, tokens);
 	}
 }
 
@@ -127,18 +155,29 @@ simulated function WaveComplete(BBWaveComponent wave)
 	
 	foreach WorldInfo.AllControllers(class'Arena.ArenaPlayerController', iter)
 	{
-		if (PRI_BotBattle(iter.Pawn.PlayerReplicationInfo) != None)
-			PRI_BotBattle(iter.Pawn.PlayerReplicationInfo).AwardTokens(5);
+			iter.AwardBBTokens(5);
 			
 		if (ArenaHUD(iter.MyHUD) != None)
 			ArenaHUD(iter.MyHUD).QueueAlert("Wave Complete", 2);
 	}
 }
 
-simulated function ComputePointsAndTokens(AP_Bot killedBot, class<DamageType> damage, out float points, out int tokens)
+simulated function ComputePointsAndTokens(AP_Bot killedBot, class<ArenaDamageType> damage, out float points, out int tokens)
 {
-	if (class<AbilityDamageType>(damage) != None)
+	if (damage != None)
 	{
+		points = damage.default.Points;
+		
+		if (killedBot.ActiveEffect != None)
+		{
+			if (class<StatusDamageType>(damage) != None)
+				points += killedBot.ActiveEffect.KilledByPoints;
+			else
+				points += killedBot.ActiveEffect.KilledWhilePoints;
+				
+			if (killedBot.ActiveEffect.Combinations > 1)
+				tokens += FFloor(killedBot.ActiveEffect.Combinations / 2);
+		}
 	}
 	else
 	{

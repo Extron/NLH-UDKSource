@@ -33,4 +33,5 @@ defaultproperties
 	ComponentName="Wood Stock"
 	ComponentDescription="Made of solid oak wood, this stock is a bit more uncommon, though still frequent enough to be used be the common soldier.  Not as mobile, but grants good stability and less recoil."
 	Weight=4
+	Cost=5
 }

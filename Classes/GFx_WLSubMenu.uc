@@ -53,6 +53,8 @@ var float WeaponScale;
 
 var float SpinRate;
 
+var bool AcceptSelection;
+
 /**
  * Indicates that the player has changed the currently selected component.
  */
@@ -66,21 +68,18 @@ function bool Start(optional bool StartPaused = false)
 	super.Start(StartPaused);
 			
     Advance(0);
-	
-	NameLabel = GetVariableObject("_root.name_label");
-	Cursor = GetVariableObject("_root.cursor");
-	BaseUI = GetVariableObject("_root.base_ui");
-	ComponentUI = GetVariableObject("_root.component_ui");
-	StatsContainer = GetVariableObject("_root.stats");
-	BaseNameLabel = BaseUI.GetObject("base_name_label");
-	
-	AcceptBW = GetVariableObject("_root.accept_button");
-	CancelBW = GetVariableObject("_root.cancel_button");
-	
-	AcceptButton = GFxClikWidget(AcceptBW.GetObject("button", class'GFxClikWidget'));
-	CancelButton = GFxClikWidget(CancelBW.GetObject("button", class'GFxClikWidget'));
 
-	AcceptButton.AddEventListener('CLIK_click', OnPressAcceptButton);
+	Cursor = GetVariableObject("_root.cursor");
+	BaseUI = GetVariableObject("_root.baseUI");
+	ComponentUI = GetVariableObject("_root.componentUI");
+	StatsContainer = GetVariableObject("_root.stats");
+	BaseNameLabel = BaseUI.GetObject("base_name_label");	
+	NameLabel = ComponentUI.GetObject("nameLabel");
+	
+	AcceptButton = GFxClikWidget(GetVariableObject("_root.acceptButton", class'GFxClikWidget'));
+	CancelButton = GFxClikWidget(GetVariableObject("_root.cancelButton", class'GFxClikWidget'));
+
+	//AcceptButton.AddEventListener('CLIK_click', OnPressAcceptButton);
 	CancelButton.AddEventListener('CLIK_click', OnPressCancelButton);
 	
 	Tooltip = GFx_Tooltip(GetVariableObject("_root.tooltip", class'GFx_Tooltip'));
@@ -90,6 +89,7 @@ function bool Start(optional bool StartPaused = false)
 	ComponentDescription = GFx_WeapDescription(ComponentUI.GetObject("component_description", class'Arena.GFx_WeapDescription'));
 	ComponentLibrary = GFx_Library(GetVariableObject("_root.library", class'Arena.GFx_Library'));
 	
+	ComponentLibrary.Parent = self;
 	ComponentLibrary.Tooltip = Tooltip;
 	
 	Tooltip.SetVisible(false);
@@ -107,6 +107,7 @@ function bool Start(optional bool StartPaused = false)
 	Stats.AddItem(GFx_StatBarComparer(StatsContainer.GetObject("roc_stat", class'Arena.GFx_StatBarComparer')));
 	Stats.AddItem(GFx_StatBarComparer(StatsContainer.GetObject("damage_stat", class'Arena.GFx_StatBarComparer')));
 
+	SetTokens(Viewer.SaveData.BBData.Tokens);
 	
 	if (BaseClass != None)
 	{
@@ -115,8 +116,6 @@ function bool Start(optional bool StartPaused = false)
 				
 		BaseStatMod.SetBaseDisplay(Base.Stats);
 		BaseDescription.SetDisplay(Base);
-		ComponentUI.SetVisible(false);
-		NameLabel.SetVisible(false);
 		
 		ComponentLibrary.BuildBaseLibrary(Base);
 		ComponentLibrary.ScrollList.AddEventListener('CLIK_itemRollOver', OnMouseHover);
@@ -144,8 +143,6 @@ function bool Start(optional bool StartPaused = false)
 		
 		SpawnNewComponent(ComponentClass);
 		NameLabel.SetText(Component.ComponentName);
-		
-		BaseUI.SetVisible(false);
 		
 		ComponentStatMod.SetComponentDisplay(Component.StatMod);
 		ComponentDescription.SetDisplay(Component);
@@ -187,19 +184,26 @@ event OnClose()
 		Component.Destroy();
 }
 
-function OnPressAcceptButton(GFxClikWidget.EventData ev)
+function AcceptButtonPressed()
 {
 	if (Component != None)
-		Parent.ChangeWeaponComponent(Component.Class);
-	else
-		Parent.ChangeWeaponBase(Base.Class);
+		Component.Mesh.SetHidden(true);
+	else if (Base != None)
+		Base.Mesh.SetHidden(true);
 		
-    Parent.InterceptEscape();
+	AcceptSelection = true;
+	
+	CloseMenu();
 }
 
 function OnPressCancelButton(GFxClikWidget.EventData ev)
 {
-	Parent.InterceptEscape();
+	if (Component != None)
+		Component.Mesh.SetHidden(true);
+	else if (Base != None)
+		Base.Mesh.SetHidden(true);
+		
+	CloseMenu();
 }
 
 function OnMouseHover(GFxClikWidget.EventData ev)
@@ -314,7 +318,9 @@ function OnItemClicked(GFxClikWidget.EventData ev)
 		BaseStatMod.SetBaseDisplay(Base.Stats);
 		BaseDescription.SetDisplay(Base);
 				
-		AcceptButton.SetBool("enabled", true);
+		if (Viewer.SaveData.WeapData.BoughtBases.Find(ComponentLibrary.ValidBases[ComponentLibrary.CurrentType].Bases[index]) > -1)
+			AcceptButton.SetBool("enabled", true);
+			
 		ChangedSelection = true;		
 	}
 	else if (Component != None)
@@ -327,13 +333,68 @@ function OnItemClicked(GFxClikWidget.EventData ev)
 		ComponentStatMod.SetComponentDisplay(Component.StatMod);
 		ComponentDescription.SetDisplay(Component);
 		
-		AcceptButton.SetBool("enabled", true);
+		if (Viewer.SaveData.WeapData.BoughtComponents.Find(ComponentLibrary.ValidComponents[index]) > -1)
+			AcceptButton.SetBool("enabled", true);
+			
 		ChangedSelection = true;
 	}
 }
 
+function ComponentPurchased(int index)
+{
+	if (Base != None)
+	{
+		Viewer.SaveData.WeapData.BoughtBases.AddItem(ComponentLibrary.ValidBases[ComponentLibrary.CurrentType].Bases[index]);
+		AcceptButton.SetBool("enabled", true);
+			
+		Viewer.SpendBBTokens(Base.default.Cost);
+		
+		ComponentLibrary.BuildBaseLibrary(Base);
+		
+		ChangedSelection = true;		
+	}
+	else if (Component != None)
+	{
+		
+		Viewer.SaveData.WeapData.BoughtComponents.AddItem(ComponentLibrary.ValidComponents[index]);
+		AcceptButton.SetBool("enabled", true);
+		
+		Viewer.SpendBBTokens(Component.default.Cost);
+		
+		ComponentLibrary.BuildComponentLibrary(ArenaWeaponBase(Parent.Weapon), Component);
+		
+		ChangedSelection = true;
+	}
+	
+	SetTokens(Viewer.SaveData.BBData.Tokens);
+}
+
+function FillLibrary(array<GFxObject> list, string sel, string category, optional int baseSelection = -1)
+{
+	ActionScriptVoid("_root.FillLibrary");
+}
+
+function CloseMenu()
+{
+	ActionScriptVoid("_root.CloseMenu");
+}
+
+function SetTokens(int tokens)
+{
+	ActionScriptVoid("_root.SetTokens");
+}
+
 function CloseAnimCompleted()
 {
+	if (AcceptSelection)
+	{
+		if (Component != None)
+			Parent.ChangeWeaponComponent(Component.Class);
+		else
+			Parent.ChangeWeaponBase(Base.Class);
+	}
+	
+	Parent.InterceptEscape();
 	Parent.Submenu.Close();
 }
 

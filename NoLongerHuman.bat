@@ -1,0 +1,1 @@
+C:\UDK\UDK-2012-05\Binaries\Win32\UDK.exe Initial?GoalScore=0?TimeLimit=0?Game=Arena.GI_Menus -log

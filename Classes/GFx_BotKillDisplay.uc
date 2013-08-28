@@ -8,9 +8,18 @@
 
 class GFx_BotKillDisplay extends GFxMoviePlayer;
 
-function SetDisplay(string desc, float pointValue, int tokenValue)
+
+var BotKillDisplay Parent;
+
+function SetDisplay(array<string> desc, array<int> colos, float pointValue, int tokenValue)
 {
 	ActionScriptVoid("_root.SetDisplay");
+}
+
+function DisplayComplete()
+{
+	if (Parent != None)
+		Parent.RemoveDisplay();
 }
 
 defaultproperties

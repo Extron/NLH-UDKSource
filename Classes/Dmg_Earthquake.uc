@@ -8,3 +8,12 @@
 
 class Dmg_Earthquake extends AbilityDamageType;
 
+defaultproperties
+{
+	ActionString="Earthquaked"
+	DisplayColor=0x5E2605
+	Points=1
+	
+	EnvironmentEffects[0]=class'Arena.EE_Charged'
+	StatusEffects[0]=class'Arena.SE_Electrocuted'
+}

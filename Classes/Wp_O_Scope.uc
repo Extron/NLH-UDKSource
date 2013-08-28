@@ -47,6 +47,7 @@ defaultproperties
 	SceneCapturer=SC
 	
 	Components.Add(SC)
+	Cost=15
 	
 	OnlyZoomWeapon=true
 }

@@ -60,8 +60,6 @@ simulated function SpawnWeather(WeatherManager manager)
 	emitterCountY = bounds.y * Sqrt(0.00015) * lambda;
 	moundCount = area * 0.00005 * SnowMoundDensity;
 	
-	`log("Emitters" @ emitterCount @ "Mounds" @ moundCount @ "Area" @ area);
-	
 	for (i = 0; i < emitterCount; i++)
 	{
 		pos.x  = bounds.x * (i % emitterCountX) / emitterCountX + (Location.X - bounds.x * 0.5);

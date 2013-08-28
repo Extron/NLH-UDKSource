@@ -49,4 +49,5 @@ defaultproperties
 	Ammo=120
 	Clip=30
 	BaseDamage=200
+	Cost=50
 }

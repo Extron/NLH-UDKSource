@@ -6,13 +6,36 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class ArenaBot extends UDKBot;
+class ArenaBot extends UDKBot
+	dependson(BehaviorTreeNode);
+
+
+struct MoveTowardParameters
+{
+	var Actor Target;
+	var Actor Focus;
+	var float DestinationOffset;
+	var bool CanStrafe;
+	var bool ShouldWalk;
+};
+
+struct MoveToParameters
+{
+	var vector Destination;
+	var Actor Focus;
+	var float DestinationOffset;
+	var bool ShouldWalk;
+};
 
 
 /**
  * The bot's personality, which governs much of how the bot responds to events in a level.
  */
 var BotPersonality Personality;
+
+var MoveTowardParameters MTParams;
+
+var MoveToParameters MParams;
 
 /**
  * The last location that the bot was in good condition at.
@@ -25,14 +48,34 @@ var vector LastStableLocation;
 var vector LastSeenLocation;
 
 /**
+ * The direction that the target was travelling in when it was last seen.
+ */
+var vector LastSeenDirection;
+
+/**
  * The direction the bot is evading in.
  */
 var vector EvadeDirection;
 
 /**
+ * The actor that most recently attacked the bot.
+ */
+var Actor Attacker;
+
+/**
+ * The root node of the behavior tree for this bot.
+ */
+var BehaviorTreeNode BTRoot;
+
+/**
  * The last navigation point that the AI is or was wandering to.
  */
 var NavigationPoint WanderTarget;
+
+/**
+ * The source code for the bot's behavior tree.
+ */
+var string BTSource;
 
 /**
  * The distance away from the player that the bot needs to move to to become idle.
@@ -109,12 +152,22 @@ var bool CanUseAbility;
  */
 var bool Searching;
 
+/**
+ * A boolean that indicates that the bot was recently shot at.
+ */
+var bool WasShotAt;
+
+var bool WasHit;
+
 
 event Tick(float dt)
 {
 	super.Tick(dt);
 	
 	LastShotAtDuration += dt;
+
+	if (BTRoot != None)
+		BTRoot.Update(dt);
 }
 
 event Possess(Pawn inPawn, bool bVehicleTransition)
@@ -130,7 +183,10 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn));
 	ArenaWeapon(ArenaPawn(Pawn).Weapon).InitializeStats();
 	
-	WhatToDoNext();
+	BTRoot = ParseTree(BTSource);
+	
+	if (BTRoot != None)
+		BTRoot.SetController(self);
 }
 
 function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, class<DamageType> damageType, vector Momentum)
@@ -138,14 +194,16 @@ function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, 
 	local vector dir;
 	
 	super.NotifyTakeHit(InstigatedBy, HitLocation, Damage, damageType, Momentum);
-
-	if (!IsAggressive() && LastShotAtDuration < 5 && Pawn.Health < ArenaPawn(Pawn).HealthMax * 0.65 && FRand() > 0.6)
+		
+	WasHit = true;
+	
+	if (!IsAggressive() && LastShotAtDuration < 5 && Pawn.Health < ArenaPawn(Pawn).HealthMax * 0.85 && FRand() > 0.5)
 	{
 		dir.x = FRand() * 2 - 1;
 		dir.y = FRand() * 2 - 1;
 		dir.z = FRand() * 2 - 1;
-		
-		Evade(dir, InstigatedBy.Pawn);
+
+		ShotAt(ArenaWeapon(InstigatedBy.Pawn.Weapon), InstigatedBy.Pawn, dir, Normal(Pawn.Location - InstigatedBy.Pawn.Location));
 	}
 }
 
@@ -160,94 +218,156 @@ function NotifyKilled(Controller killer, Controller killed, Pawn killedPawn, cla
 	}
 }
 
-event WhatToDoNext()
+/**
+ * Parses the bot's behavior tree source and creates the corresponding behavior tree.
+ */
+function BehaviorTreeNode ParseTree(string tree)
 {
-	if (Pawn == None)
-		return;
-
-	DecisionComponent.bTriggered = true;
-}
-
-protected function ExecuteWhatToDoNext()
-{
-	local ArenaPawn nearestPawn;
+	local array<string> params;
+	local array<string> subtrees;
+	local array<string> delBinding;
 	
-	if (Pawn == None)
+	local string header;
+	local string body;
+	local string footer;
+	local BehaviorTreeNode node;
+	local class<BehaviorTreeNode> nodeClass;
+	local int i;
+	
+	node = None;
+	
+	header = tree;
+	
+	body = Split(header, ">", true);
+	header = Repl(header, body, "");
+	header = Repl(Repl(header, ">", ""), "<", "");
+	
+	params = SplitString(header, " ", true);
+	
+	if (params.Length > 0)
 	{
-		GoToState('Idle');
-		return;
-	}
-	
-	nearestPawn = FindNearestTarget();
+		footer = SplitLast(body, "</" $ params[0] $ ">");
+		body = Left(body, Len(body) - Len(footer));
 		
-	if (nearestPawn != None && Pawn != None && CanSee(nearestPawn))
-	{
-		if (VSize(Pawn.Location - nearestPawn.Location) < BotFireRange)
+		subtrees = SplitBody(body);
+		
+		nodeClass = class<BehaviorTreeNode>(DynamicLoadObject("Arena." $ params[0], class'class'));
+		
+		if (nodeClass != None)
 		{
-			Focus = nearestPawn;
+			node = Spawn(nodeClass, None);
+		
+			params.Remove(0, 1);
 
-			GoToState('Focusing');
-		}
-		else if (Pawn.ReachedDestination(nearestPawn) || VSize(Pawn.Location - nearestPawn.Location) < BotRange)
-		{
-			ApproachedTarget = true;
-			GoToState('Idle');
-		}
-		else
-		{
-			MoveTarget = nearestPawn;
-			ApproachedTarget = false;
-			GoToState('MoveToTarget');
-		}
-	}
-	else
-	{
-		if (Searching)
-		{
-			GoToState('SearchingForTarget');
-		}
-		else if (IdleCounter > 4)
-		{
-			IdleCounter = 0;
-			GoToState('Wandering');
-		}
-		else
-		{
-			GoToState('Idle');
+			node.SetParameters(params);
+			
+			for (i = 0; i < params.Length; i++)
+			{
+				delBinding = SplitString(params[i], "=", true);
+				
+				if (delBinding.Length == 2 && node.HasDelegate(delBinding[0]))
+					AssignNodeDelegate(node, delBinding[0], delBinding[1]);
+			}
+			
+			for (i = 0; i < subtrees.Length; i++)
+				BTSelector(node).AddChild(ParseTree(subtrees[i]));
 		}
 	}
+	
+	return node;
 }
 
-function ArenaPawn FindNearestTarget()
+function array<string> SplitBody(string body)
 {
-	local ArenaPawn p;
-	local ArenaPawn nearest;
+	local array<string> subtrees;
+	local int scope;
+	local int i, prev;
 	
-	nearest = None;
+	prev = 0;
 	
-	foreach WorldInfo.AllPawns(class'ArenaPawn', p)
-	{
-		if (p != Pawn && !p.Invisible)
-		{			
-			if (p.PlayerReplicationInfo != None && PlayerReplicationInfo != None)
-			{
-				if (p.PlayerReplicationInfo.Team != None && p.PlayerReplicationInfo.Team.TeamIndex != PlayerReplicationInfo.Team.TeamIndex)
-				{
-					if (nearest != None)
-					{
-						if (VSize(Pawn.Location - p.Location) < VSize(Pawn.Location - nearest.Location))
-							nearest = p;
-					}
-					else
-					{
-						nearest = p;
-					}
-				}
-			}
+	for (i = 0; i < Len(body); i++)
+	{			
+		if (i + 1 == Len(body))
+		{
+			subtrees.AddItem(Mid(body, prev, i - prev + 1));
+		}
+		else if (Mid(body, i, 1) == "<" && Mid(body, i + 1, 1) != "/")
+		{
+			scope++;
+		}
+		else if (Mid(body, i, 2) == "</")
+		{
+			scope--;
+		}
+		else if (Mid(body, i, 1) == "," && scope == 0)
+		{
+			subtrees.AddItem(Mid(body, prev, i - prev));
+			prev = i + 1;
 		}
 	}
 	
-	return nearest;
+	return subtrees;
+}
+
+function string SplitLast(string str, string substr)
+{
+	local int i;
+	
+	if (Len(str) < Len(substr))
+		return "";
+		
+	for (i = Len(str) - Len(substr); i >= 0; i--)
+	{
+		if (Mid(str, i, Len(substr)) == substr)
+			return Right(str, Len(str) - i);
+	}
+	
+	return "";
+}
+
+/**
+ * Assigns a function within this class to a specified delegate in a BT node.  This should be implemented per each child class
+ * that requires a specific behavior tree.
+ */
+event AssignNodeDelegate(BehaviorTreeNode node, string delegateTarget, string funcName)
+{
+}
+
+event BeginMoveToward(Actor target, Actor viewFocus, float offset, bool canStrafe, bool shouldWalk)
+{
+	//We don't want to short circuit any states that may be running latent code, so if we are not in the default state, don't attempt to 
+	//change the state.
+	if (!IsInState('Idle'))
+		return;
+		
+	MTParams.Target = target;
+	MTParams.Focus = viewFocus;
+	MTParams.DestinationOffset = offset;
+	MTParams.CanStrafe = canStrafe;
+	MTParams.ShouldWalk = shouldWalk;
+	
+	GotoState('MoveTowardState');
+}
+
+event BeginMoveTo(vector destination, Actor viewFocus, float offset, bool shouldWalk)
+{
+	//We don't want to short circuit any states that may be running latent code, so if we are not in the default state, don't attempt to 
+	//change the state.
+	if (!IsInState('Idle'))
+		return;
+		
+	MParams.Destination = destination;
+	MParams.Focus = viewFocus;
+	MParams.DestinationOffset = offset;
+	MParams.ShouldWalk = shouldWalk;
+	
+	GotoState('MoveToState');
+}
+
+event MoveTowardFocus(BehaviorTreeNode sender)
+{
+	BTAction_MoveToward(sender).Target = Focus;
+	BTAction_MoveToward(sender).DestinationOffset = BotRange;
 }
 
 function name GetAttack(Actor actor)
@@ -260,73 +380,13 @@ function name GetAttack(Actor actor)
 		return 'MoveToTarget';
 }
 
-function Evade(vector direction, Actor attacker)
+function ShotAt(ArenaWeapon weap, Actor shooter, vector traceLoc, vector direction)
 {
-	if (!IsInState('Evading'))
-	{
-		StopLatentExecution();
-		Pawn.ZeroMovementVariables();
-		EvadeDirection = direction;
-		Focus = attacker;
-		
-		GoToState('Evading');
-	}
-}
-
-function ShootAt(Actor actor)
-{
-	local float a;
-	
-	if (Pawn != None && CanFire)
-	{
-		Pawn.StartFire(0);
-		CanFire = false;
-		//CanUseAbility = false;
-		
-		Pawn.StopFire(0);
-		
-		a = FRand();
-		
-		SetTimer(FireIntervalMin * (1 - a) + FireIntervalMax * a, false, 'ReactivateFire');
-		//SetTimer(UseAbIntervalMin * (1 - a) + UseAbIntervalMax * a, false, 'ReactivateAbility');
-	}
-}
-
-function UseAbility(Actor actor)
-{
-	local float a;
-	
-	if (ArenaPawn(Pawn) != None && CanUseAbility && CanFire)
-	{
-		ArenaPawn(Pawn).StartFireAbility();
-		CanUseAbility = false;
-		CanFire = false;
-		
-		ArenaPawn(Pawn).StopFireAbility();
-		
-		a = FRand();
-		
-		SetTimer(UseAbIntervalMin * (1 - a) + UseAbIntervalMax * a, false, 'ReactivateAbility');
-		SetTimer(FireIntervalMin * (1 - a) + FireIntervalMax * a, false, 'ReactivateFire');
-	}
-}
-
-function ShotAt(ArenaWeapon weap, Actor attacker, vector traceLoc, vector direction)
-{
-	local float rand;
-	
 	LastShotAtDuration = 0;
+	EvadeDirection = traceLoc - Pawn.Location;
+	Attacker = shooter;
 	
-	if (!IsAggressive())
-	{
-		if (IsCautious())
-			rand = FRand() + 0.5;
-		else
-			rand = FRand();
-			
-		if (rand > 0.75)
-			Evade(traceLoc - Pawn.Location, attacker);
-	}
+	WasShotAt = true;
 }
 
 /**
@@ -456,123 +516,43 @@ function int BotsNear(float radius)
 	return count;
 }
 
-function ReactivateFire()
-{
-	CanFire = true;
-}
-
-function ReactivateAbility()
-{
-	CanUseAbility = true;
-}
-
 auto state Idle
 {
 	event Tick(float dt)
 	{
 		global.Tick(dt);
 		
-		IdleCounter += dt;		
+		//IdleCounter += dt;		
 	}
 	
-Begin:	
-	if (Pawn != None)
-		Pawn.GoToState('Idle');
+//Begin:	
+	//if (Pawn != None)
+		//Pawn.GoToState('Idle');
 	
-	Sleep(0.1);
+	//Sleep(0.1);
 	
-	LatentWhatToDoNext();
+	//LatentWhatToDoNext();
 }
 
-simulated state MoveToTarget
+simulated state MoveTowardState
 {
-	event Tick(float dt)
-	{
-		global.Tick(dt);
-		
-		if (VSize(Pawn.Location - MoveTarget.Location) < BotRange)
-		{			
-			ApproachedTarget = true;
-			
-			StopLatentExecution();
-			Pawn.ZeroMovementVariables();
-		}
-		else if (Pawn(MoveTarget) != None && !CanSee(Pawn(MoveTarget)))
-		{
-			LastSeenLocation = MoveTarget.Location;
-			MoveTarget = None;
-			Searching = true;
-			
-			`log("I should search for my target.");
-			StopLatentExecution();
-			Pawn.ZeroMovementVariables();
-			
-			GoToState('MovingToSearch');
-		}
-	}
-	
 Begin:
-	if (Pawn != None)
-		Pawn.GoToState('MoveToTarget');
-		
-	if (ApproachedTarget)
-	{	
-		LatentWhatToDoNext();
-	}
-	else if (MoveTarget != None)
-	{
-		MoveToward(MoveTarget, MoveTarget);
-		LatentWhatToDoNext();
-	}
-	else
-	{
-		GoToState('Idle');
-	}
+	MoveToward(MTParams.Target, MTParams.Focus, MTParams.DestinationOffset, MTParams.CanStrafe, MTParams.ShouldWalk);
+	GotoState('Idle');
 }
 
-/**
- * This state is for bots when they are actively engaging an emeny.  It forms a hub of sorts
- * from which attacks will originate.
- */
-simulated state Focusing
+simulated state MoveToState
 {
 Begin:
-	if (Pawn != None)
-		Pawn.GoToState('Focusing');
-		
-	if (Pawn.NeedToTurn(GetFocalPoint()))
-		FinishRotation();
-
-	GoToState(GetAttack(Focus));
+	MoveTo(MParams.Destination, MParams.Focus, MParams.DestinationOffset, MParams.ShouldWalk);
+	GotoState('Idle');
 }
 
-simulated state FiringWeapon
+simulated state FinishRotationState
 {
 Begin:
-	while(!AP_Bot(Pawn).CanShoot())
-		Sleep(0.0);
-		
-	if (Pawn.NeedToTurn(GetFocalPoint()))
-		FinishRotation();
-			
-	ShootAt(None);
-	
-	LatentWhatToDoNext();
-}
-
-simulated state UsingAbility
-{
-Begin:
-
-	while(!AP_Bot(Pawn).CanUseAbility())
-		Sleep(0.0);
-		
-	if (Pawn.NeedToTurn(GetFocalPoint()))
-		FinishRotation();
-			
-	UseAbility(None);
-	
-	LatentWhatToDoNext();
+	FinishRotation();
+	GotoState('Idle');
 }
 
 simulated state Stunned
@@ -598,109 +578,13 @@ Begin:
 	LatentWhatToDoNext();
 }
 
-simulated state Wandering
-{
-	event Tick(float dt)
-	{
-		local ArenaPawn target;
-		
-		global.Tick(dt);
-		
-		target = FindNearestTarget();
-		
-		if (target != None && CanSee(target))
-		{
-			MoveTarget = target;
-			
-			StopLatentExecution();
-			Pawn.ZeroMovementVariables();
-		}
-	}
-	
-Begin:
-	if (Pawn != None)
-		Pawn.GoToState('Wandering');
-		
-	WanderTarget = FindRandomDest();
-		
-	MoveTo(WanderTarget.Location);
-	Pawn.ZeroMovementVariables();
-	LatentWhatToDoNext();
-}
-
-simulated state MovingToSearch
-{
-	event Tick(float dt)
-	{
-		local ArenaPawn target;
-		
-		global.Tick(dt);
-		
-		target = FindNearestTarget();
-		
-		if (target != None && CanSee(target))
-		{
-			MoveTarget = target;
-			
-			StopLatentExecution();
-			Pawn.ZeroMovementVariables();
-		}
-	}
-	
-Begin:
-	`log("Moving to search location.");
-	MoveTo(LastSeenLocation);
-	Pawn.ZeroMovementVariables();
-	Searching = true;
-	LatentWhatToDoNext();
-}
-
-simulated state SearchingForTarget
-{
-	event Tick(float dt)
-	{
-		local ArenaPawn target;
-		
-		global.Tick(dt);
-		
-		SearchCounter += dt;
-		
-		target = FindNearestTarget();
-		
-		if (target != None && CanSee(target))
-		{
-			MoveTarget = target;
-			
-			StopLatentExecution();
-			Pawn.ZeroMovementVariables();
-		}
-	}
-	
-Begin:
-	Sleep(SearchMax);
-	LatentWhatToDoNext();
-}
-
-simulated state Evading
-{
-Begin:
-	if (Pawn != None)
-		Pawn.GoToState('Evading');
-	
-	Sleep(0.1);
-	
-	while(AP_Bot(Pawn).IsEvading())
-		Sleep(0.0);
-		
-	Pawn.ZeroMovementVariables();
-	LatentWhatToDoNext();
-}
-
 defaultproperties
 {
 	Begin Object Class=BotPersonality Name=BP
 	End Object
 	Personality=BP
+	
+	BTSource="<BTAction_Idle></BTAction_Idle>"
 	
 	BotRange=1000
 	BotFireRange=1000

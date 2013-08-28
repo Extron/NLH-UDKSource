@@ -526,8 +526,6 @@ function bool InterceptEscape()
 {
 	if (Submenu != None && Submenu.bMovieIsOpen)
 	{
-		Submenu.PlayCloseAnimation();
-		
 		PartTooltip.SetVisible(true);
 		StatTooltip.SetVisible(true);
 		Cursor.SetVisible(true);

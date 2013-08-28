@@ -25,6 +25,11 @@ var array<BaseTypeElement> ValidBases;
 var array<class<ArenaWeaponComponent> > ValidComponents;
 
 /**
+ * The menu that owns the library.
+ */
+var GFx_WLSubMenu Parent;
+
+/**
  * The scroll list in the library.
  */
 var GFxClikWidget ScrollList, BaseDropdownMenu;
@@ -52,15 +57,17 @@ var int SelectedComponent;
 
 function BuildBaseLibrary(ArenaWeaponBase base)
 {
-	local GFxObject baseLabel;
 	local array<class<ArenaWeaponBase> > bases;
-	local array<string> baseNames;
+	local array<GFxObject> baseNames;
 	local BaseTypeElement element;
+	local GFxObject baseItem;
 	local int i;
 	
 	CurrentType = base.Type;
 	
 	bases = base.default.Subclasses;
+	
+	SelectedComponent = -1;
 	
 	for (i = 0; i < 8; i++)
 	{
@@ -73,63 +80,96 @@ function BuildBaseLibrary(ArenaWeaponBase base)
 		ValidBases[bases[i].default.Type].Bases.AddItem(bases[i]);
 		
 		if (bases[i].default.Type == CurrentType)
-			baseNames.AddItem(bases[i].default.BaseName);
+		{
+			baseItem = CreateObject("Object");
+			baseItem.SetString("name", bases[i].default.BaseName);
+			
+			if (Parent.Viewer.SaveData.WeapData.BoughtBases.Find(bases[i]) > -1)
+				baseItem.SetBool("purchased", true);
+			else
+				baseItem.SetBool("purchased", false);
+				
+			baseItem.SetInt("cost", bases[i].default.Cost);
+			
+			baseNames.AddItem(baseItem);
+			
+			if (bases[i].default.BaseName == base.BaseName)
+				SelectedComponent = i;
+		}
 	}
 	
-	SelectedComponent = baseNames.Find(base.BaseName);
 	CurrentBaseName = base.BaseName;
 	
-	FillLibrary(baseNames, base.BaseName, "Bases", CurrentType);	
-	ScrollList = GFxClikWidget(GetObject("scroll_list", class'GFxClikWidget'));
-	baseLabel = GetObject("base_label");
-	BaseDropdownMenu = GFxClikWidget(baseLabel.GetObject("base_list", class'GFxClikWidget'));
+	Parent.FillLibrary(baseNames, base.BaseName, "Bases", CurrentType);	
+	ScrollList = GFxClikWidget(GetObject("scrollList", class'GFxClikWidget'));
+	BaseDropdownMenu = GFxClikWidget(GetObject("baseDropdownList", class'GFxClikWidget'));
 	BaseDropdownMenu.AddEventListener('CLIK_change', OnItemClicked);
 }
 
 function BuildComponentLibrary(ArenaWeaponBase base, ArenaWeaponComponent component)
 {
 	local array<class<ArenaWeaponComponent> > components;
-	local array<string> compNames;
+	local array<GFxObject> compNames;
+	local GFxObject compItem;
 	local int i;
 	
 	components = component.default.Subclasses;
+	
+	SelectedComponent = -1;
 	
 	for (i = 0; i < components.Length; i++)
 	{
 		if (components[i].default.CompatibleTypes.Find(base.Type) > -1 && components[i].default.CompatibleSizes.Find(base.Size) > -1)
 		{
+			compItem = CreateObject("Object");
+			compItem.SetString("name", components[i].default.ComponentName);
+			
+			if (Parent.Viewer.SaveData.WeapData.BoughtComponents.Find(components[i]) > -1)
+				compItem.SetBool("purchased", true);
+			else
+				compItem.SetBool("purchased", false);
+				
+			compItem.SetInt("cost", components[i].default.Cost);
+			
 			ValidComponents.AddItem(components[i]);
-			compNames.AddItem(components[i].default.ComponentName);
+			compNames.AddItem(compItem);
+			
+			if (components[i].default.ComponentName == component.ComponentName)
+				SelectedComponent = i;
 		}
 	}
 
-	SelectedComponent = compNames.Find(component.ComponentName);
+	Parent.FillLibrary(compNames, component.ComponentName, GetCategory(component));
 	
-	FillLibrary(compNames, component.ComponentName, GetCategory(component));
-	
-	ScrollList = GFxClikWidget(GetObject("scroll_list", class'GFxClikWidget'));
-}
-
-function FillLibrary(array<string> list, string sel, string category, optional int baseSelection = -1)
-{
-	ActionScriptVoid("FillLibrary");
+	ScrollList = GFxClikWidget(GetObject("scrollList", class'GFxClikWidget'));
 }
 
 function OnItemClicked(GFxClikWidget.EventData ev)
 {
-	local array<string> baseNames;
+	local array<GFxObject> baseNames;
+	local GFxObject baseItem;
 	local int index, i;
 	
 	index = BaseDropdownMenu.GetInt("selectedIndex");
 	
 	for (i = 0; i < ValidBases[index].Bases.Length; i++)
 	{
-		baseNames.AddItem(ValidBases[index].Bases[i].default.BaseName);
+		baseItem = CreateObject("Object");
+		baseItem.SetString("name", ValidBases[index].Bases[i].default.BaseName);
+		
+		if (Parent.Viewer.SaveData.WeapData.BoughtBases.Find(ValidBases[index].Bases[i]) > -1)
+				baseItem.SetBool("purchased", true);
+			else
+				baseItem.SetBool("purchased", false);
+				
+		baseItem.SetInt("cost", ValidBases[index].Bases[i].default.Cost);
+		
+		baseNames.AddItem(baseItem);
 	}
 	
 	SelectedComponent = -1;
 	CurrentType = WeaponType(index);
-	FillLibrary(baseNames, CurrentBaseName, "Bases", CurrentType);
+	Parent.FillLibrary(baseNames, CurrentBaseName, "Bases", CurrentType);
 }
 
 function string GetCategory(ArenaWeaponComponent component)

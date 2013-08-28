@@ -27,11 +27,6 @@ var GFx_BotKillDisplay KillDisplay;
  */
 var class<GFx_BotKillDisplay> KillDisplayClass;
 
-/**
- * How long the kill display lasts before it is destroyed.
- */
-var float Duration;
-
 simulated function PostBeginPlay()
 {
 	super.PostBeginPlay();
@@ -40,12 +35,11 @@ simulated function PostBeginPlay()
 	
 	if (KillDisplay != None && RenderTarget != None)
 	{
+		KillDisplay.Parent = self;
 		KillDisplay.RenderTexture = RenderTarget;
 		KillDisplay.SetTimingMode(TM_Real);
 		KillDisplay.Init();
 	}
-	
-	SetTimer(Duration, false, 'RemoveDisplay');
 }
 
 simulated function Tick(float dt)
@@ -76,6 +70,4 @@ defaultproperties
 	
 	RenderTarget=TextureRenderTarget2D'ArenaObjects.Textures.KillDisplayGFxTarget'
 	KillDisplayClass=class'GFx_BotKillDisplay'
-	
-	Duration=2
 }

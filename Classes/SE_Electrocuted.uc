@@ -85,7 +85,8 @@ function DeactivateEffect()
 {
 	super.DeactivateEffect();
 	
-	ActivePS.DeactivateSystem();
+	if (ActivePS != None)
+		ActivePS.DeactivateSystem();
 }
 
 defaultproperties
@@ -96,6 +97,8 @@ defaultproperties
 		ValueMods[PSVGlobalDamageInput]=1.5
 		
 	End Object
+	
+	DisplayColors[0]=0x0BB5FF
 	
 	EffectName="Electrocuted"
 	Duration=5

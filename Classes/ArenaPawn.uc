@@ -385,8 +385,9 @@ simulated function Bump(Actor other, PrimitiveComponent otherComp, Vector hitNor
 
 
 function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
-{	
-	ActiveEffect.DeactivateEffect();
+{
+	if (ActiveEffect != None)
+		ActiveEffect.DeactivateEffect();
 	
 	ClearAllTimers();
 	Stats.ClearModifiers();

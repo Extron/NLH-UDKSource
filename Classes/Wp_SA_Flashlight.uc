@@ -65,6 +65,7 @@ defaultproperties
 	CompatibleSizes[4]=WSHeavy
 	
 	Weight=1
+	Cost=2
 	ComponentName="Flashlight"
 	ComponentDescription="Though batteries are relatively rare, Old World tech can last a nearly unlimited amount of time using batteries from that era.  Many scavanged flashlights, if cleaned properly, are perfectly functional."
 }

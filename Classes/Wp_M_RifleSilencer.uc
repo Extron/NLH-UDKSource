@@ -46,4 +46,5 @@ defaultproperties
 	ComponentName="Rifle Silencer"
 	ComponentDescription="Common to elite soldier squads, rifle silencers can dampen the sounds of a rifle, assuming it has been constructed properly.  Its added weight lowers mobility, but increases accuracy and reduces recoil."
 	Weight=1
+	Cost=10
 }

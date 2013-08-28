@@ -37,6 +37,11 @@ var array<float> PSMWeights;
  */
 var array<int> PSMDirections;
 
+/**
+ * The list of display colors to use when showing this status effect.  Length should agree with Combinations variable.
+ */
+var array<int> DisplayColors;
+
 /* The player that is being affected by the status effect. */
 var Controller Affectee;
 
@@ -134,10 +139,24 @@ var float InitialStaminaDamage;
 var float ISDWeight;
 
 /**
+ * The points that this status effect gives if a pawn is killed directly by this effect.
+ */
+var float KilledByPoints;
+
+/**
+ * The points that this status effect gives if a pawn had this status effect when they died.
+ */
+var float KilledWhilePoints;
+
+/**
  * The SE Group of the status effect.
  */
 var int SEGroup;
 
+/**
+ * The number of base status effects that make up this status effect.  Will be 1 if this is a base status effect.
+ */
+var int Combinations;
 
 
 static function StatusEffect AddEffects(StatusEffect A, StatusEffect B)
@@ -151,6 +170,7 @@ static function StatusEffect AddEffects(StatusEffect A, StatusEffect B)
 	
 	se.SEGroup = A.SEGroup | B.SEGroup;
 	se.EffectName = A.EffectName @ "+" @ B.EffectName;
+	se.Combinations = A.Combinations + B.Combinations;
 	
 	se.Duration = WeightedAddition(A.Duration - A.Counter, B.Duration - B.Counter, B.DurationWeight, -advantage);
 	se.HealthDamage = WeightedAddition(A.HealthDamage, B.HealthDamage, B.HealthDamageWeight, advantage);
@@ -166,10 +186,19 @@ static function StatusEffect AddEffects(StatusEffect A, StatusEffect B)
 	for (i = 0; i < B.PSMWeights.Length; i++)
 		se.PSMWeights[i] = WeightedAddition(A.PSMWeights[i], B.PSMWeights[i], 1.0, advantage);
 	
+	for (i = 0; i < A.DisplayColors.length; i++)
+		se.DisplayColors.AddItem(A.DisplayColors[i]);
+		
+	for (i = 0; i < B.DisplayColors.length; i++)
+		se.DisplayColors.AddItem(B.DisplayColors[i]);
+		
 	se.ScreenEffect = A.ScreenEffect;
 	se.Affectee = A.Affectee;
 	se.ParentA = A;
 	se.ParentB = B;
+	
+	se.KilledByPoints = FMax((A.KilledByPoints + B.KilledByPoints) / 2 + se.Combinations * advantage, 0.0);
+	se.KilledWhilePoints = FMax((A.KilledWhilePoints + B.KilledWhilePoints) / 2 + se.Combinations  * advantage, 0.0);
 	
 	return se;
 }
@@ -355,6 +384,9 @@ defaultproperties
 	Begin Object Class=PlayerStatModifier Name=NewStatMod
 	End Object
 	StatsModifier=NewStatMod
+	
+	Combinations = 1;
+	DisplayColors[0]=0xFFFFFF
 	
 	PSMWeights[PSVWeight]=0
 	PSMWeights[PSVMobility]=0

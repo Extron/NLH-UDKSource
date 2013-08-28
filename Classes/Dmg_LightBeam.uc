@@ -6,5 +6,10 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class Dmg_LightBeam extends DamageType;
+class Dmg_LightBeam extends ArenaDamageType;
 
+defaultproperties
+{
+	Points=1
+	ActionString="Shot"
+}

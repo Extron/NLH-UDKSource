@@ -51,6 +51,12 @@ var float EnergyCost;
 var name AttachSock;
 
 /**
+ * The cost of the component in tokens.
+ */
+var int Cost;
+
+
+/**
  * Attaches this component to a weapon base.
  *
  * @param weap - The weapon base to attach to.

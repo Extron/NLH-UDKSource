@@ -33,6 +33,7 @@ defaultproperties
 	
 	ScopeZoom=4
 	Weight=2
+	Cost=10
 	ComponentName="ACOG 4x Scope"
 	ComponentDescription="A telescopic sight designed to enhance accuracy, the Advanced Combat Optical Gunsight provides a 4x magnification.  Though ideal for long range shooting, quick target tracking is difficult at close range."
 }

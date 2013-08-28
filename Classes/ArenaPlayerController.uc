@@ -14,6 +14,11 @@ class ArenaPlayerController extends UDKPlayerController;
 var PlayerLoadout Loadout;
 
 /**
+ * The player's save data.
+ */
+var PlayerData SaveData;
+
+/**
  * The HUD settings for the player.
  */
 var PlayerHUDSettings HUDSettings;
@@ -67,23 +72,48 @@ var bool FiringAbility;
 /* Indicates that the pawn will be accelerated on the next player tick. */
 var bool AccelPawn;
 
+simulated function PostBeginPlay()
+{
+	local string filename;
+	
+	super.PostBeginPlay();
+	
+	if (Role < Role_Authority || (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer))
+	{
+		`log("Loading player save data file.");
+		if (PlayerReplicationInfo.PlayerName == "")
+			PlayerReplicationInfo.PlayerName = "Nameless";
+			
+		filename = PlayerReplicationInfo.PlayerName $ "_data.bin";
+		
+		SaveData = new class'Arena.PlayerData';
+		
+		if (!(class'Engine'.static.BasicLoadObject(SaveData, filename, true, class'Arena.PlayerData'.const.FileVersion)))
+		{
+			`log("No save data detected.  Creating a new file.");
+			
+			if (!(class'Engine'.static.BasicSaveObject(SaveData, filename, true, class'Arena.PlayerData'.const.FileVersion)))
+				`log("File save failed.");
+		}
+		
+		SaveData.Initialize();
+	}		
+}
+
 simulated function ReceivedGameClass(class<GameInfo> GameClass)
 {
 	super.ReceivedGameClass(GameClass);
 	
 	ArenaGRI(WorldInfo.GRI).Constants.Initialize();
 	
-	if (Role < Role_Authority)
-	{
+	if (Role < Role_Authority )
 		ServerInitializeGameConstants();
-	}
 }
 
 function Possess(Pawn newPawn, bool bVehicleTransition)
 {
 	if (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer)
 	{
-		`log("Setting initial stats.");
 		ArenaPawn(newPawn).Stats.SetInitialStats(ArenaPawn(newPawn));
 
 		PClass = new Loadout.AbilityClass;
@@ -250,9 +280,7 @@ simulated function ReplicatedEvent(name property)
 	if (property == nameof(Pawn))
 	{
 		if (ArenaPawn(Pawn) != None)
-		{		
-		
-			`log("Setting initial stats.");
+		{
 			ArenaPawn(Pawn).Stats.SetInitialStats(ArenaPawn(Pawn));
 				
 			PClass = new Loadout.AbilityClass;
@@ -301,6 +329,23 @@ function bool PerformedUseAction()
 	
 	return ret;
 }
+
+simulated function AwardBBTokens(int tokens)
+{
+	SaveData.BBData.Tokens += tokens;
+	
+	if (Pawn != None && PRI_BotBattle(Pawn.PlayerReplicationInfo) != None)
+		PRI_BotBattle(Pawn.PlayerReplicationInfo).AwardTokens(tokens);
+}
+
+simulated function SpendBBTokens(int tokens)
+{
+	SaveData.BBData.Tokens -= tokens;
+	
+	if (Pawn != None && PRI_BotBattle(Pawn.PlayerReplicationInfo) != None)
+		PRI_BotBattle(Pawn.PlayerReplicationInfo).SpendTokens(tokens);
+}
+
 state PlayerWalking
 {
 	simulated function ProcessMove(float delta, vector newAccel, eDoubleClickDir doubleClickMove, rotator deltaRot)

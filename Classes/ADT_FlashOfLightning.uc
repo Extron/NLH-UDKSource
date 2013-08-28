@@ -9,11 +9,9 @@
 /**
  * The damage type used for the Flash of Lightning ability.  Gives Electroguted and Flashed effects.
  */
-class ADT_FlashOfLightning extends AbilityDamageType;
+class ADT_FlashOfLightning extends Dmg_Shock;
 
 defaultproperties
 {
-	EnvironmentEffects[0]=class'Arena.EE_Charged'
-	StatusEffects[0]=class'Arena.SE_Electrocuted'
 	StatusEffects[1]=class'Arena.SE_Flash'
 }

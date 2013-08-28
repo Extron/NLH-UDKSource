@@ -38,8 +38,6 @@ simulated function Tick(float dt)
 	
 		if (CurrentWaveComplete() && !Intermission)
 		{
-			`log("Wave complete.");
-			
 			Intermission = true;
 			
 			Parent.WaveComplete(Waves[CurrentWave]);
@@ -71,8 +69,6 @@ simulated function SpawnNextWave()
 		
 		if (CurrentWave < Waves.Length)
 		{
-			`log("Spawning new wave.");
-			
 			Waves[CurrentWave].SpawnWave();
 			Parent.WaveSpawned(Waves[CurrentWave]);
 		}

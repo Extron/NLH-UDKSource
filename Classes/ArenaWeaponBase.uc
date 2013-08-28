@@ -54,6 +54,12 @@ var string BaseName;
  */
 var string BaseDescription;
 
+/**
+ * The cost of the weapon base, in tokens.
+ */
+var int Cost;
+
+
 simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name SocketName)
 {
 	super.AttachWeaponTo(MeshCpnt, SocketName);

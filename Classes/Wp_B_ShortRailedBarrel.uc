@@ -29,6 +29,7 @@ defaultproperties
 	
 	SightsOffset=(Z=0.4)
 	Weight=3.5
+	Cost=20
 	ComponentName="Short Railed Barrel"
 	ComponentDescription="A bit more advanced than the basic rifle barrel, this barrel is perfect for constructing carbines to be used in small spaces.  The addition of railing allows various attachments to be added."
 }

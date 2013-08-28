@@ -10,6 +10,10 @@ class Dmg_Shock extends AbilityDamageType;
 
 defaultproperties
 {
+	ActionString="Shocked"
+	DisplayColor=0x0BB5FF
+	Points=1
+	
 	EnvironmentEffects[0]=class'Arena.EE_Charged'
 	StatusEffects[0]=class'Arena.SE_Electrocuted'
 }

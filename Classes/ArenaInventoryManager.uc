@@ -77,9 +77,7 @@ simulated function NextAbility()
 	local ArenaAbility start, candidate, iter;
 	local bool bBreakNext;
 	local int i;
-	
-	`log("NextAbility");
-	
+
 	start = ArenaPawn(Instigator).ActiveAbility;
 	
 	if (PendingAbility != None)
@@ -132,8 +130,6 @@ simulated function NextAbility()
  */
 reliable client function SetCurrentAbility(ArenaAbility desired)
 {
-	`log("Setting current ability to" @ desired);
-	
 	// Switch to this weapon
 	InternalSetCurrentAbility(desired);
 
@@ -242,8 +238,6 @@ simulated private function InternalSetCurrentAbility(ArenaAbility desired)
 
 	prev = ArenaPawn(Instigator).ActiveAbility;
 
-	`LogInv("Prev Ability:" @ prev @ "Desired Ability:" @ desired);
-
 	// Make sure we are switching to a new weapon
 	// Handle the case where we're selecting again a weapon we've just deselected
 	if (prev != None && desired == prev)
@@ -326,8 +320,6 @@ simulated function bool AddInventory(Inventory NewItem, optional bool bDoNotActi
 {
 	if (ArenaAbility(NewItem) != None)
 	{
-		`log("Adding ability to inventory");
-		
 		if((NewItem != None) && !NewItem.bDeleteMe )
 		{
 			if (Abilities.Find(ArenaAbility(NewItem)) > 0)

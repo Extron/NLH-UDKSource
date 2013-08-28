@@ -8,3 +8,9 @@
 
 class SDT_Electrocuted extends StatusDamageType;
 
+defaultproperties
+{
+	ActionString="Electrocuted"
+	Points=1.5
+}
+

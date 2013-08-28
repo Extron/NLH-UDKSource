@@ -64,7 +64,6 @@ simulated function PostBeginPlay()
 	
 	if (TerminalUI != None && RenderTarget != None)
 	{
-		`log("Setting up terminal UI.");
 		TerminalUI.RenderTexture = RenderTarget;
 		TerminalUI.SetTimingMode(TM_Real);
 		TerminalUI.Init();
