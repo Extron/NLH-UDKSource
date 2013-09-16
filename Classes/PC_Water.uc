@@ -42,6 +42,9 @@ defaultproperties
 {
 	ClassName="Water"
 	
+	Trees[0]=class'Arena.AT_Bubble'
+	Trees[1]=class'Arena.AT_Osmosis'
+	
 	Begin Object Name=NewMod
 		ValueMods[PSVEnergyRegenRate]=1.1
 		ValueMods[PSVMobility]=1.1

@@ -42,6 +42,13 @@ defaultproperties
 {
 	ClassName="Electricity"
 	
+	Trees[0]=class'Arena.AT_ShockShort'
+	Trees[1]=class'Arena.AT_ShockMedium'
+	Trees[2]=class'Arena.AT_Repulsion'
+	Trees[3]=class'Arena.AT_LightningBolt'
+	Trees[4]=class'Arena.AT_Deflection'
+	Trees[5]=class'Arena.AT_EMP'
+	
 	Begin Object Name=NewMod
 		ValueMods[PSVAccuracy]=1.1
 		ValueMods[PSVMobility]=1.1

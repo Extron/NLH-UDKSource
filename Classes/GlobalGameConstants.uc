@@ -248,7 +248,7 @@ defaultproperties
 	FactorValues[1]=(X=0.5,Y=1.125,Z=1)
 	FactorValues[2]=(X=0.25,Y=1.25,Z=0.75)
 	FactorValues[3]=(X=0.75,Y=1.75,Z=1)
-	FactorValues[4]=(X=1.5,Y=3.75,Z=1)
+	FactorValues[4]=(X=1.5,Y=2.5,Z=1)
 	FactorValues[5]=(X=0,Y=0.1,Z=1)
 	FactorValues[6]=(X=0.01,Y=1,Z=1)
 	FactorValues[7]=(X=0,Y=5,Z=1)

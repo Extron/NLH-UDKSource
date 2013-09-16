@@ -50,7 +50,7 @@ var private int IterCount;
  * This delegate allows custom path constraints to be built for the path before path finding is run.  If no constraints are set, 
  * a default constraint set consisting of a Toward constraint and a At goal are used.
  */
-delegate BuildConstraintsAndGoals(NavigationHandle handle);
+delegate BuildConstraintsAndGoals(NavigationHandle handle, BTAction_NavigateTo sender);
 
 
 simulated function bool HasDelegate(string delName)
@@ -91,7 +91,7 @@ simulated function SetParameters(array<string> parameters)
 
 simulated function Reset()
 {
-	if (Controller.IsInState('Idle') || Controller.IsInState('MoveToState'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		if (Controller.NavigationHandle != None)
 			Controller.NavigationHandle.ClearConstraints();
@@ -117,7 +117,7 @@ simulated function bool FindPath()
 		if (DisplayLog)
 			`log(Controller $ ":" @ self @ "using custom nav goals.");
 			
-		BuildConstraintsAndGoals(Controller.NavigationHandle);
+		BuildConstraintsAndGoals(Controller.NavigationHandle, self);
 	}
 	else
 	{
@@ -139,7 +139,7 @@ Begin:
 	{
 		if (Controller.PointReachable(Destination))
 		{
-			Controller.BeginMoveTo(Destination, Focus, DestinationOffset, ShouldWalk);
+			Controller.BeginMoveTo(self, Destination, Focus, DestinationOffset, ShouldWalk);
 			
 			while (Controller.IsInState('MoveToState'))
 				Sleep(0.0);
@@ -152,7 +152,10 @@ Begin:
 				
 				if (!Controller.NavigationHandle.SuggestMovePreparation(CurrentDestination, Controller))
 				{
-					Controller.BeginMoveTo(CurrentDestination, Focus, 0, ShouldWalk);
+					if (DisplayLog)
+						`log(Controller $ ":" @ self @ "moving to" @ CurrentDestination);
+					
+					Controller.BeginMoveTo(self, CurrentDestination, Focus, 0, ShouldWalk);
 
 					while (Controller.IsInState('MoveToState'))
 						Sleep(0.0);
@@ -189,7 +192,7 @@ Begin:
 state Succeeded
 {
 Begin:
-	if (Controller.IsInState('Idle') || Controller.IsInState('MoveToState'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		if (Controller.NavigationHandle != None)
 			Controller.NavigationHandle.ClearConstraints();
@@ -204,7 +207,7 @@ Begin:
 state Failed
 {
 Begin:
-	if (Controller.IsInState('Idle') || Controller.IsInState('MoveToState'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		if (Controller.NavigationHandle != None)
 			Controller.NavigationHandle.ClearConstraints();

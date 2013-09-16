@@ -76,6 +76,16 @@ simulated exec function StopDuck()
 	}
 }
 
+simulated exec function StartMelee()
+{
+	`log("Meleeing");
+	
+	if (ArenaPawn(Pawn) != None)
+	{
+		ArenaPawn(Pawn).Melee();
+	}
+}
+
 simulated exec function Reload()
 {
 	if (ArenaPawn(Pawn) != None)

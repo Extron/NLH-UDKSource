@@ -18,9 +18,22 @@ const ExpandedHeight = 240;
 const AspectRatio = 1.777777778;
 const Far = 100;
 const Near = 1;
+const ButtonGroupCount = 6;
 
-var GFxObject Buttons, BotBattleGroup, SinglePlayerGroup, MultiplayerGroup, OptionsGroup, ExitGroup;
-var GFxClikWidget SPButton, BBSoloButton, BBCoopButton, MPButton, OButton, EButton;
+struct ButtonGroup
+{
+	var GFxObject Group;
+	var array<GFxClikWidget> Buttons;
+	var array<string> ButtonNames;
+	var name Socket;
+	var bool Expanded;
+	var bool Over;
+};
+
+var ButtonGroup Groups[ButtonGroupCount];
+
+var GFxObject Buttons, BotBattleGroup, SinglePlayerGroup, MultiplayerGroup, CharacterGroup, OptionsGroup, ExitGroup;
+var GFxClikWidget SPButton, BBSoloButton, BBCoopButton, MPButton, CEditButton, CNewButton, OButton, EButton;
 
 
 /**
@@ -90,6 +103,8 @@ function bool Start(optional bool StartPaused = false)
 {
 	local SkeletalMeshActor iter;
 	local AN_BlendByState node;
+	local GFxClikWidget button;
+	local int i, j;
 	
 	super.Start(StartPaused);
 			
@@ -100,20 +115,45 @@ function bool Start(optional bool StartPaused = false)
 		Pawn = AP_Specter(GetPC().Pawn);
 		Pawn.SetMenu(self);
 	}
-		
+	
 	Buttons = GetVariableObject("_root.buttons");	
-	SinglePlayerGroup = GetVariableObject("_root.buttons.singlePlayerButtons");	
-	MultiplayerGroup = GetVariableObject("_root.buttons.multiplayerButtons");
-	BotBattleGroup = GetVariableObject("_root.buttons.botBattleButtons");	
-	OptionsGroup = GetVariableObject("_root.buttons.optionsButtons");	
-	ExitGroup = GetVariableObject("_root.buttons.exitButtons");
+	Groups[0].Group = GetVariableObject("_root.buttons.singlePlayerButtons");	
+	Groups[1].Group = GetVariableObject("_root.buttons.multiplayerButtons");
+	Groups[2].Group = GetVariableObject("_root.buttons.botBattleButtons");	
+	Groups[3].Group = GetVariableObject("_root.buttons.characterButtons");
+	Groups[4].Group = GetVariableObject("_root.buttons.optionsButtons");	
+	Groups[5].Group = GetVariableObject("_root.buttons.exitButtons");
 
-	SPButton = GFxClikWidget(SinglePlayerGroup.GetObject("singlePlayerButton", class'GFxClikWidget'));
-	BBSoloButton = GFxClikWidget(BotBattleGroup.GetObject("singlePlayer", class'GFxClikWidget'));
-	BBCoopButton = GFxClikWidget(BotBattleGroup.GetObject("multiplayer", class'GFxClikWidget'));
-	MPButton = GFxClikWidget(MultiplayerGroup.GetObject("multiplayerButton", class'GFxClikWidget'));
-	OButton = GFxClikWidget(OptionsGroup.GetObject("optionsButton", class'GFxClikWidget'));
-	EButton = GFxClikWidget(ExitGroup.GetObject("exitButton", class'GFxClikWidget'));
+	Groups[0].ButtonNames.AddItem("singlePlayerButton");
+	Groups[0].Socket = 'SinglePlayerSocket';
+	
+	Groups[1].ButtonNames.AddItem("multiplayerButton");
+	Groups[1].Socket = 'MultiplayerSocket';
+	
+	Groups[2].ButtonNames.AddItem("botBattle");
+	Groups[2].Socket = 'BotBattleSocket';
+	
+	Groups[3].ButtonNames.AddItem("character");
+	Groups[3].Socket = 'CharacterSocket';
+	
+	Groups[4].ButtonNames.AddItem("optionsButton");
+	Groups[4].Socket = 'OptionsSocket';
+	
+	Groups[5].ButtonNames.AddItem("exitButton");
+	Groups[5].Socket = 'ExitSocket';
+	
+	for (i = 0; i < ButtonGroupCount; i++)
+	{
+		for (j = 0; j < Groups[i].ButtonNames.Length; j++)
+		{
+			button = GFxClikWidget(Groups[i].Group.GetObject(Groups[i].ButtonNames[j], class'GFxClikWidget'));
+			
+			Groups[i].Buttons.AddItem(button);
+			
+			if (button == none)
+				`warn("Could not find button" @ Groups[i].ButtonNames[j]);
+		}
+	}
 	
 	foreach Pawn.AllActors(class'SkeletalMeshActor', iter)
 	{
@@ -135,11 +175,33 @@ function bool Start(optional bool StartPaused = false)
 	
 }
 
+event bool WidgetInitialized(name widgetName, name widgetPath, GFxObject widget)
+{
+	local bool handled;
+	local int group;
+	
+	`log("Initializing widget" @ widgetName);
+	
+	group = FindGroupWithButton(string(widgetName));
+	
+	if (group > -1)
+	{
+		Groups[group].Buttons.AddItem(GFxClikWidget(widget));
+	}
+	
+	if (!handled)
+	{
+		handled = Super.WidgetInitialized(widgetName, widgetPath, widget);    
+	}
+	
+    return handled;
+}
+
 function Update(float dt)
 {
 	Counter += dt;
 	
-	if (CurrentOverButton == "" && Rotating)
+	if (!IsOver() && Rotating)
 	{
 		if (Abs(Cube.Owner.RotationRate.Pitch) < 4 && Abs(Cube.Owner.RotationRate.Yaw) < 4 && Abs(Cube.Owner.RotationRate.Roll) < 4)
 		{
@@ -153,7 +215,7 @@ function Update(float dt)
 		PositionButtons();
 		
 	}
-	else if (CurrentOverButton == "" && !(SPExpanded || MPExpanded || BBExpanded || OExpanded) && !Rotating)
+	else if (!IsOver()  && !IsExpanded())
 	{
 		Cube.Owner.RotationRate.Pitch += 64 * Cos(Counter);
 		Cube.Owner.RotationRate.Yaw += 64 * Cos(2.5 * Counter);
@@ -173,6 +235,64 @@ function Update(float dt)
 	}
 }
 
+function int FindGroupWithButton(string buttonName)
+{
+	local int i;
+	
+	for (i = 0; i < ButtonGroupCount; i++)
+	{
+		if (Groups[i].ButtonNames.Find(buttonName) > -1)
+			return i;
+	}
+	
+	return -1;
+}
+
+function int FindGroupWithBtnLabel(string label)
+{
+	local int i, j;
+	
+	for (i = 0; i < ButtonGroupCount; i++)
+	{
+		`log("Group buttons" @ Groups[i].Buttons.Length);
+		
+		for (j = 0; j < Groups[i].Buttons.Length; j++)
+		{
+			`log("Button" @ Groups[i].Buttons[j]);
+			
+			if (Groups[i].Buttons[j].GetString("label") == label)
+				return i;
+		}
+	}
+	
+	return -1;
+}
+
+function bool IsOver()
+{
+	local int i;
+	
+	for (i = 0; i < ButtonGroupCount; i++)
+	{
+		if (Groups[i].Over)
+			return true;
+	}
+	
+	return false;
+}
+
+function bool IsExpanded()
+{
+	local int i;
+	
+	for (i = 0; i < ButtonGroupCount; i++)
+	{
+		if (Groups[i].Expanded)
+			return true;
+	}
+	
+	return false;
+}
 function OnMouseMove(float x, float y, bool mouseDown)
 {
 	local vector mousePos, d;
@@ -180,7 +300,7 @@ function OnMouseMove(float x, float y, bool mouseDown)
 	mousePos.x = x;
 	mousePos.y = y;
 
-	if (mouseDown && !(SPExpanded || MPExpanded || BBExpanded || OExpanded))
+	if (mouseDown && !IsExpanded())
 	{
 		d = mousePos - OldMousePos;
 		
@@ -212,106 +332,34 @@ function PositionButtons()
 	local vector v;
 	local rotator r;
 	local float scale;
+	local int i;
 	
 	scale = 1.8;
 	
 	if (Cube != None)
 	{
-		if (Cube.GetSocketByName('SinglePlayerSocket') != None)
+		for (i = 0; i < ButtonGroupCount; i++)
 		{
-			Cube.GetSocketWorldLocationAndRotation('SinglePlayerSocket', v, r, 0);
+			if (Cube.GetSocketByName(Groups[i].Socket) != None)
+			{
+				Cube.GetSocketWorldLocationAndRotation(Groups[i].Socket, v, r, 0);
 
-			if (SPExpanded)
-			{
-				SinglePlayerGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
-				SinglePlayerGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
+				if (Groups[i].Expanded)
+				{
+					Groups[i].Group.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
+					Groups[i].Group.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
+				}
+				else
+				{
+					Groups[i].Group.SetFloat("width", ButtonWidth * (1 - v.x / 200));
+					Groups[i].Group.SetFloat("height", ButtonHeight * (1 - v.x / 200));
+				}
+				
+				v = ProjectPosition(v);
+				
+				Groups[i].Group.SetFloat("x", v.x * scale);
+				Groups[i].Group.SetFloat("y", v.y * scale);
 			}
-			else
-			{
-				SinglePlayerGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
-				SinglePlayerGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
-			}
-			
-			v = ProjectPosition(v);
-			
-			SinglePlayerGroup.SetFloat("x", v.x * scale);
-			SinglePlayerGroup.SetFloat("y", v.y * scale);
-		}
-		
-		if (Cube.GetSocketByName('MultiplayerSocket') != None)
-		{
-			Cube.GetSocketWorldLocationAndRotation('MultiplayerSocket', v, r, 0);
-			
-			if (MPExpanded)
-			{
-				MultiplayerGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
-				MultiplayerGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
-			}
-			else
-			{
-				MultiplayerGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
-				MultiplayerGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
-			}
-			
-			v = ProjectPosition(v);
-			
-			MultiplayerGroup.SetFloat("x", v.x * scale);
-			MultiplayerGroup.SetFloat("y", v.y * scale);
-		}
-		
-		if (Cube.GetSocketByName('BotBattleSocket') != None)
-		{
-			Cube.GetSocketWorldLocationAndRotation('BotBattleSocket', v, r, 0);
-			
-			if (BBExpanded)
-			{
-				BotBattleGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
-				BotBattleGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
-			}
-			else
-			{
-				BotBattleGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
-				BotBattleGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
-			}
-			
-			v = ProjectPosition(v);
-			
-			BotBattleGroup.SetFloat("x", v.x * scale);
-			BotBattleGroup.SetFloat("y", v.y * scale);
-		}
-		
-		if (Cube.GetSocketByName('OptionsSocket') != None)
-		{
-			Cube.GetSocketWorldLocationAndRotation('OptionsSocket', v, r, 0);
-			
-			if (OExpanded)
-			{
-				OptionsGroup.SetFloat("width", ExpandedWidth * (1 - v.x / 200));
-				OptionsGroup.SetFloat("height", ExpandedHeight * (1 - v.x / 200));
-			}
-			else
-			{
-				OptionsGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
-				OptionsGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
-			}
-			
-			v = ProjectPosition(v);
-			
-			OptionsGroup.SetFloat("x", v.x * scale);
-			OptionsGroup.SetFloat("y", v.y * scale);
-		}
-		
-		if (Cube.GetSocketByName('ExitSocket') != None)
-		{
-			Cube.GetSocketWorldLocationAndRotation('ExitSocket', v, r, 0);
-			
-			ExitGroup.SetFloat("width", ButtonWidth * (1 - v.x / 200));
-			ExitGroup.SetFloat("height", ButtonHeight * (1 - v.x / 200));
-			
-			v = ProjectPosition(v);
-			
-			ExitGroup.SetFloat("x", v.x * scale);
-			ExitGroup.SetFloat("y", v.y * scale);
 		}
 	}
 }
@@ -338,50 +386,56 @@ function vector ProjectPosition(vector pos)
 
 function ButtonUp(string label)
 {
-	if (CurrentOverButton == label)
+	local int group;
+	
+	group = FindGroupWithBtnLabel(label);
+	
+	if (group > -1)
 	{
-		CurrentOverButton = "";
+		Groups[group].Over = false;
 	}
 }
 
 function ButtonOver(string label)
 {
-	CurrentOverButton = label;
+	local int group;
+	local int i;
+	
+	group = FindGroupWithBtnLabel(label);
+	
+	if (group > -1)
+	{
+		Groups[group].Over = true;
+		
+		for (i = 0; i < ButtonGroupCount; i++)
+		{
+			if (i != group)
+				Groups[i].Over = false;
+		}
+	}
 }
 
 function ButtonClicked(string label)
 {
+	local int group;
+	local int i;
+	
+	group = FindGroupWithBtnLabel(label);
+	
+	if (group > -1)
+	{
+		Groups[group].Expanded = !Groups[group].Expanded;
+		
+		for (i = 0; i < ButtonGroupCount; i++)
+		{
+			if (i != group)
+				Groups[i].Expanded = false;
+		}
+	}
+	
 	if (label == "Exit")
 	{
 		ConsoleCommand("exit");
-	}
-	else if (label == "Options")
-	{
-		OExpanded = !OExpanded;
-		SPExpanded = false;
-		MPExpanded = false;
-		BBExpanded = false;
-	}
-	else if (label == "Campaign")
-	{
-		SPExpanded = !SPExpanded;
-		OExpanded = false;
-		MPExpanded = false;
-		BBExpanded = false;
-	}
-	else if (label == "Muliplayer")
-	{
-		MPExpanded = !MPExpanded;
-		SPExpanded = false;
-		OExpanded = false;
-		BBExpanded = false;
-	}
-	else if (label == "Bot Battle")
-	{
-		BBExpanded = !BBExpanded;
-		SPExpanded = false;
-		MPExpanded = false;
-		OExpanded = false;
 	}
 	else if (label == "Solo")
 	{

@@ -43,18 +43,18 @@ event PostBeginPlay()
 							"<BTAction_NavigateTo OnRunning=Investigate></BTAction_NavigateTo>," $
 							"<BTAction_Idle OnRunning=Idle></BTAction_Idle>," $
 							"<BTAction_NavigateTo OnRunning=Search></BTAction_NavigateTo>," $
-							"<BTSelector_Repeater Repetitions=3>" $
+							"<BTSelector_Repeater Repetitions=2>" $
 								"<BTSelector_Sequence>" $
 									"<BTAction_Idle OnRunning=Idle></BTAction_Idle>," $
-									"<BTAction_NavigateTo OnRunning=MoveToRandom></BTAction_NavigateTo>" $
+									"<BTAction_NavigateTo OnRunning=MoveToRandom BuildConstraintsAndGoals=NavGoalsRandom></BTAction_NavigateTo>" $
 								"</BTSelector_Sequence>" $
 							"</BTSelector_Repeater>" $
 						"</BTSelector_Sequence>," $
 						"<BTSelector_Sequence>" $
 							"<BTSelector_Repeater>" $
 								"<BTSelector_Sequence>" $
-									"<BTAction_Idle OnRunning=Idle></BTAction_Idle>," $
-									"<BTAction_NavigateTo OnRunning=MoveToRandom></BTAction_NavigateTo>" $
+									"<BTAction_Idle OnRunning=LongIdle></BTAction_Idle>," $
+									"<BTAction_NavigateTo OnRunning=MoveToRandom BuildConstraintsAndGoals=NavGoalsRandom ShouldWalk=true></BTAction_NavigateTo>" $
 								"</BTSelector_Sequence>" $
 							"</BTSelector_Repeater>" $
 						"</BTSelector_Sequence>" $
@@ -114,6 +114,9 @@ event AssignNodeDelegate(BehaviorTreeNode node, string delegateTarget, string fu
 	if (funcName == "Idle" && delegateTarget == "OnRunning")
 		node.OnRunning = Idle;
 	
+	if (funcName == "LongIdle" && delegateTarget == "OnRunning")
+		node.OnRunning = LongIdle;
+		
 	if (funcName == "DelayFire" && delegateTarget == "OnSucceeded")
 		node.OnSucceeded = DelayFire;
 		
@@ -200,6 +203,12 @@ event Idle(BehaviorTreeNode sender)
 	BTAction_Idle(sender).Duration = Lerp(0.25, 1.5, FRand());
 }
 
+event LongIdle(BehaviorTreeNode sender)
+{
+	BTAction_Idle(sender).Duration = Lerp(5, 15, FRand());
+}
+
+
 event DelayFire(BehaviorTreeNode sender)
 {
 	BTSelector_Delayer(sender).Delay = Lerp(FireIntervalMin, FireIntervalMax, FRand());
@@ -249,25 +258,30 @@ event MoveTowardFocus(BehaviorTreeNode sender)
 	BTAction_MoveToward(sender).Target = Focus;
 }
 
-event NavGoalsRandom(NavigationHandle handle)
+event NavGoalsRandom(NavigationHandle handle, BTAction_NavigateTo sender)
 {
-	class'NavMeshPath_WithinTraversalDist'.static.DontExceedMaxDist(handle, 2000, true);
-	class'NavMeshGoal_Random'.static.FindRandom(handle, 500, 25);
+	class'NavMeshPath_Toward'.static.TowardPoint(handle, sender.Destination);
+	class'NavMeshPath_WithinTraversalDist'.static.DontExceedMaxDist(handle, 2000);
+	class'NavMeshGoal_At'.static.AtLocation(handle, sender.Destination, sender.DestinationOffset, sender.AllowPartialPath);
 }
 
 event MoveToRandom(BehaviorTreeNode sender)
 {
 	local array<vector> possibles;
-	local box bb;
+	local vector extent;
+	local float r, h;
 	
-	Pawn.GetComponentsBoundingBox(bb);
+	Pawn.GetBoundingCylinder(r, h);
+	extent.x = r * 2;
+	extent.y = r * 2;
+	extent.z = h;
+
+	class'NavigationHandle'.static.GetValidPositionsForBox(Pawn.Location, 2000, extent, true, possibles, , 500);
 	
-	class'NavigationHandle'.static.GetValidPositionsForBox(Pawn.Location, 5000, bb.Max, true, possibles, , 500);
-	
-	`log("Found" @ possibles.Length @ "random positions to try");
-	
-	BTAction_NavigateTo(sender).Destination = possibles[Rand(possibles.Length)];
-	
+	if (possibles.Length > 0)
+		BTAction_NavigateTo(sender).Destination = possibles[Rand(possibles.Length)];
+	else
+		sender.GotoState('Failed');	
 }
 
 function float RadiusBias()

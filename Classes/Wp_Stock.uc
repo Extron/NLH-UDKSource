@@ -18,4 +18,5 @@ defaultproperties
 	Subclasses[0]=class'Arena.Wp_S_NoStock'
 	Subclasses[1]=class'Arena.Wp_S_CheapStock'
 	Subclasses[2]=class'Arena.Wp_S_WoodStock'
+	Subclasses[3]=class'Arena.Wp_S_CollapsibleStock'
 }

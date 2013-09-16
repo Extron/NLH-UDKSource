@@ -110,6 +110,11 @@ simulated function Reset()
 	GotoState('Ready');
 }
 
+simulated function DestroyTree()
+{
+	ClearAllTimers();
+}
+
 simulated function Update(float dt)
 {
 	if (IsInState('Ready'))

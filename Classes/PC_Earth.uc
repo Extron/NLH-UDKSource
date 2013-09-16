@@ -36,6 +36,12 @@ defaultproperties
 {
 	ClassName="Earth"
 	
+	Trees[0]=class'Arena.AT_Earthquake'
+	Trees[1]=class'Arena.AT_RockWall'
+	Trees[2]=class'Arena.AT_Sand'
+	Trees[3]=class'Arena.AT_StoneFlesh'
+	Trees[4]=class'Arena.AT_Pedestal'
+	
 	Begin Object Name=NewMod
 		ValueMods[PSVMaxStamina]=1.05
 		ValueMods[PSVGlobalDamageInput]=0.95

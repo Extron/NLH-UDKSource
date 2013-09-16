@@ -17,4 +17,5 @@ defaultproperties
 {
 	ObjName="Terminal Hacked"
 	ObjCategory="Interactive"
+	bPlayerOnly=false
 }

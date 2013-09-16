@@ -187,10 +187,17 @@ event OnClose()
 function AcceptButtonPressed()
 {
 	if (Component != None)
+	{
 		Component.Mesh.SetHidden(true);
+	}
 	else if (Base != None)
+	{
 		Base.Mesh.SetHidden(true);
 		
+		if (Base.ClipMesh != None)
+			Base.ClipMesh.SetHidden(true);
+	}
+	
 	AcceptSelection = true;
 	
 	CloseMenu();
@@ -199,9 +206,16 @@ function AcceptButtonPressed()
 function OnPressCancelButton(GFxClikWidget.EventData ev)
 {
 	if (Component != None)
+	{
 		Component.Mesh.SetHidden(true);
+	}
 	else if (Base != None)
+	{
 		Base.Mesh.SetHidden(true);
+		
+		if (Base.ClipMesh != None)
+			Base.ClipMesh.SetHidden(true);
+	}
 		
 	CloseMenu();
 }
@@ -409,6 +423,14 @@ function SpawnNewBase(class<ArenaWeaponBase> c)
 	Base.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
 	Base.Mesh.SetOnlyOwnerSee(false);
 	Base.SetDrawScale(WeaponScale);
+	
+	if (Base.ClipMesh != None)
+	{
+		Base.ClipMesh.SetDepthPriorityGroup(SDPG_Foreground);
+		Base.ClipMesh.SetOnlyOwnerSee(false);
+		Base.AttachClip();
+		Base.ClipMesh.SetLightEnvironment(LightEnvironment);
+	}
 }
 
 function SpawnNewComponent(class<ArenaWeaponComponent> c)

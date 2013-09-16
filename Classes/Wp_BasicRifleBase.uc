@@ -14,6 +14,10 @@ defaultproperties
 		SkeletalMesh=SkeletalMesh'BasicRifleBase.Meshes.RifleBaseMesh_1P'
 	End Object
 	
+	Begin Object Name=Clip
+		SkeletalMesh=SkeletalMesh'BasicRifleBase.Meshes.BasicRifleMagazineMesh'
+	End Object
+	
 	Begin Object Name=NewStats
 		Values[WSVWeight]=4
 		Values[WSVStability]=0.25
@@ -41,7 +45,7 @@ defaultproperties
 	
 	FireSound=SoundCue'BasicRifleBase.Audio.GunshotSC'
 	
-	PlayerAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
+	//PlayerAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
 	
 	ViewOffset=(X=45, Y=5, Z=-22);
 	BaseName="Basic Rifle Base"

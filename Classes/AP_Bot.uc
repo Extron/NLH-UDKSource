@@ -148,11 +148,15 @@ auto state Idle
 {
 }
 
-state MoveToTarget
+state MoveToState
 {
 }
 
-state Focusing
+state MoveTowardState
+{
+}
+
+state FinishRotationState
 {
 }
 
@@ -162,16 +166,4 @@ state Stunned
 
 state Recovering
 {
-}
-
-state Wandering
-{
-}
-
-state Evading
-{
-	simulated function bool IsEvading()
-	{
-		return true;
-	}
 }

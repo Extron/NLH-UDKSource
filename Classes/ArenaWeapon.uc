@@ -55,9 +55,19 @@ var array<name> FireAnims;
 var array<name> EquipAnims;
 
 /**
+ * A list of melee animations that the weapon can use.
+ */
+var array<name> MeleeAnims;
+
+/**
  * A list of all fire modes the weapon can be in.
  */
 var array<FireMode> FireModes;
+
+/**
+ * The clip mesh component that the weapon uses to draw the clip/magazine.
+ */
+var UDKSkeletalMeshComponent ClipMesh;
 
 /** The type of the weapon, which determines what kind of projectile the weapon fires and what components can be used on it. */
 var WeaponType Type;
@@ -384,7 +394,7 @@ simulated function rotator AddSpread(rotator BaseAim)
 simulated function TimeWeaponEquipping()
 {
 	if (AP_Player(Instigator) != None)
-		AttachWeaponTo(AP_Player(Instigator).Arms, AP_Player(Instigator).GetWeaponHandSocket());
+		AttachWeaponTo(AP_Player(Instigator).RightArm, AP_Player(Instigator).GetWeaponHandSocket());
 		
 	EquipWeapon(ArenaPawn(Instigator));
 }
@@ -404,6 +414,7 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 	if (Instigator.IsFirstPerson())
 	{
 		AttachComponent(Mesh);
+		AttachClip();
 		EnsureWeaponOverlayComponentLast();
 		SetHidden(false);
 		Mesh.SetLightEnvironment(pawn.LightEnvironment);
@@ -435,12 +446,35 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 	//SetSkin(ArenaPawn(Instigator).ReplicatedBodyMaterial);
 }
 
+function AttachClip()
+{
+	local ArenaPawn pawn;
+	local name socket;
+	
+	socket = 'ClipSocket';
+
+	if (ClipMesh != None)
+	{
+		pawn = ArenaPawn(Instigator);
+		
+		if (SkeletalMeshComponent(Mesh).GetSocketByName(socket) != None)
+			SkeletalMeshComponent(Mesh).AttachComponentToSocket(ClipMesh, socket);
+		
+		if (pawn != None)
+			ClipMesh.SetLightEnvironment(pawn.LightEnvironment);
+	}
+}
+
 function AttachWeapon(LightEnvironmentComponent lightEnv)
 {
 	AttachComponent(Mesh);
+	AttachClip();
 	EnsureWeaponOverlayComponentLast();
 	SetHidden(false);
 	Mesh.SetLightEnvironment(lightEnv);
+	
+	if (ClipMesh != None)
+		ClipMesh.SetLightEnvironment(lightEnv);
 }
 
 /**
@@ -465,18 +499,19 @@ simulated function PlayArmAnimation(name sequence, float duration, optional bool
 	{
 		
 		// Check we have access to mesh and animations
-		if (player.Arms == None || PlayerAnimSet == none || GetArmAnimNodeSeq() == None)
+		if (player.RightArm == None || player.LeftArm == None || PlayerAnimSet == none || GetArmAnimNodeSeq() == None)
 			return;
 
 		// If we are not specifying a duration, use the default play rate.
 		if (duration > 0.0)
 		{
 			// @todo - this should call GetWeaponAnimNodeSeq, move 'duration' code into AnimNodeSequence and use that.
-			player.Arms.PlayAnim(sequence, duration, loop);
+			player.RightArm.PlayAnim(sequence, duration, loop);
+			player.LeftArm.PlayAnim(sequence, duration, loop);
 		}
 		else
 		{
-			node = AnimNodeSequence(player.Arms.Animations);
+			node = AnimNodeSequence(player.RightArm.Animations);
 			node.SetAnim(sequence);
 			node.PlayAnim(loop, DefaultAnimSpeed);
 		}
@@ -489,8 +524,8 @@ simulated function AnimNodeSequence GetArmAnimNodeSeq()
 
 	player = AP_Player(Instigator);
 	
-	if (player != None && player.Arms != None)
-		return AnimNodeSequence(player.Arms.Animations);
+	if (player != None && player.RightArm != None)
+		return AnimNodeSequence(player.RightArm.Animations);
 
 	return None;
 }
@@ -810,14 +845,28 @@ simulated function HideWeapon(bool hidden)
 	Mesh.SetHidden(hidden);
 	
 	if (AP_Player(Instigator) != None)
-		AP_Player(Instigator).Arms.SetHidden(hidden);
+	{
+		AP_Player(Instigator).RightArm.SetHidden(hidden);
+		AP_Player(Instigator).LeftArm.SetHidden(hidden);
+	}
+	
+	if (ClipMesh != None)
+		ClipMesh.SetHidden(hidden);
 }
 
 simulated function SetWeaponFOV(float angle)
 {
+	`log("Setting weapon FOV" @ angle);
+	
 	if (AP_Player(Instigator) != None)
-		UDKSkeletalMeshComponent(AP_Player(Instigator).Arms).SetFOV(angle);
-		
+	{
+		UDKSkeletalMeshComponent(AP_Player(Instigator).RightArm).SetFOV(angle);
+		UDKSkeletalMeshComponent(AP_Player(Instigator).LeftArm).SetFOV(angle);
+	}
+	
+	if (ClipMesh != None)
+		ClipMesh.SetFOV(angle);
+	
 	UDKSkeletalMeshComponent(Mesh).SetFOV(angle);
 }
 
@@ -938,9 +987,22 @@ defaultproperties
 	End Object
 	Mesh=FirstPersonMesh
 	
+	Begin Object Class=UDKSkeletalMeshComponent Name=Clip
+		DepthPriorityGroup=SDPG_PostProcess
+		bOnlyOwnerSee=true
+		bOverrideAttachmentOwnerVisibility=true
+		bCastDynamicShadow=false
+		CastShadow=false
+		bOwnerNoSee=false
+		BlockZeroExtent=true
+	End Object
+	ClipMesh=Clip
+	
 	Begin Object Class=WeaponStats Name=NewStats
 	End Object
 	Stats=NewStats
+	
+	MeleeAnims[0]=Arms1PMelee1
 	
 	FireInterval(0)=1
 	FiringStatesArray(0)=WeaponFiring

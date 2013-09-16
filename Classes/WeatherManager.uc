@@ -140,6 +140,11 @@ var float SnowTempThreshold;
 var float ThawTempThreshold;
 
 /**
+ * The value that the temperature needs to be greater than to start thawing.
+ */
+var float FreezeTempThreshold;
+
+/**
  * The value that the temperature needs to be greater than to start raining.
  */
 var float RainTempThresholdMin;
@@ -208,6 +213,11 @@ var bool Snowing;
  * Indicates that it is warm enough for snow and ice to melt.
  */
 var bool Thawing;
+
+/**
+ * Indicates that it is cold enough enough for water to freeze.
+ */
+var bool Freezing;
 
 /**
  * Indicates that it is raining.
@@ -281,6 +291,7 @@ function SetProgressDay(SeqAct_SetProgressDay action)
 
 simulated function Tick(float dt)
 {
+	local array<SequenceObject> events;
 	local float time;
 	local float rand;
 	local float windSpeed;
@@ -367,7 +378,9 @@ simulated function Tick(float dt)
 	
 	if (Temperature > ThawTempThreshold)
 		Thawing = true;
-			
+	else if (Temperature < FreezeTempThreshold)
+		Freezing = true;
+		
 	if (Snowing)
 	{
 		if (TickWeather)
@@ -383,6 +396,12 @@ simulated function Tick(float dt)
 			rand = FClamp((GetNoise(WeatherCounter, 0, 0.25) + GetNoise(WeatherCounter, 1, 0.25) + GetNoise(WeatherCounter, 2, 0.25) + GetNoise(WeatherCounter, 3, 0.25) - 0.5) * 1.5, 0.0, 1.0);
 			WeatherIntensity = ExpDecay(StartWeatherIntensity, rand, WeatherCounter, WeatherDecayRate);
 		}
+	}
+	
+	if (TickWeather)
+	{
+		WorldInfo.GetGameSequence().FindSeqObjectsByClass(class'Arena.SeqEvent_WeatherUpdated', true, events);		
+		ActivateEventClass(class'Arena.SeqEvent_WeatherUpdated', self, events);
 	}
 	
 	Landscape.Update(self, dt);
@@ -504,6 +523,7 @@ defaultproperties
 	WeatherCloudThreshold=0.25
 	SnowTempThreshold=0.5
 	ThawTempThreshold=0.65
+	FreezeTempThreshold=0.32
 	RainTempThresholdMin=0.66
 	RainTempThresholdMax=0.75
 	LightningCloudThreshold=0.1

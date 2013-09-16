@@ -54,6 +54,11 @@ var float ADSCounter;
 
 var float OldFOV;
 
+/**
+ * Allows an FOV offset to be applied to first person weapons and arms.
+ */
+var float WeaponFOVAddition;
+
 var float FOVTime;
 
 var float FOVCounter;
@@ -125,6 +130,11 @@ function Possess(Pawn newPawn, bool bVehicleTransition)
 	super.Possess(newPawn, bVehicleTransition);
 
 	newPawn.GoToState('Idle');
+}
+
+function SetWeaponFOV()
+{
+	ArenaWeapon(Pawn.Weapon).SetWeaponFOV(FOVAngle + WeaponFOVAddition);
 }
 
 function SetFOV(float NewFOV)
@@ -237,7 +247,10 @@ exec function ADS()
 		}
 		else
 		{
-			SetFOVWithTime(DefaultFOV, ADSTime);
+			if (ArenaWeapon(Pawn.Weapon).OnlyAlterWeaponFOV())
+				SetFOVWithTime(DefaultFOV + WeaponFOVAddition, ADSTime);
+			else	
+				SetFOVWithTime(DefaultFOV, ADSTime);
 			
 			PC = LocalPlayer(Player);
 	
@@ -287,7 +300,7 @@ simulated function ReplicatedEvent(name property)
 			PClass.Owner = self;
 		
 			ArenaPawn(Pawn).AddStatMod(PClass.Mod);
-	
+			
 			if (Role < Role_Authority)
 			{
 				ServerInitializePlayerStats();
@@ -458,5 +471,6 @@ defaultproperties
 	End Object
 	HUDSettings=PHS
 	
+	WeaponFOVAddition=-10
 	ADSDirection=-1
 }

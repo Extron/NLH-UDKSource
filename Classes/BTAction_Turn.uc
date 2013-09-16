@@ -13,7 +13,7 @@ class BTAction_Turn extends BTAction;
 
 simulated function Reset()
 {
-	if (Controller.IsInState('FinishRotationState') || Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		Controller.StopLatentExecution();
 		Controller.GotoState('Idle');
@@ -27,9 +27,9 @@ state Running
 Begin:
 	//We don't want to short circuit any states that may be running latent code, so if we are not in the default state, don't attempt to 
 	//change the state.
-	if (Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
-		Controller.GotoState('FinishRotationState');
+		Controller.BeginFinishRotation(self);
 		
 		while (!Controller.IsInState('Idle'))
 			Sleep(0.0);
@@ -45,7 +45,7 @@ Begin:
 state Succeeded
 {
 Begin:
-	if (Controller.IsInState('FinishRotationState') || Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		Controller.StopLatentExecution();
 		Controller.GotoState('Idle');
@@ -55,7 +55,7 @@ Begin:
 state Failed
 {
 Begin:
-	if (Controller.IsInState('FinishRotationState') || Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		Controller.StopLatentExecution();
 		Controller.GotoState('Idle');

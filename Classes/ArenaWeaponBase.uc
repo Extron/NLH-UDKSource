@@ -43,6 +43,16 @@ var array<ArenaWeaponComponent> WeaponComponents;
  */
 var array<name> Sockets;
 
+/**
+ * The muzzle flash that the barrel emits when the weapon is fired.
+ */
+var ParticleSystem MuzzleFlashTemplate;
+
+/**
+ * The light to use for the muzzle flash.
+ */
+var class<UDKExplosionLight> MFLClass;
+
 /* The maximum amount of energy that the base supports. */
 var float EnergyMax;
 
@@ -104,7 +114,12 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 {
 	super.GetMuzzleSocketLocRot(l, r);
 	
-	if (!(WeaponComponents[WCMuzzle] != None && Wp_M_NoMuzzle(WeaponComponents[WCMuzzle]) != None))
+	if (WeaponComponents[WCBarrel] != None && Wp_B_NoBarrel(WeaponComponents[WCBarrel]) != None)
+	{
+		if (SkeletalMeshComponent(Mesh).GetSocketByName(Sockets[WCMuzzle]) != None)
+			SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndRotation(Sockets[WCMuzzle], l, r, 0);
+	}
+	else if (!(WeaponComponents[WCMuzzle] != None && Wp_M_NoMuzzle(WeaponComponents[WCMuzzle]) != None))
 	{
 		if (SkeletalMeshComponent(WeaponComponents[WCBarrel].Mesh).GetSocketByName(Sockets[WCMuzzle]) != None)
 			SkeletalMeshComponent(WeaponComponents[WCBarrel].Mesh).GetSocketWorldLocationAndRotation(Sockets[WCMuzzle], l, r, 0);
@@ -118,6 +133,8 @@ simulated function GetMuzzleSocketLocRot(out vector l, out rotator r)
 	
 simulated function AttachToMuzzleSocket(ActorComponent component)
 {
+	if (WeaponComponents[WCBarrel] == None || Wp_B_NoBarrel(WeaponComponents[WCBarrel]) != None)
+		SkeletalMeshComponent(Mesh).AttachComponentToSocket(component, Sockets[WCMuzzle]);
 	if (WeaponComponents[WCMuzzle] == None || Wp_M_NoMuzzle(WeaponComponents[WCMuzzle]) != None)
 		SkeletalMeshComponent(WeaponComponents[WCBarrel].Mesh).AttachComponentToSocket(component, Sockets[WCMuzzle]);
 	else
@@ -128,16 +145,20 @@ simulated function ParticleSystem GetMuzzeFlashParticleTemplate()
 {
 	if (Wp_Muzzle(WeaponComponents[WCMuzzle]).OverrideDefaultMuzzleFlash())
 		return Wp_Muzzle(WeaponComponents[WCMuzzle]).MuzzleFlashTemplate;
-	else
+	else if (WeaponComponents[WCBarrel] != None && Wp_B_NoBarrel(WeaponComponents[WCBarrel]) == None)
 		return Wp_Barrel(WeaponComponents[WCBarrel]).MuzzleFlashTemplate;
+	else
+		return MuzzleFlashTemplate;
 }
 
 simulated function class<UDKExplosionLight> GetMuzzleFlashLightClass()
 {
 	if (Wp_Muzzle(WeaponComponents[WCMuzzle]).OverrideDefaultMuzzleFlash())
 		return Wp_Muzzle(WeaponComponents[WCMuzzle]).MFLClass;
-	else
+	else if (WeaponComponents[WCBarrel] != None && Wp_B_NoBarrel(WeaponComponents[WCBarrel]) == None)
 		return Wp_Barrel(WeaponComponents[WCBarrel]).MFLClass;
+	else
+		return MFLClass;
 }
 
 simulated function SoundCue GetFireSound()
@@ -152,9 +173,15 @@ simulated function GetGripSocketLocRot(out vector l, out rotator r)
 {
 	super.GetGripSocketLocRot(l, r);
 	
-	if (SkeletalMeshComponent(WeaponComponents[WCBarrel].Mesh).GetSocketByName('GripSocket') != None)
+	if (WeaponComponents[WCBarrel] != None && Wp_B_NoBarrel(WeaponComponents[WCBarrel]) != None)
 	{
-		SkeletalMeshComponent(WeaponComponents[WCBarrel].Mesh).GetSocketWorldLocationAndRotation('GripSocket', l, r, 0);
+		if (SkeletalMeshComponent(WeaponComponents[WCBarrel].Mesh).GetSocketByName('GripSocket') != None)
+			SkeletalMeshComponent(WeaponComponents[WCBarrel].Mesh).GetSocketWorldLocationAndRotation('GripSocket', l, r, 0);
+	}
+	else
+	{
+		if (SkeletalMeshComponent(Mesh).GetSocketByName('GripSocket') != None)
+			SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndRotation('GripSocket', l, r, 0);
 	}
 }
 
@@ -318,7 +345,9 @@ function bool CanEquipBarrel(Wp_Barrel barrel)
 defaultproperties
 {
 	Subclasses[0]=class'Arena.Wp_BasicRifleBase'
-	Subclasses[1]=class'Arena.Wp_PhotonEmitterBase'
+	Subclasses[1]=class'Arena.Wp_AssaultRifleBase'
+	Subclasses[2]=class'Arena.Wp_PhotonEmitterBase'
+	Subclasses[3]=class'Arena.Wp_SnubHandgun'
 	
 	WeaponComponents[WCStock]=None
 	WeaponComponents[WCBarrel]=None

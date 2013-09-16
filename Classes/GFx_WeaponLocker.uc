@@ -845,7 +845,14 @@ function SetWeaponParameters()
 	local MaterialInstanceConstant mat;
 	
 	ArenaWeaponBase(Weapon).Mesh.SetDepthPriorityGroup(SDPG_Foreground);
-	ArenaWeaponBase(Weapon).Mesh.SetOnlyOwnerSee(false);	
+	ArenaWeaponBase(Weapon).Mesh.SetOnlyOwnerSee(false);
+	
+	if (ArenaWeaponBase(Weapon).ClipMesh != None)
+	{
+		ArenaWeaponBase(Weapon).ClipMesh.SetDepthPriorityGroup(SDPG_Foreground);
+		ArenaWeaponBase(Weapon).ClipMesh.SetOnlyOwnerSee(false);
+	}
+	
 	ArenaWeaponBase(Weapon).SetDrawScale(WeaponScale);
 	
 	foreach ArenaWeaponBase(Weapon).WeaponComponents(iter)
@@ -1093,6 +1100,8 @@ function string GetValue(int value)
 	case 8:
 		return TruncTo(string(Weapon.Stats.GetBloomCost()), 3);
 	}
+	
+	return "";
 }
 
 function SetStatTooltip(GFx_Tooltip tooltip, array<float> valueList, float ignoreValue, optional float weight = -1)

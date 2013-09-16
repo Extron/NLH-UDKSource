@@ -83,94 +83,10 @@ function bool Start(optional bool StartPaused = false)
 
 function Update(float dt)
 {
-	/*
-	local float x, y, a1, a2;
-	
-	StartBtn.SetLabel("Start");
-	Map.SetLabel("Map");
-	Map.SetDescription(CurrentMap.DisplayName);
-	Material.SetTextureParameterValue('MapPreview', Texture(FindObject(CurrentMap.PreviewImageMarkup, class'Texture')));
-	
-	Options.SetLabel("Options");
-	Gametype.SetLabel("Game type");
-	
-	if (Open)
-	{
-		x = Cursor.GetFloat("x");
-		y = Cursor.GetFloat("y");
-		
-		a1 = FClamp((x - NativeWidth / 2) / (NativeWidth / 16), -1.0, 1.0);
-		a1 *= 1 - FClamp(Abs((y - NativeHeight / 2) / (NativeHeight / 8)), 0.0, 1.0);
-		
-		a2 = FClamp((y - NativeHeight / 2) / (NativeHeight / 16), -1.0, 1.0);
-		a2 *= 1 - FClamp(Abs((x - NativeWidth / 2) / (NativeWidth / 8)), 0.0, 1.0);
-		
-		Cube.Owner.SetRotation(RLerp(RLerp(rot(0, -16384, 0), rot(0, -16384, 8192), a2), rot(0, -8192, 0), a1));
-	}*/
 }
 
 function PostRender()
 {
-/*
-	local vector2D mousePos;
-	local vector origin, direction;
-	local vector traceLoc, traceNorm;
-	local TraceHitInfo info;
-	local name highlightedPanel;
-
-	highlightedPanel = '';
-	
-	mousePos.x = Cursor.GetFloat("x") * GetPC().MyHUD.SizeX / NativeWidth;
-	mousePos.y = Cursor.GetFloat("y") * GetPC().MyHUD.SizeY / NativeHeight;
-	
-	GetPC().MyHUD.Canvas.DeProject(mousePos, origin, direction);
-	
-	if (GetPC().TraceComponent(traceLoc, traceNorm, Cube, origin + direction * 512, origin , , info, true))
-		highlightedPanel = info.BoneName;
-	
-	if (highlightedPanel != CurrentPanel)
-	{
-		switch (CurrentPanel)
-		{
-		case 'Top':
-			StartBtn.Leave();
-			break;
-			
-		case 'Bottom':
-			Options.Leave();
-			break;
-			
-		case 'Front':
-			Map.Leave();
-			break;
-			
-		case 'Back':
-			Gametype.Leave();
-			break;
-		}
-		
-		CurrentPanel = highlightedPanel;
-		
-		switch (CurrentPanel)
-		{
-		case 'Top':
-			`log("Highlighting top panel");
-			StartBtn.Hover();
-			break;
-			
-		case 'Bottom':
-			Options.Hover();
-			break;
-			
-		case 'Front':
-			Map.Hover();
-			break;
-			
-		case 'Back':
-			Gametype.Hover();
-			break;
-		}
-	}*/
 }
 
 function CloseMenu()
@@ -220,6 +136,8 @@ function KeyBindingChanged(int bindingIndex, int list, string key, bool shift, b
 		ListTwoBindings[bindingIndex].Shift = shift;
 		ListTwoBindings[bindingIndex].Control = ctrl;
 		ListTwoBindings[bindingIndex].Alt = alt;
+		
+		`log("Binding" @ key @ GetBindingName(key));
 	}
 	
 	DisplayListTwo();
@@ -258,6 +176,8 @@ function BuildBindingList()
 		if (InStr(string(PlayerController(Pawn.Controller).PlayerInput.Bindings[i].Name), "Xbox") > -1)
 			continue;
 
+		`log("Player bindings" @ PlayerController(Pawn.Controller).PlayerInput.Bindings[i].Command);
+		
 		if (ListOneCommands.Find(PlayerController(Pawn.Controller).PlayerInput.Bindings[i].Command) > -1)
 			ListOneBindings.AddItem(PlayerController(Pawn.Controller).PlayerInput.Bindings[i]);
 		else if (ListTwoCommands.Find(PlayerController(Pawn.Controller).PlayerInput.Bindings[i].Command) > -1)
@@ -462,7 +382,10 @@ function string GetCommandDisplay(string command)
 				
 	case "GBA_Duck":
 		return "Crouch";
-				
+		
+	case "GBA_Use":
+		return "Interact/Use";
+		
 	case "GBA_Fire":
 		return "Fire Weapon";
 				
@@ -475,6 +398,9 @@ function string GetCommandDisplay(string command)
 	case "GBA_Reload":
 		return "Reload";
 				
+	case "GBA_Melee":
+		return "Melee";
+		
 	case "GBA_PrevWeapon":
 		return "Previous Weapon";
 				
@@ -676,21 +602,23 @@ defaultproperties
 	ListOneCommands[3]="GBA_StrafeRight";
 	ListOneCommands[4]="GBA_Sprint";
 	ListOneCommands[5]="GBA_Duck";
+	ListOneCommands[6]="GBA_Use";
 	
 	ListTwoCommands[0]="GBA_Fire";	
 	ListTwoCommands[1]="GBA_FireAbility";	
 	ListTwoCommands[2]="GBA_ADS";	
-	ListTwoCommands[3]="GBA_Reload";	
-	ListTwoCommands[4]="GBA_PrevWeapon";	
-	ListTwoCommands[5]="GBA_NextWeapon";	
-	ListTwoCommands[6]="GBA_PrevAbility";	
-	ListTwoCommands[7]="GBA_NextAbility";
-	ListTwoCommands[8]="GBA_ToggleSide";
-	ListTwoCommands[9]="GBA_ToggleUnder";
-	ListTwoCommands[10]="GBA_ToggleOptics";
-	ListTwoCommands[11]="GBA_ToggleBarrel";
-	ListTwoCommands[12]="GBA_ToggleMuzzle";
-	ListTwoCommands[13]="GBA_ToggleStock";
+	ListTwoCommands[3]="GBA_Reload";
+	ListTwoCommands[4]="GBA_Melee";
+	ListTwoCommands[5]="GBA_PrevWeapon";	
+	ListTwoCommands[6]="GBA_NextWeapon";	
+	ListTwoCommands[7]="GBA_PrevAbility";	
+	ListTwoCommands[8]="GBA_NextAbility";
+	ListTwoCommands[9]="GBA_ToggleSide";
+	ListTwoCommands[10]="GBA_ToggleUnder";
+	ListTwoCommands[11]="GBA_ToggleOptics";
+	ListTwoCommands[12]="GBA_ToggleBarrel";
+	ListTwoCommands[13]="GBA_ToggleMuzzle";
+	ListTwoCommands[14]="GBA_ToggleStock";
 	
 	bCaptureInput=true
 }

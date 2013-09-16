@@ -75,6 +75,21 @@ var(HitEffects) ParticleSystem SnowHitPS;
  */
 var(HitEffects) bool AllowOtherParticleSystem;
 
+/**
+ * The sound cue to use for playing footstep sounds on this material.
+ */
+var (Audio) SoundCue Footsteps;
+
+/**
+ * The sound cue to use for playing footstep sounds on this material when it is covered in snow.
+ */
+var (Audio) SoundCue SnowFootsteps;
+
+/**
+ * The sound cue to use for playing footstep sounds on this material when it is covered in rain.
+ */
+var (Audio) SoundCue RainFootsteps;
+
 
 simulated function ParticleSystem GetHitParticleSystem(ArenaWeapon weapon)
 {

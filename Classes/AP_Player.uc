@@ -8,16 +8,23 @@
 
 class AP_Player extends ArenaPawn;
 
+
 /**
  * The sound cue to play when the player is near death.
  */
 var AudioComponent NearDeathHeartbeat;
 
 /**
- * The arms used for first person animations are kept separate from the rest of the 
+ * The right arm used for first person animations are kept separate from the rest of the 
  * pawn's mesh for simplicity.
  */
-var SkeletalMeshComponent Arms;
+var SkeletalMeshComponent RightArm;
+
+/**
+ * The left arm used for first person animations are kept separate from the rest of the 
+ * pawn's mesh for simplicity.
+ */
+var SkeletalMeshComponent LeftArm;
 
 /**
  * The arm control for the left hand, to place on the weapon.
@@ -33,8 +40,6 @@ var name LeftArmControlName;
  * The translation to apply to the arms when drawing them.
  */
 var vector ArmsTranslation;
-
-var RainCylinder RainCylinder;
 
 simulated event TickSpecial(float dt)
 {
@@ -73,16 +78,26 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 
 	super.PostInitAnimTree(SkelComp);
 
-	if (SkelComp == Arms)
+	if (SkelComp == RightArm)
 	{
-		RecoilControl = GameSkelCtrl_Recoil(Arms.FindSkelControl(RecoilControlName));
-		LeftArmControl = SkelControlLimb(Arms.FindSkelControl(LeftArmControlName));
+		RecoilControl = GameSkelCtrl_Recoil(RightArm.FindSkelControl(RecoilControlName));
+		
+		foreach RightArm.AllAnimNodes(class'AN_BlendBySprint', node)
+		{
+			node.SetSprint(false);
+			SprintAnimNodes.AddItem(node);
+		}
+	}
+	if (SkelComp == LeftArm)
+	{
+		LeftArmControl = SkelControlLimb(LeftArm.FindSkelControl(LeftArmControlName));
 		LeftArmControl.ControlStrength = 0.0;
 		
 		EnableLeftHandPositioning(false);
 		
-		foreach Arms.AllAnimNodes(class'AN_BlendBySprint', node) 
+		foreach LeftArm.AllAnimNodes(class'AN_BlendBySprint', node)
 		{
+			node.SetSprint(false);
 			SprintAnimNodes.AddItem(node);
 		}
 	}
@@ -105,6 +120,7 @@ function InitInventory()
 		{
 			InvManager.AddInventory(newWeapon);
 			InvManager.NextWeapon();
+			ArenaPlayerController(Owner).SetWeaponFOV();
 		}
 		
 		CreateInventory(class'Arena.Ab_ShockShort', true);
@@ -113,40 +129,102 @@ function InitInventory()
 	}
 }
 
+function bool DoJump(bool bUpdating)
+{
+	local bool ret;
+	
+	ret = super.DoJump(bUpdating);
+	
+	PlayArmAnimation('Arms1PJump');
+	
+	return ret;
+}
+
+event Landed(vector HitNormal, Actor FloorActor)
+{
+	super.Landed(HitNormal, FloorActor);
+	
+	PlayArmAnimation('Arms1PLand');
+}
+
+simulated function Melee()
+{
+	super.Melee();
+	
+	PlayArmAnimation(ArenaWeapon(Weapon).MeleeAnims[Rand(ArenaWeapon(Weapon).MeleeAnims.Length)]);
+}
+
 /**
  * Gets the location that abilities will fire from.  Preferrably, this will be the location of the
  * player's right or left hand (as per player handedness).
  */
 function GetAbilitySourceOffset(out vector l, out rotator r)
 {	
-	if (Arms.GetSocketByName('AbilitySourceSocket') != None)
-		Arms.GetSocketWorldLocationAndRotation('AbilitySourceSocket', l, r, 0);
+	if (RightArm.GetSocketByName('AbilitySourceSocket') != None)
+		RightArm.GetSocketWorldLocationAndRotation('AbilitySourceSocket', l, r, 0);
+	else if (LeftArm.GetSocketByName('AbilitySourceSocket') != None)
+		LeftArm.GetSocketWorldLocationAndRotation('AbilitySourceSocket', l, r, 0);
 }
 
 function GetWeaponSourceOffset(out vector l, out rotator r)
 {	
-	if (Arms.GetSocketByName('RightHandSocket') != None)
-		Arms.GetSocketWorldLocationAndRotation('RightHandSocket', l, r, 0);
+	if (RightArm.GetSocketByName('HandSocket') != None)
+		RightArm.GetSocketWorldLocationAndRotation('HandSocket', l, r, 0);
+	else if (LeftArm.GetSocketByName('HandSocket') != None)
+		LeftArm.GetSocketWorldLocationAndRotation('HandSocket', l, r, 0);
 }
 
 function AttachToAbilitySource(ActorComponent component)
 {
-	Arms.AttachComponentToSocket(component, GetAbilityHandSocket());
+	LeftArm.AttachComponentToSocket(component, GetAbilityHandSocket());
 }
 
 simulated function PositionArms()
 {
 	local rotator R;
 	
-	R = Arms.Rotation;
+	R = RightArm.Rotation;
 	
 	if (Controller != None)
 		R.Pitch = Controller.Rotation.Pitch;
 	
-	Arms.SetTranslation(((ArmsTranslation - vect(0, 0, 1) * EyeHeight) >> R) + vect(0, 0, 1) * EyeHeight);
-	Arms.SetRotation(R);
+	RightArm.SetTranslation(((ArmsTranslation - vect(0, 0, 1) * EyeHeight) >> R) + vect(0, 0, 1) * EyeHeight);
+	RightArm.SetRotation(R);
+	
+	LeftArm.SetTranslation(((ArmsTranslation - vect(0, 0, 1) * EyeHeight) >> R) + vect(0, 0, 1) * EyeHeight);
+	LeftArm.SetRotation(R);
 	
 	//SetBase(Holder);
+}
+
+simulated function PlayArmAnimation(name sequence, optional float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
+{
+	local AnimNodePlayCustomAnim node;
+
+	if (WorldInfo.NetMode == NM_DedicatedServer || !IsFirstPerson())
+		return;
+
+		node = GetArmAnimNode(LeftArm);
+
+		if (LeftArm == None || node == None)
+			return;
+
+		node.PlayCustomAnim(sequence, 1.0, , , loop);
+		
+		node = GetArmAnimNode(RightArm);
+
+		if (LeftArm == None || node == None)
+			return;
+
+		node.PlayCustomAnim(sequence, 1.0, , , loop);
+}
+
+simulated function AnimNodePlayCustomAnim GetArmAnimNode(SkeletalMeshComponent skelMesh)
+{
+	if (skelMesh != None)
+		return AnimNodePlayCustomAnim(AnimTree(skelMesh.Animations).Children[0].Anim);
+
+	return None;
 }
 
 simulated function EnableLeftHandPositioning(bool enable)
@@ -370,10 +448,10 @@ exec function GiveAmmo()
 
 defaultproperties
 {
-	Begin Object Class=UDKSkeletalMeshComponent Name=ArmsMesh
-		SkeletalMesh=SkeletalMesh'AC_Player.Meshes.PlayerArmsMesh'
-		PhysicsAsset=PhysicsAsset'AC_Player.Physics.PlayerArmsMeshPhysics'
-		Scale=0.95
+	Begin Object Class=UDKSkeletalMeshComponent Name=RightArmMesh
+		SkeletalMesh=SkeletalMesh'AC_Player.Meshes.RightArmMesh'
+		PhysicsAsset=PhysicsAsset'AC_Player.Physics.RightArmPhysics'
+		Scale=5
 		bCacheAnimSequenceNodes=FALSE
 		AlwaysLoadOnClient=true
 		AlwaysLoadOnServer=true
@@ -390,8 +468,8 @@ defaultproperties
 		LightEnvironment=MyLightEnvironment
 		bOverrideAttachmentOwnerVisibility=true
 		bAcceptsDynamicDecals=FALSE
-		AnimTreeTemplate=AnimTree'AC_Player.Animations.PlayerArmsAnimTree'
-		AnimSets[0]=AnimSet'AC_Player.Animations.PlayerArmsAnim'
+		AnimTreeTemplate=AnimTree'AC_Player.Animations.ArmsAnimTree'
+		AnimSets[0]=AnimSet'AC_Player.Animations.ArmsAnimSet'
 		bHasPhysicsAssetInstance=true
 		TickGroup=TG_PreAsyncWork
 		bChartDistanceFactor=true
@@ -400,8 +478,41 @@ defaultproperties
 		bUseOnePassLightingOnTranslucency=TRUE
 		bPerBoneMotionBlur=true
 	End Object 
-	Arms=ArmsMesh
-	Components.Add(ArmsMesh)
+	RightArm=RightArmMesh
+	Components.Add(RightArmMesh)
+	
+	Begin Object Class=UDKSkeletalMeshComponent Name=LeftArmMesh
+		SkeletalMesh=SkeletalMesh'AC_Player.Meshes.LeftArmMesh'
+		PhysicsAsset=PhysicsAsset'AC_Player.Physics.LeftArmPhysics'
+		Scale=5
+		bCacheAnimSequenceNodes=FALSE
+		AlwaysLoadOnClient=true
+		AlwaysLoadOnServer=true
+		bOwnerNoSee=false
+		bOnlyOwnerSee=true
+		CastShadow=FALSE
+		BlockRigidBody=TRUE
+		bUpdateSkelWhenNotRendered=false
+		bIgnoreControllersWhenNotRendered=TRUE
+		bUpdateKinematicBonesFromAnimation=true
+		bCastDynamicShadow=true
+		RBChannel=RBCC_Untitled3
+		RBCollideWithChannels=(Untitled3=true)
+		LightEnvironment=MyLightEnvironment
+		bOverrideAttachmentOwnerVisibility=true
+		bAcceptsDynamicDecals=FALSE
+		AnimTreeTemplate=AnimTree'AC_Player.Animations.ArmsAnimTree'
+		AnimSets[0]=AnimSet'AC_Player.Animations.ArmsAnimSet'
+		bHasPhysicsAssetInstance=true
+		TickGroup=TG_PreAsyncWork
+		bChartDistanceFactor=true
+		MinDistFactorForKinematicUpdate=0.2
+		RBDominanceGroup=20
+		bUseOnePassLightingOnTranslucency=TRUE
+		bPerBoneMotionBlur=true
+	End Object 
+	LeftArm=LeftArmMesh
+	Components.Add(LeftArmMesh)
 	
 	Begin Object Class=AudioComponent Name=NDHB
 		SoundCue=SoundCue'AC_Player.Audio.HeartbeatSC'
@@ -421,5 +532,5 @@ defaultproperties
 	bScriptTickSpecial=true
 	RecoilControlName=RecoilNode
 	LeftArmControlName=LeftArmNode
-	ArmsTranslation=(X=-5,Y=-2,Z=45)
+	ArmsTranslation=(X=0,Y=-10,Z=40)
 }

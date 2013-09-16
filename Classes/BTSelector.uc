@@ -63,6 +63,16 @@ simulated function Reset()
 	super.Reset();
 }
 
+simulated function DestroyTree()
+{
+	local BehaviorTreeNode iter;
+	
+	foreach Nodes(iter)
+		iter.DestroyTree();
+		
+	super.DestroyTree();
+}
+
 simulated function TreeDisplayLog(bool display)
 {
 	local BehaviorTreeNode iter;

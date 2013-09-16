@@ -24,3 +24,8 @@ simulated function SetMenu(GFx_Menu menu)
 	if (MenuHUD(PlayerController(Controller).MyHUD) != None)
 		MenuHUD(PlayerController(Controller).MyHUD).Menu = menu;
 }
+
+defaultproperties
+{
+	HasFootsteps=false
+}

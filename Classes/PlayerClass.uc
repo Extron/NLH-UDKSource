@@ -14,9 +14,19 @@ class PlayerClass extends Object
 
 
 /**
+ * A list of trees that make up the abilities of the class.
+ */
+var array<class<AbilityTree> > Trees;
+
+/**
  * The player controller that owns the class.
  */
 var ArenaPlayerController Owner;
+
+/**
+ * The loadout that contains this class.
+ */
+var PlayerLoadout Loadout;
 
 /**
  * The stat modifier of class.

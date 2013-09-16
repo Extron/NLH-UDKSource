@@ -229,7 +229,7 @@ simulated function StartFire(byte FireModeNum)
 	if (CanCharge && !IsCharging && CanFire)
 	{
 		CanFire = false;
-		PlayArmAnimation(ChargeStartAnim, 0.0, true);
+		AP_Player(Instigator).PlayArmAnimation(ChargeStartAnim, 0.0, true);
 		SetTimer(GetArmAnimLength(ChargeStartAnim) - 0.1, false, 'ChargeAnimComplete');
 		PlayingChargeStartAnim = true;
 		InterruptedChargeStartAnim = false;
@@ -240,7 +240,7 @@ simulated function StartFire(byte FireModeNum)
 		if (PlayedStartAnim || AP_Player(Instigator) == None)
 		{
 			if (CanHold && AP_Player(Instigator) != None)
-				PlayArmAnimation(HoldingAnim, 0.0, true);
+				AP_Player(Instigator).PlayArmAnimation(HoldingAnim, 0.0, true);
 				
 			super.StartFire(FireModeNum);
 		}
@@ -248,12 +248,12 @@ simulated function StartFire(byte FireModeNum)
 		{
 			if (CanHold)
 			{
-				PlayArmAnimation(HoldStartAnim, 0.0);
+				AP_Player(Instigator).PlayArmAnimation(HoldStartAnim, 0.0);
 				SetTimer(GetArmAnimLength(HoldStartAnim), false, 'FireAnimComplete');
 			}
 			else
 			{
-				PlayArmAnimation(FireStartAnim, 0.0);
+				AP_Player(Instigator).PlayArmAnimation(FireStartAnim, 0.0);
 				SetTimer(GetArmAnimLength(FireStartAnim), false, 'FireAnimComplete');
 			}
 		}
@@ -271,7 +271,7 @@ simulated function StopFire(byte FireModeNum)
 		HeldTime = 0;
 		
 		if (AP_Player(Instigator) != None)
-			PlayArmAnimation(HoldEndAnim, 0.0);
+			AP_Player(Instigator).PlayArmAnimation(HoldEndAnim, 0.0);
 			
 		PlayedStartAnim = false;
 	}
@@ -281,7 +281,7 @@ simulated function StopFire(byte FireModeNum)
 		
 		if (!PlayedStartAnim && AP_Player(Instigator) != None)
 		{
-			PlayArmAnimation(ChargeFireAnim, 0.0);
+			AP_Player(Instigator).PlayArmAnimation(ChargeFireAnim, 0.0);
 			SetTimer(GetArmAnimLength(ChargeFireAnim) - 0.1, false, 'ChargeFireAnimComplete');
 			PlayingChargeFireAnim = true;
 		}
@@ -301,7 +301,7 @@ simulated function StopFire(byte FireModeNum)
 		ChargeTime = 0;
 		
 		if (AP_Player(Instigator) != None)
-			PlayArmAnimation(ChargeAbortAnim, 0.0);
+			AP_Player(Instigator).PlayArmAnimation(ChargeAbortAnim, 0.0);
 		
 		if (ChargeParticles != None)
 				ChargeParticles.DeactivateSystem();
@@ -329,7 +329,7 @@ simulated function FireAmmunition()
 		if (CanCharge)
 		{
 			if (AP_Player(Instigator) != None)
-				PlayArmAnimation(ChargeEndAnim, 0.0);
+				AP_Player(Instigator).PlayArmAnimation(ChargeEndAnim, 0.0);
 			
 			if (ChargeParticles != None)
 				ChargeParticles.DeactivateSystem();
@@ -337,7 +337,7 @@ simulated function FireAmmunition()
 		else
 		{
 			if (AP_Player(Instigator) != None)
-				PlayArmAnimation(FireEndAnim, 0.0);
+				AP_Player(Instigator).PlayArmAnimation(FireEndAnim, 0.0);
 		}
 			
 		PlayedStartAnim = false;
@@ -444,47 +444,13 @@ simulated function float GetArmAnimLength(name sequence)
 
 	if (player != None)
 	{
-		if (player.Arms == None)
+		if (player.LeftArm == None)
 			return 0;
 			
-		return player.Arms.GetAnimLength(sequence);
+		return player.LeftArm.GetAnimLength(sequence);
 	}
 	
 	return 0;
-}
-
-simulated function PlayArmAnimation(name sequence, float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
-{
-	local AP_Player player;
-	local AnimNodePlayCustomAnim node;
-
-	if (WorldInfo.NetMode == NM_DedicatedServer || Instigator == None || !Instigator.IsFirstPerson())
-		return;
-	
-	player = AP_Player(Instigator);
-
-	if (player != None)
-	{
-		node = GetArmAnimNode();
-
-		if (player.Arms == None || node == None)
-			return;
-
-		node.PlayCustomAnim(sequence, 1.0, , , loop);
-	}
-}
-
-simulated function AnimNodePlayCustomAnim GetArmAnimNode()
-{
-	local SkeletalMeshComponent skelMesh;
-
-	if (AP_Player(Instigator) != None)
-		skelMesh = AP_Player(Instigator).Arms;
-
-	if (skelMesh != None)
-		return AnimNodePlayCustomAnim(AnimTree(skelMesh.Animations).Children[0].Anim);
-
-	return None;
 }
 
 simulated function FireAnimComplete()
@@ -512,7 +478,10 @@ simulated function ChargeAnimComplete()
 	else
 	{
 		IsCharging = true;
-		PlayArmAnimation(ChargingAnim, 0.0, true);
+		
+		if (AP_Player(Instigator) != None)
+			AP_Player(Instigator).PlayArmAnimation(ChargingAnim, 0.0, true);
+			
 		EmitChargeParticles();
 	}
 }
@@ -679,8 +648,6 @@ defaultproperties
 	RemoteRole=ROLE_SimulatedProxy
 	bAlwaysRelevant=true
 	
-	FireStartAnim=PlayerArmsAbilityOffHandStart
-	FireEndAnim=PlayerArmsAbilityOffHandEnd
 	ChargeStartAnim=PlayerArmsAbilityChargeStart
 	ChargingAnim=PlayerArmsAbilityCharging
 	ChargeFireAnim=PlayerArmsAbilityChargeFire
@@ -691,6 +658,9 @@ defaultproperties
 	HoldEndAnim=PlayerArmsAbilityHoldEnd
 	
 	InstantHitDamage[0]=0
+	
+	FireStartAnim=Arms1PShockStart
+	FireEndAnim=Arms1PShockEnd
 	
 	CanFire=true
 	//ChargedHasFired=false

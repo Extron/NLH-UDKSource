@@ -57,7 +57,7 @@ simulated function SetParameters(array<string> parameters)
 
 simulated function Reset()
 {
-	if (Controller.IsInState('MoveToState') || Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		Controller.StopLatentExecution();
 		Controller.Pawn.ZeroMovementVariables();
@@ -72,9 +72,9 @@ state Running
 Begin:
 	//We don't want to short circuit any states that may be running latent code, so if we are not in the default state, don't attempt to 
 	//change the state.
-	if (Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
-		Controller.BeginMoveTo(Destination, Focus, DestinationOffset, ShouldWalk);
+		Controller.BeginMoveTo(self, Destination, Focus, DestinationOffset, ShouldWalk);
 		
 		while (!Controller.IsInState('Idle'))
 			Sleep(0.0);
@@ -90,7 +90,7 @@ Begin:
 state Succeeded
 {
 Begin:
-	if (Controller.IsInState('MoveToState') || Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		Controller.StopLatentExecution();
 		Controller.Pawn.ZeroMovementVariables();
@@ -101,7 +101,7 @@ Begin:
 state Failed
 {
 Begin:
-	if (Controller.IsInState('MoveToState') || Controller.IsInState('Idle'))
+	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
 		Controller.StopLatentExecution();
 		Controller.Pawn.ZeroMovementVariables();

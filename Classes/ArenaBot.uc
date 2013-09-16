@@ -68,6 +68,11 @@ var Actor Attacker;
 var BehaviorTreeNode BTRoot;
 
 /**
+ * The current node depending on a latent process in ArenaBot.
+ */
+var BehaviorTreeNode CurrentLatentNode;
+
+/**
  * The last navigation point that the AI is or was wandering to.
  */
 var NavigationPoint WanderTarget;
@@ -76,6 +81,7 @@ var NavigationPoint WanderTarget;
  * The source code for the bot's behavior tree.
  */
 var string BTSource;
+
 
 /**
  * The distance away from the player that the bot needs to move to to become idle.
@@ -215,6 +221,8 @@ function NotifyKilled(Controller killer, Controller killed, Pawn killedPawn, cla
 	{
 		if (ArenaTeamInfo(PlayerReplicationInfo.Team) != None)
 			ArenaTeamInfo(PlayerReplicationInfo.Team).TeamMemberKilled(self);
+			
+		BTRoot.DestroyTree();
 	}
 }
 
@@ -333,11 +341,11 @@ event AssignNodeDelegate(BehaviorTreeNode node, string delegateTarget, string fu
 {
 }
 
-event BeginMoveToward(Actor target, Actor viewFocus, float offset, bool canStrafe, bool shouldWalk)
+event BeginMoveToward(BehaviorTreeNode node, Actor target, Actor viewFocus, float offset, bool canStrafe, bool shouldWalk)
 {
 	//We don't want to short circuit any states that may be running latent code, so if we are not in the default state, don't attempt to 
 	//change the state.
-	if (!IsInState('Idle'))
+	if (CurrentLatentNode != None && CurrentLatentNode != node)
 		return;
 		
 	MTParams.Target = target;
@@ -346,14 +354,16 @@ event BeginMoveToward(Actor target, Actor viewFocus, float offset, bool canStraf
 	MTParams.CanStrafe = canStrafe;
 	MTParams.ShouldWalk = shouldWalk;
 	
+	CurrentLatentNode = node;
+	
 	GotoState('MoveTowardState');
 }
 
-event BeginMoveTo(vector destination, Actor viewFocus, float offset, bool shouldWalk)
+event BeginMoveTo(BehaviorTreeNode node, vector destination, Actor viewFocus, float offset, bool shouldWalk)
 {
 	//We don't want to short circuit any states that may be running latent code, so if we are not in the default state, don't attempt to 
 	//change the state.
-	if (!IsInState('Idle'))
+	if (CurrentLatentNode != None && CurrentLatentNode != node)
 		return;
 		
 	MParams.Destination = destination;
@@ -361,7 +371,19 @@ event BeginMoveTo(vector destination, Actor viewFocus, float offset, bool should
 	MParams.DestinationOffset = offset;
 	MParams.ShouldWalk = shouldWalk;
 	
+	CurrentLatentNode = node;
+	
 	GotoState('MoveToState');
+}
+
+event BeginFinishRotation(BehaviorTreeNode node)
+{
+	if (CurrentLatentNode != None && CurrentLatentNode != node)
+		return;
+		
+	CurrentLatentNode = node;
+	
+	GotoState('FinishRotationState');
 }
 
 event MoveTowardFocus(BehaviorTreeNode sender)
@@ -520,23 +542,22 @@ auto state Idle
 {
 	event Tick(float dt)
 	{
-		global.Tick(dt);
-		
-		//IdleCounter += dt;		
+		global.Tick(dt);	
 	}
 	
-//Begin:	
-	//if (Pawn != None)
-		//Pawn.GoToState('Idle');
-	
-	//Sleep(0.1);
-	
-	//LatentWhatToDoNext();
+Begin:
+	if (Pawn != None)
+		Pawn.GotoState('Idle');
+		
+	CurrentLatentNode = None;
 }
 
 simulated state MoveTowardState
 {
 Begin:
+	if (Pawn != None)
+		Pawn.GotoState('MoveTowardState');
+		
 	MoveToward(MTParams.Target, MTParams.Focus, MTParams.DestinationOffset, MTParams.CanStrafe, MTParams.ShouldWalk);
 	GotoState('Idle');
 }
@@ -544,6 +565,9 @@ Begin:
 simulated state MoveToState
 {
 Begin:
+	if (Pawn != None)
+		Pawn.GotoState('MoveToState');
+		
 	MoveTo(MParams.Destination, MParams.Focus, MParams.DestinationOffset, MParams.ShouldWalk);
 	GotoState('Idle');
 }
@@ -551,6 +575,9 @@ Begin:
 simulated state FinishRotationState
 {
 Begin:
+	if (Pawn != None)
+		Pawn.GotoState('FinishRotationState');
+		
 	FinishRotation();
 	GotoState('Idle');
 }

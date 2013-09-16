@@ -100,6 +100,16 @@ var float StaminaMax;
 /* A float variable to store health in. */
 var float FHealth;
 
+/**
+ * The amount of time in between footstep sounds.
+ */
+var float FootstepPeriod;
+
+/**
+ * The footstep counter.  When this reaches a certain threshold, a footstep sound is made.
+ */
+var float FootstepCounter;
+
 /* Indicates that the player can regenerate health at this time. */
 var bool CanRegenHealth;
 
@@ -114,6 +124,11 @@ var bool ADS;
 
 /* Indicates that the pawn is sprinting. */
 var bool Sprinting;
+
+/**
+ * Indicates that the pawn has toostep sounds while moving.
+ */
+var bool HasFootsteps;
 
 /**
  * Indicates that the pawn is in a weather volume.
@@ -265,15 +280,26 @@ simulated function Tick(float dt)
 		SpendStamina(dt * StaminaMax);
 		
 		if (Stamina <= 0)
-		{
 			StopSprint();
 	}
+	
+	if (VSize(Velocity) > 0 && Physics == PHYS_Walking)
+	{
+		FootstepCounter += dt * (1 + (MovementSpeedModifier - 1) * 0.35);
+		
+		if (FootstepCounter >= FootstepPeriod && HasFootsteps)
+		{
+			PlayFootStepSound(0);
+			FootstepCounter = 0;
 		}
+	}
+	else
+	{
+		FootstepCounter = FootstepPeriod;
+	}
 	
 	if (ArenaWeapon(Weapon) != None)
-	{
 		PositionArms();
-	}
 	
 	if (ArenaInventoryManager(InvManager) != None)
 	{
@@ -476,6 +502,90 @@ simulated function Recover()
 		setPhysics(PHYS_Falling);
 }
 
+simulated event PlayFootStepSound(int FootDown)
+{
+	//local PlayerController PC;
+	local SoundCue FootSound;
+
+	FootSound = GetFootstepSound();
+	
+	if (IsFirstPerson())
+	{
+		if (FootSound != None)
+			PlaySound(FootSound, false, true,,, true);
+	}
+	/*if (!IsFirstPerson())
+	{
+		ForEach LocalPlayerControllers(class'PlayerController', PC)
+		{
+			if ( (PC.ViewTarget != None) && (VSizeSq(PC.ViewTarget.Location - Location) < MaxFootstepDistSq) )
+			{
+				ActuallyPlayFootstepSound(FootDown);
+				return;
+			}
+		}
+	}*/
+}
+
+simulated function SoundCue GetFootstepSound()
+{
+	local vector HitLocation, HitNormal;
+	local TraceHitInfo HitInfo;
+	local ArenaPMP PhysicalProperty;
+	local actor HitActor;
+	local float TraceDist;
+	local bool snow, rain;
+	
+	TraceDist = 1.5 * GetCollisionHeight();
+
+	HitActor = Trace(HitLocation, HitNormal, Location - TraceDist*vect(0,0,1), Location, false,, HitInfo);
+	
+	/*if ( WaterVolume(HitActor) != None )
+	{
+		return (Location.Z - HitLocation.Z < 0.33*TraceDist) ? 'Water' : 'ShallowWater';
+	}*/
+	
+	if (HitInfo.PhysMaterial != None)
+	{
+		PhysicalProperty = ArenaPMP(HitInfo.PhysMaterial.GetPhysicalMaterialProperty(class'Arena.ArenaPMP'));
+		
+		if (PhysicalProperty != None)
+		{
+			if (EnvironmentObject(HitActor) != None)
+			{
+				if (EnvironmentObject(HitActor).SnowLevel > 0.25)
+					snow = true;
+				else if (EnvironmentObject(HitActor).RainLevel > 0.25)
+					rain = true;
+			}
+			else if (DynamicEnvironmentObject(HitActor) != None)
+			{
+				if (DynamicEnvironmentObject(HitActor).SnowLevel > 0.25)
+					snow = true;
+				else if (DynamicEnvironmentObject(HitActor).RainLevel > 0.25)
+					rain = true;
+			}
+			else if (Landscape(HitActor) != None && Landscape(HitActor) == ArenaGRI(WorldInfo.GRI).WeatherMgr.Landscape.Landscape)
+			{
+				if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Landscape.SnowLevel > 0.25)
+					snow = true;
+				else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Landscape.RainLevel > 0.25)
+					rain = true;
+			}
+			
+			if (snow)
+				return PhysicalProperty.SnowFootsteps;
+			else if (rain)
+				return PhysicalProperty.RainFootsteps;
+			else
+				return PhysicalProperty.Footsteps;
+		}
+	}
+	
+	return None;
+}
+
+
 simulated function SetPawnRBChannels(bool bRagdollMode)
 {
 	if(bRagdollMode)
@@ -574,6 +684,8 @@ simulated function StartSprint()
 	if (!Sprinting && Stamina > 0 && VSize(Velocity) > 0)
 	{
 		Sprinting = true;
+		
+		`log("Sprinting");
 		
 		for (i = 0; i < SprintAnimNodes.Length; i++)
 			SprintAnimNodes[i].SetSprint(Sprinting);
@@ -966,7 +1078,7 @@ function AttachToAbilitySource(ActorComponent component)
 
 function name GetWeaponHandSocket()
 {
-	return 'RightHandSocket';
+	return 'HandSocket';
 }
 
 function name GetAbilityHandSocket()
@@ -1120,6 +1232,8 @@ defaultproperties
 	
 	EyeHeight=64
 	
+	FootstepPeriod=0.325
+	HasFootsteps=true
 	CrouchHeight=40.0
 	CrouchRadius=21.0
 	bCanCrouch=true

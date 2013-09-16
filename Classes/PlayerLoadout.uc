@@ -21,6 +21,11 @@ enum PlayerModel
 var WeaponSchematic Weapon;
 
 /**
+ * The model that the loadout uses.
+ */
+var PlayerModel Model;
+
+/**
  * The ability class of the player.
  */
 var class<PlayerClass> AbilityClass;
@@ -31,9 +36,20 @@ var class<PlayerClass> AbilityClass;
 var string LoadoutName;
 
 /**
- * The model that the loadout uses.
+ * The name of the character this class represents.
  */
-var PlayerModel Model;
+var string CharacterName;
+
+/**
+ * The amount of ability experience that the player has gained, used for obtaining new abilities.
+ */
+var int XP;
+
+/**
+ * The amount of cash the player has obtained, used for buying weapons and armor.
+ */
+var int Cash;
+
 
 
 defaultproperties
