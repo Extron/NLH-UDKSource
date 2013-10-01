@@ -322,7 +322,11 @@ exec function GiveAbility(string ability)
 	case "FlashOfLightning":
 		CreateInventory(class'Arena.Ab_FlashOfLightning', true);
 		break;
-		
+
+	case "HeavyHanded":
+		CreateInventory(class'Arena.Ab_HeavyHanded', true);
+		break;
+
 	case "Osmosis":
 		CreateInventory(class'Arena.Ab_Osmosis', true);
 		break;
@@ -335,10 +339,18 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_Repulsion', true);
 		break;
 		
+	case "RockFist":
+		CreateInventory(class'Arena.Ab_RockFist', true);
+		break;
+		
 	case "Magnetism":
 		CreateInventory(class'Arena.Ab_Magnetism', true);
 		break;
-		
+	
+	case "SandFlesh":
+		CreateInventory(class'Arena.Ab_SandFlesh', true);
+		break;
+	
 	case "ShotsOfHaste":
 		CreateInventory(class'Arena.Ab_ShotsOfHaste', true);
 		break;
@@ -407,6 +419,9 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_DustCloud', true);
 		CreateInventory(class'Arena.Ab_Earthquake', true);
 		CreateInventory(class'Arena.Ab_TremblingEarth', true);
+		CreateInventory(class'Arena.Ab_SandFlesh', true);
+		CreateInventory(class'Arena.Ab_HeavyHanded', true);
+		CreateInventory(class'Arena.Ab_RockFist', true);
 		break;
 	}
 }
