@@ -67,6 +67,38 @@ var array<float> Values;
 /** Stores the starting values of the stats. */
 var array<float> DefaultValues;
 
+static function PStatValues GetStatEnum(string statName)
+{
+	switch (statName)
+	{
+		case "Weight": return PSVWeight;
+		case "Mobility": return PSVMobility;
+		case "Accuracy": return PSVAccuracy;
+		case "Stability": return PSVStability;
+		case "Movement": return PSVMovement;
+		case "Jump": return PSVJump;
+		case "MaxHealth": case "Health": return PSVMaxHealth;
+		case "MaxEnergy": case "Energy": return PSVMaxEnergy;
+		case "MaxStamina": return PSVMaxStamina;
+		case "Obstruction": return PSVObstruction;
+		case "GlobalDamageInput": return PSVGlobalDamageInput;
+		case "HealthRegenDelay": return PSVHealthRegenDelay;
+		case "EnergyRegenDelay": return PSVEnergyRegenDelay;
+		case "StaminaRegenDelay": return PSVStaminaRegenDelay;
+		case "HealthRegenRate": return PSVHealthRegenRate;
+		case "EnergyRegenRate": return PSVEnergyRegenRate;
+		case "StaminaRegenRate": return PSVStaminaRegenRate;
+		case "EnergyCostFactor": return PSVEnergyCostFactor;
+		case "StaminaCostFactor": return PSVStaminaCostFactor;
+		case "EnergyDamageFactor": return PSVEnergyDamageFactor;
+		case "MeleeDamage": return PSVMeleeDamage;
+		case "MeleeRange": return PSVMeleeRange;
+		case "GlobalDamageOutput": return PSVGlobalDamageOutput;
+		case "AbilityCooldownFactor": return PSVAbilityCooldownFactor;
+	}
+	
+	return -1;
+}
 
 /**
  * Sets the player's initial stats. 

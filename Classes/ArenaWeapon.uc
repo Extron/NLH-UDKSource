@@ -1003,6 +1003,8 @@ defaultproperties
 	Stats=NewStats
 	
 	MeleeAnims[0]=Arms1PMelee1
+	MeleeAnims[1]=Arms1PMelee2
+	MeleeAnims[3]=Arms1PMelee3
 	
 	FireInterval(0)=1
 	FiringStatesArray(0)=WeaponFiring

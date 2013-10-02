@@ -22,4 +22,5 @@ defaultproperties
 	Abilities[6]=None
 	
 	TreeName="Short-Range Shock"
+	TreeIcon="ArenaAbilities.Icons.ShockShort";
 }

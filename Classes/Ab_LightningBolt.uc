@@ -108,6 +108,7 @@ defaultproperties
 	CoolDown=5
 	EnergyCost=300	
 	AbilityName="Lightning Bolt"
+	AbilityIcon="ArenaAbilities.Icons.LightningBolt"
 	Extent=0.75
 	
 	CanHold=false

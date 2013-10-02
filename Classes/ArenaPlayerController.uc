@@ -6,7 +6,8 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class ArenaPlayerController extends UDKPlayerController;
+class ArenaPlayerController extends UDKPlayerController
+	dependson(PlayerData);
 
 
 
@@ -77,13 +78,16 @@ var bool FiringAbility;
 /* Indicates that the pawn will be accelerated on the next player tick. */
 var bool AccelPawn;
 
+
+delegate OnSetPlayerViewpoint(out vector loc, out rotator rot);
+
 simulated function PostBeginPlay()
 {
 	local string filename;
 	
 	super.PostBeginPlay();
 	
-	if (Role < Role_Authority || (Role == Role_Authority && WorldInfo.NetMode == NM_ListenServer))
+	if (!(Role == Role_Authority && WorldInfo.NetMode == NM_DedicatedServer))
 	{
 		`log("Loading player save data file.");
 		if (PlayerReplicationInfo.PlayerName == "")
@@ -198,6 +202,9 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 			loc += (ADSOffset >> rot);
 		}
 	}
+	
+	if (OnSetPlayerViewpoint != None)
+		OnSetPlayerViewpoint(loc, rot);
 }
 
 function CheckJumpOrDuck()
@@ -357,6 +364,112 @@ simulated function SpendBBTokens(int tokens)
 	
 	if (Pawn != None && PRI_BotBattle(Pawn.PlayerReplicationInfo) != None)
 		PRI_BotBattle(Pawn.PlayerReplicationInfo).SpendTokens(tokens);
+}
+
+simulated function CreateNewCharacter(string charName, int charClass)
+{
+	local LoadoutData newLoadout;
+	
+	newLoadout.CharacterName = charName;
+	
+	switch (charClass)
+	{
+		case 0:
+			newLoadout.AbilityClass = class'Arena.PC_Electricity';
+			break;
+		
+		case 1:
+			newLoadout.AbilityClass = class'Arena.PC_Water';
+			break;
+			
+		case 2:
+			newLoadout.AbilityClass = class'Arena.PC_Earth';
+			break;
+	}
+	
+	newLoadout.Points += 15;
+	
+	//newLoadout.EquippedAbilities.AddItem(class'Arena.Ab_ShockShort');
+	
+	SaveData.Loadouts.AddItem(newLoadout);
+}
+
+simulated function LoadoutData GetCharacter(string charName)
+{
+	local LoadoutData nullData;
+	local int i;
+	
+	for (i = 0; i < SaveData.Loadouts.Length; i++)
+	{
+		`log("Checking character" @ SaveData.Loadouts[i].CharacterName);
+		
+		if (SaveData.Loadouts[i].CharacterName == charName)
+		{
+			`log("Found character");
+			return SaveData.Loadouts[i];
+		}
+	}
+	
+	return nullData;	
+}
+
+simulated function WeaponSchematicData GetWeapon(string weaponName)
+{
+	local WeaponSchematicData nullData;
+	local int i;
+	
+	for (i = 0; i < SaveData.WeapData.WeaponLibrary.Length; i++)
+	{
+		if (SaveData.WeapData.WeaponLibrary[i].WeaponName == weaponName)
+			return SaveData.WeapData.WeaponLibrary[i];
+	}
+	
+	return nullData;	
+}
+
+simulated function SetCharacterLoadout(LoadoutData charLoadout)
+{
+	local int i;
+	
+	for (i = 0; i < SaveData.Loadouts.Length; i++)
+	{
+		if (SaveData.Loadouts[i].CharacterName == charLoadout.CharacterName)
+		{
+			SaveData.Loadouts[i] = charLoadout;
+			break;
+		}
+	}
+}
+
+function array<string> GetCharacters()
+{
+	local array<string> charList;
+	local int i;
+	
+	for (i = 0; i < SaveData.Loadouts.Length; i++)
+		charList.AddItem(SaveData.Loadouts[i].CharacterName);
+	
+	`log("Loaded characters" @ charList.Length);
+	
+	return charList;
+}
+
+simulated function SavePlayerData()
+{
+	local string filename;
+	
+	if (PlayerReplicationInfo.PlayerName == "")
+			PlayerReplicationInfo.PlayerName = "Nameless";
+			
+		filename = PlayerReplicationInfo.PlayerName $ "_data.bin";
+		
+	if (!(class'Engine'.static.BasicSaveObject(SaveData, filename, true, class'Arena.PlayerData'.const.FileVersion)))
+		`warn("File save failed.");
+}
+
+simulated function float ComputeNextLevelXP(int level)
+{
+	return 100 + level * 200 ** level;
 }
 
 state PlayerWalking

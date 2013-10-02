@@ -119,6 +119,7 @@ defaultproperties
 	FireSound=SoundCue'ArenaAbilities.Audio.RepulseSC'
 	
 	AbilityName="Repulse"
+	AbilityIcon="ArenaAbilities.Icons.Repulsion"
 	CoolDown=5
 	EnergyCost=350
 	Radius=1000

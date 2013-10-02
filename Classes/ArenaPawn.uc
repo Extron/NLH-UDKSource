@@ -126,6 +126,11 @@ var bool ADS;
 var bool Sprinting;
 
 /**
+ * Indicates that the pawn is currently in the act of meleeing.
+ */
+var bool Meleeing;
+
+/**
  * Indicates that the pawn has toostep sounds while moving.
  */
 var bool HasFootsteps;
@@ -414,6 +419,8 @@ function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLo
 {
 	if (ActiveEffect != None)
 		ActiveEffect.DeactivateEffect();
+	
+	`log("Pawn died" @ Killer @ DamageType);
 	
 	ClearAllTimers();
 	Stats.ClearModifiers();
@@ -744,16 +751,21 @@ simulated function Melee()
 	local vector x, y, z, hitloc;
 	local ArenaPawn target;
 
-	GetAxes(GetViewRotation(), x, y, z);
-
-	foreach VisibleCollidingActors(class'ArenaPawn', target, Stats.GetMeleeRange(), Location)
+	if (!Meleeing)
 	{
-		hitloc = target.Location + (target.Location - Location);
+		Meleeing = true;
+		
+		GetAxes(GetViewRotation(), x, y, z);
 
-		target.TakeDamage(Stats.GetMeleeDamage(), ArenaPlayerController(Owner), hitloc, Normal(x), None);
+		foreach VisibleCollidingActors(class'ArenaPawn', target, Stats.GetMeleeRange(), Location)
+		{
+			hitloc = target.Location + (target.Location - Location);
 
-		//momentum = (traget.Location - Location) * 1000/target.Mass;
-		//Other.Velocity += momentum;
+			target.TakeDamage(Stats.GetMeleeDamage(), ArenaPlayerController(Owner), hitloc, Normal(x), None);
+
+			//momentum = (traget.Location - Location) * 1000/target.Mass;
+			//Other.Velocity += momentum;
+		}
 	}
 }
 

@@ -124,6 +124,21 @@ var vector SourceOffset;
 var string AbilityName;
 
 /**
+ * An extended description of the ability.
+ */
+var string AbilityDescription;
+
+/**
+ * A short one line summary of the ability.
+ */
+var string AbilitySummary;
+
+/**
+ * The icon used to respesent the ability within the UI.
+ */
+var string AbilityIcon;
+
+/**
  * The base damage that the ability deals.  This will be modified by player stats before 
  * the final damage is set.
  */
@@ -196,6 +211,11 @@ var bool PlayingChargeFireAnim;
 
 /* Indicates that the ability is passive, and non-equippable. */
 var bool IsPassive;
+
+/**
+ * The amount of XP points the player must spend to unlock this ability.
+ */
+var int UnlockPoints;
 
 
 simulated function Tick(float dt)

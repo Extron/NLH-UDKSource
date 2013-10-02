@@ -57,6 +57,11 @@ var rotator OrigRot;
 var vector OldMousePos;
 
 /**
+ * The name of the character to edit in the character viewer.
+ */
+var string SelectedChar;
+
+/**
  * The counter for rotations and timers on the nemu.
  */
 var float Counter;
@@ -72,16 +77,6 @@ var float Timer;
 var float RotationDuration;
 
 /**
- * The button that is currently being hovered on.  Will be empty if no button is.
- */
-var string CurrentOverButton;
-
-/**
- * Indicates whether or not certain buttons are expanded or not.
- */
-var bool SPExpanded, MPExpanded, BBExpanded, OExpanded;
-
-/**
  * Indicates that the menu tick will ignore button states.
  */
 var bool IgnoreButtons;
@@ -92,6 +87,8 @@ var bool IgnoreButtons;
 var bool Closing;
 
 var bool Rotating;
+
+
 
 /**
  * The delegate to call when the menu closes.
@@ -180,8 +177,6 @@ event bool WidgetInitialized(name widgetName, name widgetPath, GFxObject widget)
 	local bool handled;
 	local int group;
 	
-	`log("Initializing widget" @ widgetName);
-	
 	group = FindGroupWithButton(string(widgetName));
 	
 	if (group > -1)
@@ -254,12 +249,8 @@ function int FindGroupWithBtnLabel(string label)
 	
 	for (i = 0; i < ButtonGroupCount; i++)
 	{
-		`log("Group buttons" @ Groups[i].Buttons.Length);
-		
 		for (j = 0; j < Groups[i].Buttons.Length; j++)
 		{
-			`log("Button" @ Groups[i].Buttons[j]);
-			
 			if (Groups[i].Buttons[j].GetString("label") == label)
 				return i;
 		}
@@ -293,6 +284,7 @@ function bool IsExpanded()
 	
 	return false;
 }
+
 function OnMouseMove(float x, float y, bool mouseDown)
 {
 	local vector mousePos, d;
@@ -435,7 +427,7 @@ function ButtonClicked(string label)
 	
 	if (label == "Exit")
 	{
-		ConsoleCommand("exit");
+		OnClose = ExitMenu;
 	}
 	else if (label == "Solo")
 	{
@@ -445,6 +437,29 @@ function ButtonClicked(string label)
 	{
 		OnControlsClicked();
 	}
+}
+
+function NewCharacter(string charName, int charClass)
+{
+	ArenaPlayerController(Pawn.Controller).CreateNewCharacter(charName, charClass);
+	SelectedChar = charName;
+	
+	OnClose = GotoCharacterViewer;
+	OnEditCharClicked();
+}
+
+function EditCharacter(string charName)
+{
+	`log("Editing character" @ charName);
+	
+	SelectedChar = charName;
+	OnClose = GotoCharacterViewer;
+	OnEditCharClicked();
+}
+
+function array<string> GetCharacters()
+{
+	return ArenaPlayerController(Pawn.Controller).GetCharacters();
 }
 
 function OnSoloBotBattleClicked()
@@ -477,6 +492,46 @@ function OnControlsClicked()
 	OnClose = GotoControlsBattle;
 	
 	CloseMenu();
+}
+
+function OnEditCharClicked()
+{
+	Closing = true;
+	IgnoreButtons = true;
+	
+	Cube.Owner.RotationRate = rot(0, 0, 0);
+	Cube.Owner.SetPhysics(PHYS_None);
+	OrigRot = Cube.Owner.Rotation;
+	Counter = 0;
+	RotationDuration = 0.35;
+	
+	CloseMenu();
+}
+
+function ExitMenu()
+{
+	ConsoleCommand("exit");
+}
+
+function GotoCharacterViewer()
+{
+	local GFx_CharacterView menu;
+	
+	menu = new class'Arena.GFx_CharacterView';
+	menu.bEnableGammaCorrection = FALSE;
+	menu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerController(Pawn.Controller).Player));
+	menu.SetTimingMode(TM_Real);
+	menu.Character = ArenaPlayerController(Pawn.Controller).GetCharacter(SelectedChar);
+	
+	Cube.Owner.SetRotation(rot(0, -16384, 0));
+
+	menu.Start();
+	menu.PlayOpenAnimation();
+	
+	
+	Pawn.SetMenu(menu);
+
+	Close();
 }
 
 function GotoSoloBotBattle()

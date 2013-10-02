@@ -45,4 +45,5 @@ defaultproperties
 {
 	FireSound=SoundCue'A_Weapon_ShockRifle.Cue.A_Weapon_SR_FireCue'
 	AbilityName="Thunder Rush"
+	AbilityIcon="ArenaAbilities.Icons.ThunderRush"
 }

@@ -27,6 +27,11 @@ var array<bool> UnlockStatus;
  */
 var string TreeName;
 
+/**
+ * The icon of the tree to use.
+ */
+var string TreeIcon;
+
 
 defaultproperties
 {

@@ -47,6 +47,7 @@ defaultproperties
 	CoolDown=0
 	EnergyCost=78
 	AbilityName="Deflection"
+	AbilityIcon="ArenaAbilities.Icons.Deflection"
 	
 	ShieldClass=class'Ab_DeflectionShield'
 	CanHold=true

@@ -149,9 +149,33 @@ event Landed(vector HitNormal, Actor FloorActor)
 
 simulated function Melee()
 {
-	super.Melee();
+	local int anim;
+	local float duration;
 	
-	PlayArmAnimation(ArenaWeapon(Weapon).MeleeAnims[Rand(ArenaWeapon(Weapon).MeleeAnims.Length)]);
+	anim = Rand(ArenaWeapon(Weapon).MeleeAnims.Length);
+	
+	`log("Trying to melee" @ Meleeing);
+	
+	if (!Meleeing)
+	{
+		`log("Meleeing");
+		
+		PlayArmAnimation(ArenaWeapon(Weapon).MeleeAnims[anim]);
+		
+		duration = RightArm.GetAnimLength(ArenaWeapon(Weapon).MeleeAnims[anim]);
+		`log("Duration" @ duration);
+		
+		SetTimer(duration, false, 'ResetMelee');
+	}
+	
+	super.Melee();
+}
+
+simulated function ResetMelee()
+{
+	`log("Resetting melee");
+	
+	Meleeing = false;
 }
 
 /**

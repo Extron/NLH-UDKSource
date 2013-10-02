@@ -19,4 +19,5 @@ defaultproperties
 	Abilities[6]=None
 	
 	TreeName="Lightning Bolt"
+	TreeIcon="ArenaAbilities.Icons.LightningBolt"
 }

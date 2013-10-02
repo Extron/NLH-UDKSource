@@ -7,8 +7,8 @@
 		
 		public var title:s_title_label;
 		public var details:s_details;
-		public var accept_button:s_button;
-		public var cancel_button:s_button;
+		public var accept_button:DefaultButton;
+		public var cancel_button:DefaultButton;
 		public var add_muzzle_button:SmallButton;
 		public var add_side_button:SmallButton;
 		public var add_under_button:SmallButton;

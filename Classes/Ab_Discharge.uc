@@ -132,5 +132,6 @@ simulated function EmitDischargeBeam(vector start, vector end)
 defaultproperties
 {
 	AbilityName="Discharge"
+	AbilityIcon="ArenaAbilities.Icons.Discharge"
 	DischargeRange=1024
 }

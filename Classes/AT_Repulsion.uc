@@ -19,4 +19,5 @@ defaultproperties
 	Abilities[6]=None
 	
 	TreeName="Repulsion"
+	TreeIcon="ArenaAbilities.Icons.Repulsion"
 }
