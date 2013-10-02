@@ -1,14 +1,18 @@
 /******************************************************************************
-	Ab_DoubleBubble
+	Ab_RockFist
 	
-	Creation date: 06/02/2013 15:41
+	Creation date: 20/04/2013 21:49
 	Copyright (c) 2013, Zack Diller
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 ******************************************************************************/
 
-class Ab_DoubleBubble extends Ab_Bubble;
+class Ab_RockFist extends Ab_HeavyHanded;
 
 defaultproperties
 {
-	AbilityName="Double Bubble"
+	AbilityName="Rock Fist"
+
+	MeleeDamageIncrease = 1.2
+	
+	IsPassive=true
 }

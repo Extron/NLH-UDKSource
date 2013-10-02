@@ -8,8 +8,8 @@
 
 class Ab_StoneFlesh extends ArenaAbility;
 
-/* How long it last */
-var float StoneFleshDuration;
+/* How long it lasts */
+var float Duration;
 
 /* The 50% fire damage reduction. */
 var float FireDamageReduction;
@@ -25,25 +25,17 @@ simulated function CustomFire()
 	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_Fire', DamageReduction);
 	// TODO: Does not extend to extended classes?
 	playerStatMod.SetTypeDamageInputMod(class 'DamageType', FireDamageReduction);
-	// Test...
-	playerStatMod.SetTypeDamageInputMod(class 'Arena.Dmg_LightBeam', DamageReduction);
 
 	if (ArenaPawn(Instigator) != None)
-	{
 		ArenaPawn(Instigator).Stats.AddModifier(PlayerStatMod);
-	}
 	
-	SetTimer(StoneFleshDuration, false, 'DestroyRockSkin');
+	SetTimer(Duration, false, 'DestroyRockSkin');
 }
-
-// TODO: Call DestoryRockSkin when used get hit by water (easy)
 
 simulated function DestroyRockSkin()
 {
 	if (ArenaPawn(Instigator) != None)
-	{
 		ArenaPawn(Instigator).Stats.RemoveModifier(PlayerStatMod);
-	}
 }
 
 defaultproperties
@@ -65,5 +57,5 @@ defaultproperties
 	DamageReduction = 0.75
 	// I belive they are multiplied not added; .5 = .75 * .6666666666, needs to be tested
 	FireDamageReduction = 0.6666666666
-	StoneFleshDuration = 45
+	Duration = 45
 }

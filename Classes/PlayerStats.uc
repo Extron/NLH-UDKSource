@@ -395,6 +395,11 @@ function float GetMeleeDamage()
 	return Values[PSVMeleeDamage] * Values[PSVGlobalDamageOutput];
 }
 
+simulated function SetMeleeDamage(float mod)
+{
+	Values[PSVMeleeDamage] *= mod;
+}
+
 function float GetMeleeRange()
 {
 	return Values[PSVMeleeRange];
