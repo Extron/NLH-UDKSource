@@ -106,12 +106,13 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 function InitInventory()
 {
 	local ArenaWeapon newWeapon;
+	local int i;
 	
 	super.InitInventory();
-	
-	if (ArenaPlayerController(Owner) != None && ArenaPlayerController(Owner).Loadout != None && ArenaPlayerController(Owner).Loadout.Weapon != None)
+
+	if (ArenaPlayerController(Controller) != None && ArenaPlayerController(Controller).Loadout != None && ArenaPlayerController(Controller).Loadout.PrimaryWeapon != None)
 	{
-		newWeapon = CreateWeapon(ArenaPlayerController(Owner).Loadout.Weapon);
+		newWeapon = CreateWeapon(ArenaPlayerController(Controller).Loadout.PrimaryWeapon);
 	}
 	
 	if (ArenaInventoryManager(InvManager) != None)
@@ -120,11 +121,14 @@ function InitInventory()
 		{
 			InvManager.AddInventory(newWeapon);
 			InvManager.NextWeapon();
-			ArenaPlayerController(Owner).SetWeaponFOV();
+			ArenaPlayerController(Controller).SetWeaponFOV();
 		}
 		
-		CreateInventory(class'Arena.Ab_ShockShort', true);
-
+		for (i = 0; i < ArenaPlayerController(Controller).Loadout.Abilities.Length; i++)
+		{
+			CreateInventory(ArenaPlayerController(Controller).Loadout.Abilities[i], true);
+		}
+		
 		ArenaInventoryManager(InvManager).NextAbility();
 	}
 }
@@ -207,10 +211,12 @@ simulated function PositionArms()
 {
 	local rotator R;
 	
-	R = RightArm.Rotation;
+	R = CurrentRecoil;
 	
+	//R += CurrentRecoil;
+	//R = Rotation;
 	if (Controller != None)
-		R.Pitch = Controller.Rotation.Pitch;
+		R.Pitch += Controller.Rotation.Pitch;
 	
 	RightArm.SetTranslation(((ArmsTranslation - vect(0, 0, 1) * EyeHeight) >> R) + vect(0, 0, 1) * EyeHeight);
 	RightArm.SetRotation(R);

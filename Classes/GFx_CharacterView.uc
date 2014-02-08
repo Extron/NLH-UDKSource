@@ -28,6 +28,11 @@ var float LookUpCounter;
 
 var float LookUpTime;
 
+/**
+ * Indicates that when transitioning to the weapon editor menu, we have created a new weapon.
+ */
+var bool NewWeapon;
+
 var int LookDirection;
 
 /**
@@ -43,7 +48,6 @@ function bool Start(optional bool StartPaused = false)
 	super.Start(StartPaused);
 			
     Advance(0);
-
 	
 	if (AP_Specter(GetPC().Pawn) != None)
 	{
@@ -129,6 +133,8 @@ function BuildCharacterProfile()
 	SetCharacter(Character.CharacterName, charType, Character.Level);
 	SetXP(Character.XP, ArenaPlayerController(Pawn.Controller).ComputeNextLevelXP(Character.Level));
 	
+	BuildPrimanyWeaponInfo();
+	
 	stats = CreateArray();
 	
 	for (i = 0; i < 7; i++)
@@ -180,18 +186,60 @@ function BuildClassInfo()
 	SetClassInfo(classInfo);
 }
 
+function BuildPrimanyWeaponInfo()
+{
+	local WeaponSchematicData schematic, nullData;
+	local GFxObject weapSchem;
+	local GFxObject baseObj;
+	local GFxObject componentArray;
+	local GFxObject component;
+	local int i, index;
+	
+	schematic = ArenaPlayerController(Pawn.Controller).GetWeapon(Character.PrimaryWeaponName);
+	
+	if (schematic == nullData)
+		return;
+		
+	weapSchem = CreateObject("Object");
+	
+	weapSchem.SetString("weapName", schematic.WeaponName);
+	
+	baseObj = CreateObject("Object");
+	
+	baseObj.SetString("baseName", schematic.BaseClass.default.BaseName);
+	baseObj.SetString("icon", "img://" $ schematic.BaseClass.default.BaseIcon);
+	
+	componentArray = CreateArray();
+	
+	index = 0;
+	
+	for (i = 0; i < schematic.Components.Length; i++)
+	{
+		if (DisplayComponentType(schematic.Components[i]))
+		{
+			component = CreateObject("Object");
+			
+			component.SetString("compType", GetComponentType(schematic.Components[i]));
+			component.SetString("compName", schematic.Components[i].default.ComponentName);
+			component.SetString("icon", "img://" $ schematic.Components[i].default.ComponentIcon);
+			
+			componentArray.SetElementObject(index, component);
+			index++;
+		}
+	}
+	
+	weapSchem.SetObject("baseComp", baseObj);
+	weapSchem.SetObject("components", componentArray);
+	
+	SetPrimaryWeapon(weapSchem);
+}
+
 function ButtonClicked(string label)
 {
 	if (label == "Save")
 	{
 		ArenaPlayerController(Pawn.Controller).SetCharacterLoadout(Character);
 		ArenaPlayerController(Pawn.Controller).SavePlayerData();
-		OnClose = GotoMainMenu;
-		LookDirection = -1;
-		LookUpCounter = LookUpTime;
-	}
-	else if (label == "Cancel")
-	{
 		OnClose = GotoMainMenu;
 		LookDirection = -1;
 		LookUpCounter = LookUpTime;
@@ -206,6 +254,50 @@ function ButtonClicked(string label)
 		OnClose = GotoWeaponEditorMenu;
 		CloseMenu();
 	}
+}
+
+function CancelButtonClicked()
+{
+	OnClose = GotoMainMenu;
+	LookDirection = -1;
+	LookUpCounter = LookUpTime;
+}
+
+function CreateNewWeaponSchematic()
+{
+	local WeaponSchematicData newWeap;
+	
+	newWeap.BaseClass = class'Arena.Wp_BasicRifleBase';
+	
+	newWeap.Components[WCStock] = class'Arena.Wp_S_CheapStock';
+	newWeap.Components[WCBarrel] = class'Arena.Wp_B_BasicRifleBarrel';
+	newWeap.Components[WCMuzzle] = class'Arena.Wp_M_NoMuzzle';
+	newWeap.Components[WCOptics] = class'Arena.Wp_O_CheapIronSights';
+	newWeap.Components[WCUnderAttachment] = class'Arena.Wp_UA_NoUnderAttachment';
+	newWeap.Components[WCSideAttachment] = class'Arena.Wp_SA_NoSideAttachment';
+	newWeap.WeaponName = "New Weapon" @ ArenaPlayerController(Pawn.Controller).SaveData.WeapData.WeaponLibrary.Length;
+	newWeap.FireModes[0] = FMFullAuto;
+	
+	ArenaPlayerController(Pawn.Controller).AddWeaponSchematic(newWeap);
+	SelectedWeapon = newWeap.WeaponName;
+	OnClose = GotoWeaponEditorMenu;
+	NewWeapon = true;
+	CloseMenu();
+}
+
+function EditWeaponSchematic(string weapon)
+{
+	NewWeapon = false;
+	SelectedWeapon = weapon;
+	OnClose = GotoWeaponEditorMenu;
+	CloseMenu();
+}
+
+function SelectWeaponSchematic(string weapon)
+{
+	Character.PrimaryWeaponName = weapon;
+	BuildPrimanyWeaponInfo();
+	DispatchPopupClose();
 }
 
 function RemoveAbility(int abilityIndex)
@@ -233,6 +325,8 @@ function CloseAnimCompleted()
 function GotoMainMenu()
 {
 	local GFx_MainMenu menu;
+	
+	`log("Going to main menu");
 	
 	menu = new class'Arena.GFx_MainMenu';
 	menu.bEnableGammaCorrection = FALSE;
@@ -276,7 +370,7 @@ function GotoAbilitiesMenu()
 function GotoWeaponEditorMenu()
 {
 	local GFx_WeaponEditor menu;
-	
+
 	menu = new class'Arena.GFx_WeaponEditor';
 	menu.bEnableGammaCorrection = FALSE;
 	menu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerController(Pawn.Controller).Player));
@@ -285,6 +379,9 @@ function GotoWeaponEditorMenu()
 	menu.Parent = self;
 	//menu.Character = Character;
 	
+	if (NewWeapon)
+		menu.ChangedWeapon = true;
+		
 	ArenaPlayerController(Pawn.Controller).OnSetPlayerViewpoint = None;
 	
 	menu.Start();
@@ -301,6 +398,11 @@ function SetClassInfo(GFxObject classInfo)
 	ActionScriptVoid("_root.SetClassInfo");
 }
 
+function SetPrimaryWeapon(GFxObject weaponInfo)
+{
+	ActionScriptVoid("_root.SetPrimaryWeapon");
+}
+
 function SetStats(GFxObject stats)
 {
 	ActionScriptVoid("_root.SetStats");
@@ -309,6 +411,52 @@ function SetStats(GFxObject stats)
 function SetXP(float xp, float nextLevel)
 {
 	ActionScriptVoid("_root.SetXP");
+}
+
+function DispatchPopupClose()
+{
+	ActionScriptVoid("_root.DispatchPopupClose");
+}
+
+function array<string> GetWeaponLibrary()
+{
+	return ArenaPlayerController(Pawn.Controller).GetWeapons();
+}
+
+function string GetComponentType(class<ArenaWeaponComponent> component)
+{
+	if (class<Wp_Stock>(component) != None)
+		return "Stock:";
+	else if (class<Wp_Barrel>(component) != None)
+		return "Barrel:";
+	else if (class<Wp_Muzzle>(component) != None)
+		return "Muzzle:";
+	else if (class<Wp_Optics>(component) != None)
+		return "Optics:";
+	else if (class<Wp_UnderAttachment>(component) != None)
+		return "Under Attachment:";
+	else if (class<Wp_SideAttachment>(component) != None)
+		return "Side Attachment:";
+	else
+		return "";
+}
+
+function bool DisplayComponentType(class<ArenaWeaponComponent> component)
+{
+	if (class<Wp_S_NoStock>(component) != None)
+		return false;
+	else if (class<Wp_B_NoBarrel>(component) != None)
+		return false;
+	else if (class<Wp_M_NoMuzzle>(component) != None)
+		return false;
+	else if (class<Wp_O_NoOptics>(component) != None)
+		return false;
+	else if (class<Wp_UA_NoUnderAttachment>(component) != None)
+		return false;
+	else if (class<Wp_SA_NoSideAttachment>(component) != None)
+		return false;
+	else
+		return true;
 }
 
 defaultproperties

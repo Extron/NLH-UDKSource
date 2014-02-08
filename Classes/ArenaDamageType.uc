@@ -17,6 +17,11 @@ class ArenaDamageType extends DamageType;
 var float Points;
 
 /**
+ * The amount of recoil a player receives when hit by this damage type.
+ */
+var float Recoil;
+
+/**
  * The string to display when an enemy is killed with this damage type (ie "Bot electrocuted").
  */
 var string ActionString;

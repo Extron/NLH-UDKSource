@@ -12,6 +12,16 @@
 class AP_OrbBot extends AP_Bot;
 
 /**
+ * The template scanning beam particle to use when the orb scans.
+ */
+var ParticleSystem ScannerBeamTemplate;
+
+/**
+ * The scanning beam particle to use when the orb scans.
+ */
+var ParticleSystemComponent ScannerBeam;
+
+/**
  * A counter to keep track of time.
  */
 var float Counter;
@@ -119,6 +129,11 @@ auto state Idle
 	}
 }
 
+state Scanning
+{
+
+}
+
 state Stunned
 {
 Begin:
@@ -134,9 +149,9 @@ Begin:
 defaultproperties
 {
 	Begin Object Name=WPawnSkeletalMeshComponent
-		SkeletalMesh=SkeletalMesh'AC_Orb.Meshes.OrbMesh'
-		PhysicsAsset=PhysicsAsset'AC_Orb.Meshes.OrbMesh_Physics'
-		Rotation=(Yaw=-16384)
+		SkeletalMesh=SkeletalMesh'AC_Orb.Meshes.OrbBot'
+		PhysicsAsset=PhysicsAsset'AC_Orb.Meshes.OrbBot_Physics'
+		Rotation=(Yaw=16384)
 		MinDistFactorForKinematicUpdate=0.0
 	End Object
 	

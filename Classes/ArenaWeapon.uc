@@ -870,13 +870,14 @@ simulated function SetWeaponFOV(float angle)
 	UDKSkeletalMeshComponent(Mesh).SetFOV(angle);
 }
 
-simulated function rotator GetRecoilRotation(Pawn holder)
+simulated function rotator GetRecoilForce()
 {
-	local vector x, y, z;
-
-	GetAxes(holder.Controller.Rotation, x, y, z);
-
-	return rotator(RecoilPos);
+	local rotator force;
+	
+	force.Pitch = (Stats.Values[WSVRecoil] * 6) * 65536;
+	force.Yaw = (Stats.Values[WSVRecoil] * 1.5) * 65536 * ((FRand() > 0.5) ? -1 : 1);
+	
+	return force;
 }
 
 simulated function float GetAvgReloadSpeed()

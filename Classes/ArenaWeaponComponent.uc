@@ -41,6 +41,11 @@ var string ComponentName;
 /** A description of the component, used for menu interfaces. */
 var string ComponentDescription;
 
+/**
+ * The icon for the component to use in the GUI.
+ */
+var string ComponentIcon;
+
 /** The numeric weight of the component. */
 var float Weight;
 

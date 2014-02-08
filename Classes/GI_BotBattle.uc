@@ -44,9 +44,16 @@ function PostBeginPlay()
 			Teams[i + 1] = WaveManager.Waves[i].WaveTI;
 		}
 		
-		if (WaveManager.AutoBegin)
+		if (WaveManager.AutoBegin && !InitialIntermission)
 			SetTimer(WaveManager.IntermissionTime, false, 'SpawnWave');
 	}
+}
+
+simulated function StartGame()
+{
+	super.StartGame();
+	
+	SetTimer(WaveManager.IntermissionTime, false, 'SpawnWave');
 }
 
 function Tick(float dt)
@@ -194,7 +201,8 @@ defaultproperties
 	GameReplicationInfoClass=class'Arena.GRI_BotBattle'
 	PlayerReplicationInfoClass=class'Arena.PRI_BotBattle'
 	//bDelayedStart=true
-	
+	InitialIntermission=true
+	InitialIntermissionTime=10
 	SettingsClass=class'Arena.GISettings_BotBattle'
 	
 	RespawnTime=3

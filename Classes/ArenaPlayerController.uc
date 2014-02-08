@@ -44,6 +44,16 @@ var vector DesiredADSOffset;
 var vector RushDestination;
 
 /**
+ * The point in the world to look at.
+ */
+var vector LookAtPoint;
+
+/** 
+ * The current character that the player is using.
+ */
+var string CurrentCharacter;
+
+/**
  * The time needed to aim down sights.
  */
 var float ADSTime;
@@ -77,6 +87,11 @@ var bool FiringAbility;
 
 /* Indicates that the pawn will be accelerated on the next player tick. */
 var bool AccelPawn;
+
+/**
+ * Indicates that the player is constrained to look at a specific point in space.
+ */
+var bool ConstrainLookAt;
 
 
 delegate OnSetPlayerViewpoint(out vector loc, out rotator rot);
@@ -175,6 +190,17 @@ function AdjustFOV(float DeltaTime )
 		FOV(FOVAngle);
 }
 
+function SetLookAt(vector lookAt)
+{
+	LookAtPoint = lookAt;
+	ConstrainLookAt = true;
+}
+
+function ClearLookAt()
+{
+	ConstrainLookAt = false;
+}
+
 simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 {
 	super.GetPlayerViewPoint(loc, rot);
@@ -195,7 +221,7 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 	 
 	if (ArenaPawn(Pawn) != None && (Role < Role_Authority || WorldInfo.NetMode == NM_ListenServer))
 	{
-		//rot += ArenaPawn(Pawn).GetRecoil();
+		rot += ArenaPawn(Pawn).GetRecoil();
 	
 		if (ArenaPawn(Pawn).ADS || Aiming)
 		{
@@ -203,6 +229,9 @@ simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 		}
 	}
 	
+	if (ConstrainLookAt)
+		rot = rotator(LookAtPoint - loc);
+		
 	if (OnSetPlayerViewpoint != None)
 		OnSetPlayerViewpoint(loc, rot);
 }
@@ -388,8 +417,7 @@ simulated function CreateNewCharacter(string charName, int charClass)
 	}
 	
 	newLoadout.Points += 15;
-	
-	//newLoadout.EquippedAbilities.AddItem(class'Arena.Ab_ShockShort');
+	SaveData.Cash = 50;
 	
 	SaveData.Loadouts.AddItem(newLoadout);
 }
@@ -441,6 +469,55 @@ simulated function SetCharacterLoadout(LoadoutData charLoadout)
 	}
 }
 
+simulated function AddWeaponSchematic(WeaponSchematicData data)
+{
+	SaveData.WeapData.WeaponLibrary.AddItem(data);
+}
+
+simulated function SetWeaponSchematic(WeaponSchematicData data, string originalName)
+{
+	local int i;
+	
+	for (i = 0; i < SaveData.WeapData.WeaponLibrary.Length; i++)
+	{
+		if (SaveData.WeapData.WeaponLibrary[i].WeaponName == originalName)
+		{
+			SaveData.WeapData.WeaponLibrary[i] = data;
+			break;
+		}
+	}
+}
+
+/**
+ * Sets the current loadout used by the player.
+ */
+simulated function SetCurrentLoadout(string characterName)
+{
+	Loadout.SetLoadout(GetCharacter(characterName), self);
+}
+
+function bool CanAffortWeaponPart(class weaponPart)
+{
+	if (class<ArenaWeaponBase>(weaponPart) != None)
+		return SaveData.Cash >= class<ArenaWeaponBase>(weaponPart).default.Cost;
+	else if (class<ArenaWeaponComponent>(weaponPart) != None)
+		return SaveData.Cash >= class<ArenaWeaponComponent>(weaponPart).default.Cost;
+}
+
+function PurchaseWeaponPart(class weaponPart)
+{
+	if (class<ArenaWeaponBase>(weaponPart) != None)
+	{
+		SaveData.WeapData.BoughtBases.AddItem(class<ArenaWeaponBase>(weaponPart));
+		SaveData.Cash -= class<ArenaWeaponBase>(weaponPart).default.Cost;
+	}
+	else if (class<ArenaWeaponComponent>(weaponPart) != None)
+	{
+		SaveData.WeapData.BoughtComponents.AddItem(class<ArenaWeaponComponent>(weaponPart));
+		SaveData.Cash -= class<ArenaWeaponComponent>(weaponPart).default.Cost;
+	}
+}
+
 function array<string> GetCharacters()
 {
 	local array<string> charList;
@@ -449,9 +526,18 @@ function array<string> GetCharacters()
 	for (i = 0; i < SaveData.Loadouts.Length; i++)
 		charList.AddItem(SaveData.Loadouts[i].CharacterName);
 	
-	`log("Loaded characters" @ charList.Length);
-	
 	return charList;
+}
+
+simulated function array<string> GetWeapons()
+{
+	local array<string> weapList;
+	local int i;
+	
+	for (i = 0; i < SaveData.WeapData.WeaponLibrary.Length; i++)
+		weapList.AddItem(SaveData.WeapData.WeaponLibrary[i].WeaponName);
+	
+	return weapList;
 }
 
 simulated function SavePlayerData()
@@ -574,7 +660,7 @@ defaultproperties
 			WeaponUnderAttachment=class'Wp_UA_Shotgun';
 			WeaponName="Cheap Rifle"
 		End Object
-		Weapon=DefaultSchematic
+		PrimaryWeapon=DefaultSchematic
 		LoadoutName="Default Loadout"
 	End Object
 	Loadout=DefaultLoadout

@@ -18,12 +18,17 @@ enum PlayerModel
 /**
  * The schematic of the weapon to use with this loadout. 
  */
-var WeaponSchematic Weapon;
+var WeaponSchematic PrimaryWeapon;
 
 /**
  * The model that the loadout uses.
  */
 var PlayerModel Model;
+
+/**
+ * A list of abilities this loadout has equipped.
+ */
+var array<class<ArenaAbility> > Abilities;
 
 /**
  * The ability class of the player.
@@ -41,6 +46,11 @@ var string LoadoutName;
 var string CharacterName;
 
 /**
+ * The skill level of the character.
+ */
+var int Level;
+
+/**
  * The amount of ability experience that the player has gained, used for obtaining new abilities.
  */
 var int XP;
@@ -51,6 +61,25 @@ var int XP;
 var int Cash;
 
 
+function SetLoadout(LoadoutData data, ArenaPlayerController owner)
+{
+	local int i;
+	
+	AbilityClass = data.AbilityClass;
+	CharacterName = data.CharacterName;
+	Level = data.Level;
+	XP = data.XP;
+	
+	if (PrimaryWeapon == None)
+		PrimaryWeapon = new class'Arena.WeaponSchematic';
+		
+	PrimaryWeapon.SetSchematic(owner.GetWeapon(data.PrimaryWeaponName));
+	
+	for (i = 0; i < data.EquippedAbilities.Length; i++)
+		Abilities.AddItem(data.EquippedAbilities[i]);
+		
+	Model = PMPurebreed;
+}
 
 defaultproperties
 {

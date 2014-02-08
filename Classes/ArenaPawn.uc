@@ -81,6 +81,21 @@ var ParticleSystemComponent BloodSplatter;
 var MaterialInstanceConstant HurtScreenMaterial;
 
 /**
+ * The current recoil value for the pawn.
+ */
+var rotator CurrentRecoil;
+
+/**
+ * The velocity of the recoil rotation.
+ */
+var rotator RecoilVelocity;
+
+/**
+ * The degree of recoil acceleration.
+ */
+var rotator RecoilAcceleration;
+
+/**
  * The name of the skeletal control animation node that manages gun recoil.
  */
 var name RecoilControlName;
@@ -222,6 +237,10 @@ simulated function Tick(float dt)
 	local float healthRate;
 	local float energyRate;
 	local float staminaRate;
+	local float recoilK;
+	local float recoilM;
+	local float recoilC;
+	
 	local int i;
 	
 	//super.Tick(dt);
@@ -306,6 +325,31 @@ simulated function Tick(float dt)
 	if (ArenaWeapon(Weapon) != None)
 		PositionArms();
 	
+	if (ArenaWeapon(Weapon) != None)
+	{
+		recoilK = 100 * Stats.Values[PSVStability] * Stats.Values[PSVAccuracy] * ArenaWeapon(Weapon).Stats.Values[WSVStability] * ArenaWeapon(Weapon).Stats.Values[WSVAccuracy];
+		recoilM = ArenaWeapon(Weapon).Stats.Values[WSVWeight] / 75;
+		recoilC = 16 * Sqrt(recoilK * recoilM);
+		
+		RecoilAcceleration.Pitch += -recoilK * CurrentRecoil.Pitch / recoilM - recoilC * RecoilVelocity.Pitch;
+		RecoilVelocity.Pitch += RecoilAcceleration.Pitch * dt;
+		CurrentRecoil.Pitch += RecoilVelocity.Pitch * dt;
+		
+		RecoilAcceleration.Pitch = 0;
+
+		RecoilAcceleration.Roll += -recoilK * CurrentRecoil.Roll / recoilM - recoilC * RecoilVelocity.Roll;
+		RecoilVelocity.Roll += RecoilAcceleration.Roll * dt;
+		CurrentRecoil.Roll += RecoilVelocity.Roll * dt;
+		
+		RecoilAcceleration.Roll = 0;
+
+		RecoilAcceleration.Yaw += -recoilK * CurrentRecoil.Yaw / recoilM - recoilC * RecoilVelocity.Yaw;
+		RecoilVelocity.Yaw += RecoilAcceleration.Yaw * dt;
+		CurrentRecoil.Yaw += RecoilVelocity.Yaw * dt;
+		
+		RecoilAcceleration.Yaw = 0;
+	}
+
 	if (ArenaInventoryManager(InvManager) != None)
 	{
 		for (i = 0; i < ArenaInventoryManager(InvManager).Abilities.Length; i++)
@@ -349,6 +393,8 @@ function bool DoJump(bool bUpdating)
 
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
+	local vector projNorm;
+	local float recoilMag;
 	local int i;
 	local class<StatusEffect> seClass;
 	local StatusEffect effect;
@@ -356,8 +402,23 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	if (!Invincible)
 	{
 		if (PlayerController(Controller) != None && ArenaHUD(PlayerController(Controller).MyHUD) != None && ArenaHUD(PlayerController(Controller).MyHUD).HUDMovie != None && HitLocation != Location)
+		{
 			ArenaHUD(PlayerController(Controller).MyHUD).HUDMovie.AddHitIndicator(Normal(HitLocation - Location));
 			
+			projNorm.x = HitLocation.x - Location.x;
+			projNorm.y = HitLocation.y - Location.y;
+			
+			projNorm = Normal(projNorm << Rotation);
+			
+			if (class<ArenaDamageType>(DamageType) != None)
+				recoilMag = class<ArenaDamageType>(DamageType).default.Recoil;
+			else
+				recoilMag = 5;
+				
+			RecoilAcceleration.Pitch = projNorm.x * 65536 * recoilMag;
+			RecoilAcceleration.Roll = -projNorm.y * 65536 * recoilMag;
+		}
+		
 		if (class<AbilityDamageType>(DamageType) != None && (ArenaPlayerController(EventInstigator) != None || ArenaBot(EventInstigator) != None))
 		{
 			`log("You were hit by an ability.");
@@ -630,18 +691,16 @@ reliable server function ServerAddVelocity(vector newVel, vector hitLoc, class<D
 
 simulated function Recoil()
 {
-	if (RecoilControl != None)
-		RecoilControl.bPlayRecoil = true;
+	RecoilAcceleration += ArenaWeapon(Weapon).GetRecoilForce();
+}
+
+simulated function ForceRecoil(rotator force)
+{
 }
 
 simulated function rotator GetRecoil()
 {
-	if (ArenaWeapon(Weapon) != None)
-	{
-		return ArenaWeapon(Weapon).GetRecoilRotation(self);
-	}
-	
-	return rot(0, 0, 0);
+	return CurrentRecoil;
 }
 
 /*
@@ -801,15 +860,19 @@ simulated function SetHurtScreenMat(PlayerController player)
 
 simulated function EnterWeatherVolume(WeatherManager weather)
 {
-	`log("Entering weather volume.");
-	ArenaPlayerController(Owner).PClass.ActivateWeatherMod(weather);
+	if (Controller == None)
+		return;
+		
+	ArenaPlayerController(Controller).PClass.ActivateWeatherMod(weather);
 	InWeatherVolume = true;
 }
 
 simulated function ExitWeatherVolume()
 {
-	`log("Exiting weather volume.");
-	ArenaPlayerController(Owner).PClass.DeactivateWeatherMod();
+	if (Controller == None)
+		return;
+		
+	ArenaPlayerController(Controller).PClass.DeactivateWeatherMod();
 	InWeatherVolume = false;
 }
 

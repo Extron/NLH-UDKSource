@@ -17,6 +17,12 @@ class AP_Specter extends ArenaPawn;
  */
 var GFx_Menu CurrentMenu;
 
+function SetMovementPhysics()
+{
+	if (Physics != PHYS_Flying)
+		SetPhysics(PHYS_Flying);
+}
+
 simulated function SetMenu(GFx_Menu menu)
 {
 	CurrentMenu = menu;
@@ -28,4 +34,8 @@ simulated function SetMenu(GFx_Menu menu)
 defaultproperties
 {
 	HasFootsteps=false
+	bCanFly=true
+	
+	WalkingPhysics=PHYS_Flying
+	LandMovementState=PlayerFlying
 }

@@ -11,7 +11,7 @@ class Wp_PhotonEmitterBase extends ArenaWeaponBase;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'PhotonEmitterBase.Meshes.DemoBaseMesh'
+		SkeletalMesh=SkeletalMesh'PhotonEmitter.Meshes.PhotonEmitterBase'
 	End Object
 	
 	Begin Object Name=NewStats

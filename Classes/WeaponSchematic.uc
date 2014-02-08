@@ -38,6 +38,21 @@ var string WeaponName;
  */
 var array<FireMode> WeaponFireModes;
 
+function SetSchematic(WeaponSchematicData data)
+{
+	ArenaWeaponBase = data.BaseClass;
+	
+	WeaponStock = class<Wp_Stock>(data.Components[WCStock]);
+	WeaponBarrel = class<Wp_Barrel>(data.Components[WCBarrel]);
+	WeaponMuzzle = class<Wp_Muzzle>(data.Components[WCMuzzle]);
+	WeaponOptics = class<Wp_Optics>(data.Components[WCOptics]);
+	WeaponSideAttachment = class<Wp_SideAttachment>(data.Components[WCSideAttachment]);
+	WeaponUnderAttachment = class<Wp_UnderAttachment>(data.Components[WCUnderAttachment]);
+	
+	WeaponName = data.WeaponName;
+	
+	WeaponFireModes = data.FireModes;
+}
 
 defaultproperties
 {

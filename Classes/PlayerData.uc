@@ -107,13 +107,7 @@ struct LoadoutData
 	 * The amount of xp points the character has to spend on abilities.
 	 */
 	var int Points;
-	
-	/**
-	 * The amount of tokens that the character has.
-	 */
-	var int Cash;
 };
-
 
 /**
  * The current file version of the player data used.
@@ -135,6 +129,11 @@ var WeaponData WeapData;
  * Data related to Bot Battle.
  */
 var BotBattleData BBData;
+
+/**
+ * The amount of tokens that the player has.
+ */
+var int Cash;
 
 
 simulated function Initialize()

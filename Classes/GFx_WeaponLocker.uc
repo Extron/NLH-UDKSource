@@ -59,11 +59,6 @@ var GFx_WLSubMenu Submenu;
 var GFxObject Cursor;
 
 /**
- * The button wrappers for the buttons.
- */
-var GFxObject AcceptBW, CancelBW;
-
-/**
  * The tooltip to display when hovering over a weapon part.
  */
 var GFx_Tooltip PartTooltip, StatTooltip;
@@ -174,11 +169,8 @@ function bool Start(optional bool StartPaused = false)
 	PartTooltip = GFx_Tooltip(GetVariableObject("_root.part_tooltip", class'GFx_Tooltip'));
 	StatTooltip = GFx_Tooltip(GetVariableObject("_root.stat_tooltip", class'GFx_Tooltip'));
 	
-	AcceptBW = GetVariableObject("_root.accept_button");
-	CancelBW = GetVariableObject("_root.cancel_button");
-	
-	AcceptButton = GFxClikWidget(AcceptBW.GetObject("button", class'GFxClikWidget'));
-	CancelButton = GFxClikWidget(CancelBW.GetObject("button", class'GFxClikWidget'));
+	AcceptButton = GFxClikWidget(GetVariableObject("_root.accept_button", class'GFxClikWidget'));
+	CancelButton = GFxClikWidget(GetVariableObject("_root.cancel_button", class'GFxClikWidget'));
 
 	AcceptButton.AddEventListener('CLIK_click', OnPressAcceptButton);
 	CancelButton.AddEventListener('CLIK_click', OnPressCancelButton);

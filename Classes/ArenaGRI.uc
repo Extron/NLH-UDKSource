@@ -17,7 +17,14 @@ var GlobalGameConstants Constants;
  */
 var GISettings GameSettings;
 
-/** The respawn time for all players. */
+/**
+ * The game's graphics settings.
+ */
+var GraphicsSettings GraphicsSettings;
+
+/** 
+ * The respawn time for all players. 
+ */
 var float RespawnTime;
 
 /**
@@ -25,7 +32,9 @@ var float RespawnTime;
  */
 var WeatherManager WeatherMgr;
 
-/** Indicates that the player can respawn immidiately after death. */
+/**
+ * Indicates that the player can respawn immidiately after death. 
+ */
 var bool AllowFastRespawn;
 
 /** Indicates that the player can respawn. */
@@ -42,6 +51,14 @@ replication
 		
 	if (bNetDirty)
 		RespawnTime, AllowFastRespawn, CanRespawn, WeatherMgr;
+}
+
+simulated function PreBeginPlay()
+{
+	GraphicsSettings = Spawn(class'Arena.GraphicsSettings');
+	GraphicsSettings.LoadSettings();
+	
+	super.PreBeginPlay();
 }
 
 simulated function PostBeginPlay()

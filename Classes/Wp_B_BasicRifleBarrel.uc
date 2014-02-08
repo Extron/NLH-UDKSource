@@ -13,7 +13,7 @@ class Wp_B_BasicRifleBarrel extends Wp_Barrel;
  */
 simulated function bool CanEquipUnderAttachment(Wp_UnderAttachment attachment)
 {
-	return false;
+	return Wp_UA_NoUnderAttachment(attachment) != None;
 }
 
 
@@ -22,7 +22,7 @@ simulated function bool CanEquipUnderAttachment(Wp_UnderAttachment attachment)
  */
 simulated function bool CanEquipSideAttachment(Wp_SideAttachment attachment)
 {
-	return false;
+	return Wp_SA_NoSideAttachment(attachment) != None;
 }
 
 defaultproperties
@@ -46,7 +46,7 @@ defaultproperties
 	CompatibleSizes[1]=WSRegular
 	CompatibleSizes[2]=WSLarge
 
-	SightsOffset=(Z=1.65)
+	SightsOffset=(Y=-0.85,Z=1.85)
 	Weight=3
 	ComponentName="Basic Rifle Barrel"
 	ComponentDescription="A simple rifled barrel made out of iron metal, it can be attached to a wide variety of projectile-based weapons, though its cheap design often leads to rust or corrosion."

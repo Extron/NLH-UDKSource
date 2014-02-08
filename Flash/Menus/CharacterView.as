@@ -10,6 +10,7 @@
 		public var characterInfo:CharacterInfo;
 		public var saveButton:DefaultButton;
 		public var cancelButton:DefaultButton;
+		public var popupWindow:DefaultWindow;
 		
 		public function CharacterView() 
 		{

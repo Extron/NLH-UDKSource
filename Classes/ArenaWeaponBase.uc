@@ -60,6 +60,11 @@ var float EnergyMax;
 var string BaseName;
 
 /**
+ * The icon image of the weapon base.
+ */
+var string BaseIcon;
+
+/**
  * A short description of the base.
  */
 var string BaseDescription;
@@ -85,6 +90,8 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 function AttachWeapon(LightEnvironmentComponent lightEnv)
 {
 	super.AttachWeapon(lightEnv);
+
+	`log("Weapon Components" @ WeaponComponents.Length);
 
 	WeaponComponents[WCStock].AttachToBaseSpecial(self, Sockets[WCStock], lightEnv);
 	WeaponComponents[WCBarrel].AttachToBaseSpecial(self, Sockets[WCBarrel], lightEnv);
