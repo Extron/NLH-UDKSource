@@ -10,6 +10,11 @@ class AP_Player extends ArenaPawn;
 
 
 /**
+ * The list of armor that the player is wearing.
+ */
+var array<ArmorComponent> Armor;
+
+/**
  * The sound cue to play when the player is near death.
  */
 var AudioComponent NearDeathHeartbeat;
@@ -37,9 +42,9 @@ var SkelControlLimb LeftArmControl;
 var name LeftArmControlName;
 
 /**
- * The translation to apply to the arms when drawing them.
+ * The translation to apply to the armor when drawing them.
  */
-var vector ArmsTranslation;
+var vector ArmorTranslation;
 
 simulated event TickSpecial(float dt)
 {
@@ -51,7 +56,7 @@ simulated event TickSpecial(float dt)
 	if (ArenaWeapon(Weapon) != None)
 	{
 		ArenaWeapon(Weapon).GetGripSocketLocRot(gripLoc, gripRot);
-		LeftArmControl.EffectorLocation = gripLoc;
+		//LeftArmControl.EffectorLocation = gripLoc;
 	}
 	
 	if (NearDeathHeartbeat != None)
@@ -106,6 +111,7 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 function InitInventory()
 {
 	local ArenaWeapon newWeapon;
+	local ArmorComponent armorComponent;
 	local int i;
 	
 	super.InitInventory();
@@ -113,6 +119,17 @@ function InitInventory()
 	if (ArenaPlayerController(Controller) != None && ArenaPlayerController(Controller).Loadout != None && ArenaPlayerController(Controller).Loadout.PrimaryWeapon != None)
 	{
 		newWeapon = CreateWeapon(ArenaPlayerController(Controller).Loadout.PrimaryWeapon);
+	}
+	
+	if (ArenaPlayerController(Controller) != None && ArenaPlayerController(Controller).Loadout != None && ArenaPlayerController(Controller).Loadout.Armor != None)
+	{
+		for (i = 0; i < ArenaPlayerController(Controller).Loadout.Armor.Components.Length; i++)
+		{
+			armorComponent = Spawn(ArenaPlayerController(Controller).Loadout.Armor.Components[i], self);
+			armorComponent.MeshComponent.SetLightEnvironment(LightEnvironment);
+			`log("Adding armor component" @ armorComponent);
+			AttachArmor(armorComponent);
+		}
 	}
 	
 	if (ArenaInventoryManager(InvManager) != None)
@@ -210,21 +227,21 @@ function AttachToAbilitySource(ActorComponent component)
 simulated function PositionArms()
 {
 	local rotator R;
+	local int i;
 	
 	R = CurrentRecoil;
 	
-	//R += CurrentRecoil;
-	//R = Rotation;
 	if (Controller != None)
 		R.Pitch += Controller.Rotation.Pitch;
 	
-	RightArm.SetTranslation(((ArmsTranslation - vect(0, 0, 1) * EyeHeight) >> R) + vect(0, 0, 1) * EyeHeight);
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].MeshComponent.SetTranslation(ArmorTranslation);
+	
+	RightArm.SetTranslation(64.432 * (vect(0, 0, 1) - (vect(0, 0, 1) >> R)));
 	RightArm.SetRotation(R);
 	
-	LeftArm.SetTranslation(((ArmsTranslation - vect(0, 0, 1) * EyeHeight) >> R) + vect(0, 0, 1) * EyeHeight);
+	LeftArm.SetTranslation(64.432 * (vect(0, 0, 1) - (vect(0, 0, 1) >> R)));
 	LeftArm.SetRotation(R);
-	
-	//SetBase(Holder);
 }
 
 simulated function PlayArmAnimation(name sequence, optional float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
@@ -275,6 +292,20 @@ simulated function RebootElectronics(ArenaPawn pawn)
 	{
 		ArenaHUD(PlayerController(Controller).MyHUD).RebootHUD();
 	}
+}
+
+simulated function AttachArmor(ArmorComponent armorComponent)
+{
+	Armor.AddItem(armorComponent);
+	
+	AttachComponent(armorComponent.MeshComponent);
+	AddStatMod(armorComponent.StatMod);
+	
+	if (armorComponent.Type == ACTRightArm)
+		RightArm = armorComponent.MeshComponent;
+	
+	if (armorComponent.Type == ACTLeftArm)
+		LeftArm = armorComponent.MeshComponent;
 }
 
 exec function GiveAbility(string ability)
@@ -492,73 +523,7 @@ exec function GiveAmmo()
 }
 
 defaultproperties
-{
-	Begin Object Class=UDKSkeletalMeshComponent Name=RightArmMesh
-		SkeletalMesh=SkeletalMesh'AC_Player.Meshes.RightArmMesh'
-		PhysicsAsset=PhysicsAsset'AC_Player.Physics.RightArmPhysics'
-		Scale=5
-		bCacheAnimSequenceNodes=FALSE
-		AlwaysLoadOnClient=true
-		AlwaysLoadOnServer=true
-		bOwnerNoSee=false
-		bOnlyOwnerSee=true
-		CastShadow=FALSE
-		BlockRigidBody=TRUE
-		bUpdateSkelWhenNotRendered=false
-		bIgnoreControllersWhenNotRendered=TRUE
-		bUpdateKinematicBonesFromAnimation=true
-		bCastDynamicShadow=true
-		RBChannel=RBCC_Untitled3
-		RBCollideWithChannels=(Untitled3=true)
-		LightEnvironment=MyLightEnvironment
-		bOverrideAttachmentOwnerVisibility=true
-		bAcceptsDynamicDecals=FALSE
-		AnimTreeTemplate=AnimTree'AC_Player.Animations.ArmsAnimTree'
-		AnimSets[0]=AnimSet'AC_Player.Animations.ArmsAnimSet'
-		bHasPhysicsAssetInstance=true
-		TickGroup=TG_PreAsyncWork
-		bChartDistanceFactor=true
-		MinDistFactorForKinematicUpdate=0.2
-		RBDominanceGroup=20
-		bUseOnePassLightingOnTranslucency=TRUE
-		bPerBoneMotionBlur=true
-	End Object 
-	RightArm=RightArmMesh
-	Components.Add(RightArmMesh)
-	
-	Begin Object Class=UDKSkeletalMeshComponent Name=LeftArmMesh
-		SkeletalMesh=SkeletalMesh'AC_Player.Meshes.LeftArmMesh'
-		PhysicsAsset=PhysicsAsset'AC_Player.Physics.LeftArmPhysics'
-		Scale=5
-		bCacheAnimSequenceNodes=FALSE
-		AlwaysLoadOnClient=true
-		AlwaysLoadOnServer=true
-		bOwnerNoSee=false
-		bOnlyOwnerSee=true
-		CastShadow=FALSE
-		BlockRigidBody=TRUE
-		bUpdateSkelWhenNotRendered=false
-		bIgnoreControllersWhenNotRendered=TRUE
-		bUpdateKinematicBonesFromAnimation=true
-		bCastDynamicShadow=true
-		RBChannel=RBCC_Untitled3
-		RBCollideWithChannels=(Untitled3=true)
-		LightEnvironment=MyLightEnvironment
-		bOverrideAttachmentOwnerVisibility=true
-		bAcceptsDynamicDecals=FALSE
-		AnimTreeTemplate=AnimTree'AC_Player.Animations.ArmsAnimTree'
-		AnimSets[0]=AnimSet'AC_Player.Animations.ArmsAnimSet'
-		bHasPhysicsAssetInstance=true
-		TickGroup=TG_PreAsyncWork
-		bChartDistanceFactor=true
-		MinDistFactorForKinematicUpdate=0.2
-		RBDominanceGroup=20
-		bUseOnePassLightingOnTranslucency=TRUE
-		bPerBoneMotionBlur=true
-	End Object 
-	LeftArm=LeftArmMesh
-	Components.Add(LeftArmMesh)
-	
+{	
 	Begin Object Class=AudioComponent Name=NDHB
 		SoundCue=SoundCue'AC_Player.Audio.HeartbeatSC'
         bAutoPlay=false
@@ -577,5 +542,5 @@ defaultproperties
 	bScriptTickSpecial=true
 	RecoilControlName=RecoilNode
 	LeftArmControlName=LeftArmNode
-	ArmsTranslation=(X=0,Y=-10,Z=40)
+	ArmorTranslation=(X=-15,Y=0,Z=0)
 }

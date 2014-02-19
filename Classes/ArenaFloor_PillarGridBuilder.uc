@@ -37,6 +37,6 @@ function FillGrid()
 
 defaultproperties
 {
-    BitmapFilename="Cancel" // Engine\EditorResources\wxRes\Cancel.png
+    BitmapFilename="PillarBuildIcon"
     ToolTip="Arena Floor Grid Builder"
 }

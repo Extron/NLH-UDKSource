@@ -158,6 +158,22 @@ simulated exec function ToggleSide()
 		ArenaWeaponBase(Pawn.Weapon).ToggleComponent(5);
 }
 
+simulated exec function ActivateArmor(int slot)
+{
+	local int i;
+	
+	`log("Attempting to activate armor slot" @ slot);
+	
+	if (AP_Player(Pawn) != None)
+	{
+		for (i = 0; i < AP_Player(Pawn).Armor.Length; i++)
+		{
+			if (AP_Player(Pawn).Armor[i].Slot == slot)
+				AP_Player(Pawn).Armor[i].Activate();
+		}
+	}
+}
+
 function AdjustMouseSensitivity(float FOVScale)
 {
 	if (ArenaPawn(Pawn) != None)

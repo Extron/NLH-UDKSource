@@ -83,15 +83,12 @@ function InitializeMaterial()
 
 function InitializeRandomMotion()
 {
-	`log("InitializeRandomMotion" @ self);
 	SetTimer(Lerp(MinRandomDuration, MaxRandomDuration, FRand()), false, 'StartMove');
 }
 
 function StartMove()
 {
 	local ArenaFloor_PillarMoveable pillar;
-	
-	`log("StartMove" @ self);
 	
 	NewHeight = Lerp(MinAllowedHeight, MaxAllowedHeight, FRand());
 	
