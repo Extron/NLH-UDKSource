@@ -60,6 +60,29 @@ event Activate()
 {
 }
 
+simulated function PlayAnimation(name sequence, optional float duration, optional bool loop)
+{
+	local AnimNodePlayCustomAnim node;
+
+	if (WorldInfo.NetMode == NM_DedicatedServer || ArenaPawn(Owner) == None|| !ArenaPawn(Owner).IsFirstPerson() || MeshComponent == None)
+		return;
+
+	node = AnimNodePlayCustomAnim(AnimTree(MeshComponent.Animations).Children[0].Anim);
+
+	if (node == None)
+		return;
+
+	node.PlayCustomAnim(sequence, 1.0, , , loop);
+}
+
+simulated function AnimNodePlayCustomAnim GetAnimNode()
+{
+	if (MeshComponent != None)
+		return AnimNodePlayCustomAnim(AnimTree(MeshComponent.Animations).Children[0].Anim);
+
+	return None;
+}
+
 defaultproperties
 {
 	Begin Object Class=PlayerStatModifier Name=PSM
@@ -82,8 +105,8 @@ defaultproperties
 		RBCollideWithChannels=(Untitled3=true)
 		bOverrideAttachmentOwnerVisibility=true
 		bAcceptsDynamicDecals=FALSE
-		AnimTreeTemplate=AnimTree'AC_Player.Animations.ArmsAnimTree'
-		AnimSets[0]=AnimSet'AC_Player.Animations.ArmsAnimSet'
+		AnimTreeTemplate=AnimTree'AC_Player.Animations.MovementAnimationTree'
+		AnimSets[0]=AnimSet'AC_Player.Animations.MovementAnimations'
 		bHasPhysicsAssetInstance=true
 		TickGroup=TG_PreAsyncWork
 		bChartDistanceFactor=true

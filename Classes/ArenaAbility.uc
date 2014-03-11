@@ -249,7 +249,7 @@ simulated function StartFire(byte FireModeNum)
 	if (CanCharge && !IsCharging && CanFire)
 	{
 		CanFire = false;
-		AP_Player(Instigator).PlayArmAnimation(ChargeStartAnim, 0.0, true);
+		AP_Player(Instigator).PlayAnimation(ChargeStartAnim, 0.0, true);
 		SetTimer(GetArmAnimLength(ChargeStartAnim) - 0.1, false, 'ChargeAnimComplete');
 		PlayingChargeStartAnim = true;
 		InterruptedChargeStartAnim = false;
@@ -260,7 +260,7 @@ simulated function StartFire(byte FireModeNum)
 		if (PlayedStartAnim || AP_Player(Instigator) == None)
 		{
 			if (CanHold && AP_Player(Instigator) != None)
-				AP_Player(Instigator).PlayArmAnimation(HoldingAnim, 0.0, true);
+				AP_Player(Instigator).PlayAnimation(HoldingAnim, 0.0, true);
 				
 			super.StartFire(FireModeNum);
 		}
@@ -268,12 +268,12 @@ simulated function StartFire(byte FireModeNum)
 		{
 			if (CanHold)
 			{
-				AP_Player(Instigator).PlayArmAnimation(HoldStartAnim, 0.0);
+				AP_Player(Instigator).PlayAnimation(HoldStartAnim, 0.0);
 				SetTimer(GetArmAnimLength(HoldStartAnim), false, 'FireAnimComplete');
 			}
 			else
 			{
-				AP_Player(Instigator).PlayArmAnimation(FireStartAnim, 0.0);
+				AP_Player(Instigator).PlayAnimation(FireStartAnim, 0.0);
 				SetTimer(GetArmAnimLength(FireStartAnim), false, 'FireAnimComplete');
 			}
 		}
@@ -291,7 +291,7 @@ simulated function StopFire(byte FireModeNum)
 		HeldTime = 0;
 		
 		if (AP_Player(Instigator) != None)
-			AP_Player(Instigator).PlayArmAnimation(HoldEndAnim, 0.0);
+			AP_Player(Instigator).PlayAnimation(HoldEndAnim, 0.0);
 			
 		PlayedStartAnim = false;
 	}
@@ -301,7 +301,7 @@ simulated function StopFire(byte FireModeNum)
 		
 		if (!PlayedStartAnim && AP_Player(Instigator) != None)
 		{
-			AP_Player(Instigator).PlayArmAnimation(ChargeFireAnim, 0.0);
+			AP_Player(Instigator).PlayAnimation(ChargeFireAnim, 0.0);
 			SetTimer(GetArmAnimLength(ChargeFireAnim) - 0.1, false, 'ChargeFireAnimComplete');
 			PlayingChargeFireAnim = true;
 		}
@@ -321,7 +321,7 @@ simulated function StopFire(byte FireModeNum)
 		ChargeTime = 0;
 		
 		if (AP_Player(Instigator) != None)
-			AP_Player(Instigator).PlayArmAnimation(ChargeAbortAnim, 0.0);
+			AP_Player(Instigator).PlayAnimation(ChargeAbortAnim, 0.0);
 		
 		if (ChargeParticles != None)
 				ChargeParticles.DeactivateSystem();
@@ -349,7 +349,7 @@ simulated function FireAmmunition()
 		if (CanCharge)
 		{
 			if (AP_Player(Instigator) != None)
-				AP_Player(Instigator).PlayArmAnimation(ChargeEndAnim, 0.0);
+				AP_Player(Instigator).PlayAnimation(ChargeEndAnim, 0.0);
 			
 			if (ChargeParticles != None)
 				ChargeParticles.DeactivateSystem();
@@ -357,7 +357,7 @@ simulated function FireAmmunition()
 		else
 		{
 			if (AP_Player(Instigator) != None)
-				AP_Player(Instigator).PlayArmAnimation(FireEndAnim, 0.0);
+				AP_Player(Instigator).PlayAnimation(FireEndAnim, 0.0);
 		}
 			
 		PlayedStartAnim = false;
@@ -500,7 +500,7 @@ simulated function ChargeAnimComplete()
 		IsCharging = true;
 		
 		if (AP_Player(Instigator) != None)
-			AP_Player(Instigator).PlayArmAnimation(ChargingAnim, 0.0, true);
+			AP_Player(Instigator).PlayAnimation(ChargingAnim, 0.0, true);
 			
 		EmitChargeParticles();
 	}

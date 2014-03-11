@@ -83,6 +83,13 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 
 	super.PostInitAnimTree(SkelComp);
 
+	foreach SkelComp.AllAnimNodes(class'AN_BlendBySprint', node)
+	{
+		node.SetSprint(false);
+		SprintAnimNodes.AddItem(node);
+	}
+		
+	/*
 	if (SkelComp == RightArm)
 	{
 		RecoilControl = GameSkelCtrl_Recoil(RightArm.FindSkelControl(RecoilControlName));
@@ -105,7 +112,7 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 			node.SetSprint(false);
 			SprintAnimNodes.AddItem(node);
 		}
-	}
+	}*/
 }
 
 function InitInventory()
@@ -156,7 +163,7 @@ function bool DoJump(bool bUpdating)
 	
 	ret = super.DoJump(bUpdating);
 	
-	PlayArmAnimation('Arms1PJump');
+	PlayAnimation('Arms1PJump');
 	
 	return ret;
 }
@@ -165,7 +172,7 @@ event Landed(vector HitNormal, Actor FloorActor)
 {
 	super.Landed(HitNormal, FloorActor);
 	
-	PlayArmAnimation('Arms1PLand');
+	PlayAnimation('Arms1PLand');
 }
 
 simulated function Melee()
@@ -181,7 +188,7 @@ simulated function Melee()
 	{
 		`log("Meleeing");
 		
-		PlayArmAnimation(ArenaWeapon(Weapon).MeleeAnims[anim]);
+		PlayAnimation(ArenaWeapon(Weapon).MeleeAnims[anim]);
 		
 		duration = RightArm.GetAnimLength(ArenaWeapon(Weapon).MeleeAnims[anim]);
 		`log("Duration" @ duration);
@@ -244,34 +251,12 @@ simulated function PositionArms()
 	LeftArm.SetRotation(R);
 }
 
-simulated function PlayArmAnimation(name sequence, optional float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
+simulated function PlayAnimation(name sequence, optional float duration, optional bool loop)
 {
-	local AnimNodePlayCustomAnim node;
-
-	if (WorldInfo.NetMode == NM_DedicatedServer || !IsFirstPerson())
-		return;
-
-		node = GetArmAnimNode(LeftArm);
-
-		if (LeftArm == None || node == None)
-			return;
-
-		node.PlayCustomAnim(sequence, 1.0, , , loop);
-		
-		node = GetArmAnimNode(RightArm);
-
-		if (LeftArm == None || node == None)
-			return;
-
-		node.PlayCustomAnim(sequence, 1.0, , , loop);
-}
-
-simulated function AnimNodePlayCustomAnim GetArmAnimNode(SkeletalMeshComponent skelMesh)
-{
-	if (skelMesh != None)
-		return AnimNodePlayCustomAnim(AnimTree(skelMesh.Animations).Children[0].Anim);
-
-	return None;
+	local int i;
+	
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].PlayAnimation(sequence, duration, loop);
 }
 
 simulated function EnableLeftHandPositioning(bool enable)

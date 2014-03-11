@@ -351,7 +351,7 @@ function bool CanEquipBarrel(Wp_Barrel barrel)
 
 defaultproperties
 {
-	Subclasses[0]=class'Arena.Wp_BasicRifleBase'
+	Subclasses[0]=class'Arena.Wp_CheapRifleBase'
 	Subclasses[1]=class'Arena.Wp_AssaultRifleBase'
 	Subclasses[2]=class'Arena.Wp_PhotonEmitterBase'
 	Subclasses[3]=class'Arena.Wp_SnubHandgun'

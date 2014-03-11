@@ -8,6 +8,11 @@
 
 class ArenaPawn extends UDKPawn;
 
+enum DrawMode
+{
+	DMDefault,
+	DMThermal
+};
 
 /**
  * This stores any sprint blending animation nodes used by the pawn's mesh.
@@ -81,6 +86,16 @@ var ParticleSystemComponent BloodSplatter;
 var MaterialInstanceConstant HurtScreenMaterial;
 
 /**
+ * The mesh's default depth priority group.
+ */
+var ESceneDepthPriorityGroup DefaultDPG;
+
+/**
+ * The current draw mode of the pawn.
+ */
+var DrawMode CurrentDrawMode;
+
+/**
  * The current recoil value for the pawn.
  */
 var rotator CurrentRecoil;
@@ -99,6 +114,11 @@ var rotator RecoilAcceleration;
  * The name of the skeletal control animation node that manages gun recoil.
  */
 var name RecoilControlName;
+
+/**
+ * The default drawing distance of the pawn's mesh.
+ */
+var float DefaultMinDrawDistance;
 
 /* Stores the amount of energy the player currently has. */
 var float Energy;
@@ -831,6 +851,31 @@ simulated function Melee()
 simulated function RebootElectronics(ArenaPawn pawn)
 {
 	//TODO: Reboot electronics of the player here.
+}
+
+/**
+ * Switches this pawn to draw itself as a thermal signature.
+ */
+simulated function EnableThermal()
+{
+	CurrentDrawMode = DMThermal;
+	
+	`log("Saving default draw mode" @ Mesh.DepthPriorityGroup);
+	
+	DefaultDPG = Mesh.DepthPriorityGroup;
+	DefaultMinDrawDistance = Mesh.MinDrawDistance;
+	//Mesh.MinDrawDistance = 4096;
+	Mesh.SetDepthPriorityGroup(SDPG_Foreground);
+}
+
+/**
+ * Switches this pawn to draw itself as a regular signature.
+ */
+simulated function DisableAltAppearance()
+{
+	CurrentDrawMode = DMDefault;
+	Mesh.SetDepthPriorityGroup(DefaultDPG);
+	//Mesh.MinDrawDistance = DefaultMinDrawDistance;
 }
 
 /**

@@ -17,5 +17,5 @@ defaultproperties
 	Components[2]=class'Arena.AC_RLNude'
 	Components[3]=class'Arena.AC_LLNude'
 	Components[4]=class'Arena.AC_TNude'
-	Components[5]=class'Arena.AC_NightVisionOptics'
+	Components[5]=class'Arena.AC_ThermalVisionOptics'
 }

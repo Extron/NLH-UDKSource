@@ -267,7 +267,7 @@ function CreateNewWeaponSchematic()
 {
 	local WeaponSchematicData newWeap;
 	
-	newWeap.BaseClass = class'Arena.Wp_BasicRifleBase';
+	newWeap.BaseClass = class'Arena.Wp_CheapRifleBase';
 	
 	newWeap.Components[WCStock] = class'Arena.Wp_S_CheapStock';
 	newWeap.Components[WCBarrel] = class'Arena.Wp_B_BasicRifleBarrel';

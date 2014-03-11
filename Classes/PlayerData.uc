@@ -149,9 +149,9 @@ simulated function Initialize()
 	WeapData.BoughtComponents[5] = class'Arena.Wp_O_CheapIronSights';
 	WeapData.BoughtComponents[6] = class'Arena.Wp_B_BasicRifleBarrel';
 	
-	WeapData.BoughtBases[0] = class'Arena.Wp_BasicRifleBase';
+	WeapData.BoughtBases[0] = class'Arena.Wp_CheapRifleBase';
 	
-	defaultWeap.BaseClass = class'Arena.Wp_BasicRifleBase';
+	defaultWeap.BaseClass = class'Arena.Wp_CheapRifleBase';
 	
 	defaultWeap.Components[WCStock] = class'Arena.Wp_S_CheapStock';
 	defaultWeap.Components[WCBarrel] = class'Arena.Wp_B_BasicRifleBarrel';
@@ -163,4 +163,36 @@ simulated function Initialize()
 	defaultWeap.FireModes[0] = FMFullAuto;
 	
 	WeapData.WeaponLibrary.AddItem(defaultWeap);
+}
+
+simulated function string Serialize()
+{
+	local string text;
+	local int i, j;
+	
+	text = "Player Save Data:\n\n";
+	
+	for (i = 0; i < WeapData.WeaponLibrary.Length; i++)
+	{
+		text $= "Weapon Schematic" @ i $ ":\n";
+		text $= "Name:" @ WeapData.WeaponLibrary[i].WeaponName $ "\n";
+		text $= "Base" @ WeapData.WeaponLibrary[i].BaseClass $ "\n";
+		
+		text $= "Components:\n";
+		
+		for (j = 0; j < WeapData.WeaponLibrary[i].Components.Length; j++)
+			text $= WeapData.WeaponLibrary[i].Components[j] $ "\n";
+			
+		text $= "\n\n";
+	}
+	
+	text $= "\n\nLoadouts:\n\n";
+	
+	for (i = 0; i < Loadouts.Length; i++)
+	{
+		text $= "Loadout" @ i $ ":" @ Loadouts[i].LoadoutName;
+		text $= "Primary Weapon:" @  Loadouts[i].PrimaryWeaponName;
+	}
+	
+	return text;
 }

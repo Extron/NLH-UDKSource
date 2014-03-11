@@ -11,7 +11,7 @@ class Wp_S_CheapStock extends Wp_Stock;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'CheapStock.Meshes.CheapStockMesh'
+		SkeletalMesh=SkeletalMesh'CheapStock.Meshes.CheapStock1'
 	End Object
 	
 	Begin Object Name=NewStatMod

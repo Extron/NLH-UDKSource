@@ -96,32 +96,11 @@ var bool ConstrainLookAt;
 
 delegate OnSetPlayerViewpoint(out vector loc, out rotator rot);
 
-simulated function PostBeginPlay()
+function SetCharacter(string inCharacter)
 {
-	local string filename;
+	super.SetCharacter(inCharacter);
 	
-	super.PostBeginPlay();
-	
-	if (!(Role == Role_Authority && WorldInfo.NetMode == NM_DedicatedServer))
-	{
-		`log("Loading player save data file.");
-		if (PlayerReplicationInfo.PlayerName == "")
-			PlayerReplicationInfo.PlayerName = "Nameless";
-			
-		filename = PlayerReplicationInfo.PlayerName $ "_data.bin";
-		
-		SaveData = new class'Arena.PlayerData';
-		
-		if (!(class'Engine'.static.BasicLoadObject(SaveData, filename, true, class'Arena.PlayerData'.const.FileVersion)))
-		{
-			`log("No save data detected.  Creating a new file.");
-			
-			if (!(class'Engine'.static.BasicSaveObject(SaveData, filename, true, class'Arena.PlayerData'.const.FileVersion)))
-				`log("File save failed.");
-		}
-		
-		SaveData.Initialize();
-	}		
+	LoadPlayerData();
 }
 
 simulated function ReceivedGameClass(class<GameInfo> GameClass)
@@ -310,7 +289,7 @@ exec function ADS()
 simulated function PlayerTick(float dt)
 {
 	super.PlayerTick(dt);
-	
+
 	if (Aiming)
 	{
 		ADSCounter += dt;
@@ -540,17 +519,51 @@ simulated function array<string> GetWeapons()
 	return weapList;
 }
 
-simulated function SavePlayerData()
+function SavePlayerData()
 {
 	local string filename;
 	
 	if (PlayerReplicationInfo.PlayerName == "")
 			PlayerReplicationInfo.PlayerName = "Nameless";
 			
-		filename = PlayerReplicationInfo.PlayerName $ "_data.bin";
+	filename = "../../SaveData/" $ PlayerReplicationInfo.PlayerName $ "_data.bin";
 		
-	if (!(class'Engine'.static.BasicSaveObject(SaveData, filename, true, class'Arena.PlayerData'.const.FileVersion)))
+	`log("Attepmting to save player data" @ filename);
+	`log("Player Data:\n" $ SaveData.Serialize());
+	
+	if (!(class'Engine'.static.BasicSaveObject(SaveData, filename, false, class'Arena.PlayerData'.const.FileVersion)))
 		`warn("File save failed.");
+}
+
+function LoadPlayerData()
+{
+	local string filename;
+	
+	if (!(Role == Role_Authority && WorldInfo.NetMode == NM_DedicatedServer))
+	{
+		`log("Loading player save data file.");
+		if (PlayerReplicationInfo.PlayerName == "")
+			PlayerReplicationInfo.PlayerName = "Nameless";
+			
+		filename = "../../SaveData/" $ PlayerReplicationInfo.PlayerName $ "_data.bin";
+		
+		`log("Loading file" @ filename);
+		
+		SaveData = new class'Arena.PlayerData';
+		
+		if (!(class'Engine'.static.BasicLoadObject(SaveData, filename, false, class'Arena.PlayerData'.const.FileVersion)))
+		{
+			`log("No save data detected.  Creating a new file.");
+			
+			if (!(class'Engine'.static.BasicSaveObject(SaveData, filename, true, class'Arena.PlayerData'.const.FileVersion)))
+				`log("File save failed.");
+		}
+		
+		`log("Save data contents:");
+		`log(SaveData.Serialize());
+		
+		SaveData.Initialize();
+	}
 }
 
 simulated function float ComputeNextLevelXP(int level)
@@ -651,7 +664,7 @@ defaultproperties
 	
 	Begin Object Class=PlayerLoadout Name=DefaultLoadout
 		Begin Object Class=WeaponSchematic Name=DefaultSchematic
-			ArenaWeaponBase=class'Wp_BasicRifleBase';
+			ArenaWeaponBase=class'Wp_CheapRifleBase';
 			WeaponStock=class'Wp_S_WoodStock';
 			WeaponBarrel=class'Wp_B_ShortRailedBarrel';
 			WeaponMuzzle=class'Wp_M_NoMuzzle';
