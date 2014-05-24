@@ -12,5 +12,5 @@ defaultproperties
 {
 	Recoil=3
 	Points=1
-	ActionString="Shot"
+	ActionString="Lazed"
 }

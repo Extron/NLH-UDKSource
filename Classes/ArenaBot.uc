@@ -78,6 +78,11 @@ var BehaviorTreeNode CurrentLatentNode;
 var NavigationPoint WanderTarget;
 
 /**
+ * The current destination of the bot.  This is set by various BT nodes, and should not be changed during runtime.
+ */
+var vector Destination;
+
+/**
  * The source code for the bot's behavior tree.
  */
 var string BTSource;
@@ -227,6 +232,18 @@ function NotifyKilled(Controller killer, Controller killed, Pawn killedPawn, cla
 }
 
 /**
+ * This function allows a bot's behavior tree to be overridden at any time, allowing its behaviors to be modified during runtime.
+ */
+simulated function SetBehaviorTree(BehaviorTreeNode rootNode)
+{
+	BTRoot.DestroyTree();
+	BTRoot = rootNode;
+	
+	if (BTRoot != None)
+		BTRoot.SetController(self);
+}
+
+/**
  * Parses the bot's behavior tree source and creates the corresponding behavior tree.
  */
 function BehaviorTreeNode ParseTree(string tree)
@@ -359,14 +376,14 @@ event BeginMoveToward(BehaviorTreeNode node, Actor target, Actor viewFocus, floa
 	GotoState('MoveTowardState');
 }
 
-event BeginMoveTo(BehaviorTreeNode node, vector destination, Actor viewFocus, float offset, bool shouldWalk)
+event BeginMoveTo(BehaviorTreeNode node, vector dest, Actor viewFocus, float offset, bool shouldWalk)
 {
 	//We don't want to short circuit any states that may be running latent code, so if we are not in the default state, don't attempt to 
 	//change the state.
 	if (CurrentLatentNode != None && CurrentLatentNode != node)
 		return;
 		
-	MParams.Destination = destination;
+	MParams.Destination = dest;
 	MParams.Focus = viewFocus;
 	MParams.DestinationOffset = offset;
 	MParams.ShouldWalk = shouldWalk;

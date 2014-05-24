@@ -12,9 +12,14 @@
 class BTAction_Idle extends BTAction;
 
 /**
- * The amount of time to do nothing for.
+ * The minimum amount of time to do nothing for.  If this is set to -1, then MaxDuration will be used as the idle time.
  */
-var float Duration;
+var float MinDuration;
+
+/**
+ * The maximumn amount of time to do nothing for.
+ */
+var float MaxDuration;
 
 
 /**
@@ -33,8 +38,10 @@ simulated function SetParameters(array<string> parameters)
 		
 		if (binding.Length == 2)
 		{
-			if (binding[0] == "Duration")
-				Duration = float(binding[1]);
+			if (binding[0] == "MinDuration")
+				MinDuration = float(binding[1]);
+			else if (binding[0] == "MaxDuration")
+				MaxDuration = float(binding[1]);
 		}
 	}
 }
@@ -47,5 +54,13 @@ state Running
 	}
 	
 Begin:
-	SetTimer(Duration, false, 'EndAction');
+	if (MinDuration < 0)
+		MinDuration = MaxDuration;
+		
+	SetTimer(Lerp(MinDuration, MaxDuration, FRand()), false, 'EndAction');
+}
+
+defaultproperties
+{
+	MinDuration = -1;
 }

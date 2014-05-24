@@ -8,10 +8,19 @@
 
 class Ab_Pedestal extends ArenaAbility;
 
-/* The pedestal that the ability generates. */
+/**
+ * The pedestal that the ability generates. 
+ */
 var Ab_PedestalBoulder Pedestal;
 
-/* The float that determines how far in the ground the pedestal starts */
+/**
+ * The particle system to play when the pedestal is rising.
+ */
+var ParticleSystem PedestalRiseTemplate;
+
+/**
+ * The float that determines how far in the ground the pedestal starts 
+ */
 var float StartDepth;
 
 /**
@@ -22,13 +31,25 @@ var float Range;
 
 simulated function CustomFire()
 {
+	local ParticleSystemComponent pedestalRise;
+	
 	local vector traceLoc, traceNorm;
 	
 	if (!IsHolding)
 	{
 		if (Trace(traceLoc, traceNorm, Instigator.Location + vect(0, 0, -1) * Range, Instigator.Location) != None)
 		{
-			Pedestal = Spawn(class 'Arena.Ab_PedestalBoulder', None, , traceLoc + (vect(0, 0, -1) * StartDepth));
+			Pedestal = Spawn(class 'Arena.Ab_PedestalBoulder', None, , traceLoc - vect(0, 0, 1) * StartDepth);
+			Pedestal.StartLocation = traceLoc - vect(0, 0, 1) * StartDepth;
+			Pedestal.EndLocation = traceLoc;
+			Pedestal.Ability = self;
+			
+			Spawn(class'Arena.PedestalCSV', None, , traceLoc);
+			
+			pedestalRise = WorldInfo.MyEmitterPool.SpawnEmitter(PedestalRiseTemplate, traceLoc);
+			pedestalRise.SetAbsolute(false, false, false);
+			pedestalRise.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+			pedestalRise.bUpdateComponentInTick = true;
 		}
 	}
 }
@@ -49,10 +70,17 @@ defaultproperties
 	EnergyCost=300
 	AbilityName="Pedestal"
 	
+	FireStartAnim=PedestalStart
+	FireEndAnim=PedestalEnd
+	
+	FireSound=SoundCue'Solus.Audio.PedestalRiseSC'
+	
+	PedestalRiseTemplate=ParticleSystem'Solus.Particles.PedestalRisePS'
+	
 	CanHold=false
 	IsPassive=false
 	CanCharge=false
 	
-	StartDepth=400
+	StartDepth=600
 	Range=150
 }

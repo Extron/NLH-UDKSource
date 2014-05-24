@@ -9,7 +9,7 @@
 /**
  * A hackable terminal to use in Bot Battle.
  */
-class Terminal extends InteractiveObject
+class Terminal extends DynamicSMActor implements(IInteractiveObject)
 	placeable;
 
 	
@@ -28,6 +28,11 @@ var(Termial) bool AutoHack;
  * A light component to attach to the terminal to simulate monitor glow.
  */
 var(Terminal) LightComponent Light;
+
+/**
+ * The distance from the terminal the player must be to interact with it.
+ */
+var(Terminal) float InteractionRadius;
 
 /**
  * The render target to use to display the terminal's UI.
@@ -73,7 +78,14 @@ simulated function PostBeginPlay()
 
 simulated function Tick(float dt)
 {
+	local ArenaPawn iter;
+	
 	super.Tick(dt);
+	
+	foreach WorldInfo.AllPawns(class'Arena.ArenaPawn', iter, Location, InteractionRadius)
+	{
+		iter.SetNearestInterObj(self);
+	}
 	
 	if (Hacking)
 	{
@@ -90,13 +102,16 @@ simulated function Tick(float dt)
 	}
 }
 
+simulated function bool IsPlayerNear(Pawn user)
+{
+	return VSize(Location - user.Location) <= InteractionRadius && user.Controller.LineOfSightTo(self);
+}
+
 /**
  * This is called when the object is being interacted with.
  */
 simulated function InteractWith(Pawn user)
-{
-	super.InteractWith(user);
-	
+{	
 	if (AutoHack && !Hacking)
 	{
 		Hacking = true;
@@ -105,6 +120,46 @@ simulated function InteractWith(Pawn user)
 			TerminalUI.BeginHack();
 	}
 }
+
+/**
+ * This is called when the pawn releases the interaction button.
+ */
+simulated function Release(Pawn pawn)
+{
+}
+
+/**
+ * Gets the message the interactive object displays to the HUD when the player is near.
+ */
+simulated function string GetMessage()
+{
+	return "Press <use> to hack terminal";
+}
+
+/**
+ * Indicates whether the interactive object requires the player to hold down the use button to continue interacting with it.
+ */
+simulated function bool MustHold()
+{
+	return false;
+}
+
+/**
+ * Gets the length the player must hold down the use button for before the object is activated.
+ */
+simulated function float GetTriggerDuration()
+{
+	return 0.0;
+}
+
+/**
+ * Gets the distance from the object to a specified actor.
+ */
+simulated function float GetDistanceFrom(Actor actor)
+{
+	return VSize(Location - actor.Location);
+}
+
 
 defaultproperties
 {
@@ -125,8 +180,7 @@ defaultproperties
 	
 	bCollideActors=true
 	bBlockActors=true
-	
-	InteractionMessage="hack terminal."
+
 	InteractionRadius=200
 	HackTime=5
 	AutoHack=true

@@ -489,7 +489,7 @@ function OnControlsClicked()
 	Counter = 0;
 	RotationDuration = 0.35;
 	
-	OnClose = GotoControlsBattle;
+	OnClose = GotoControls;
 	
 	CloseMenu();
 }
@@ -553,7 +553,7 @@ function GotoSoloBotBattle()
 	Close();
 }
 
-function GotoControlsBattle()
+function GotoControls()
 {
 	local GFx_Controls menu;
 	

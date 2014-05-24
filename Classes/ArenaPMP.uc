@@ -10,6 +10,28 @@ class ArenaPMP extends PhysicalMaterialPropertyBase
 	dependson(ArenaWeapon);
 
 /**
+ * Pairs a projectile with particle systems and decals.
+ */
+struct ProjectileEffect
+{
+	/**
+	 * Each projectile type in the game has a unique tag.  This specifies which projectile the particle system pairs to.
+	 */
+	var() string ProjectileTag;
+	
+	/**
+	 * The particle system to pair to the projectile.
+	 */
+	var() ParticleSystem ParticleSystem;
+	
+	/**
+	 * The decal to use when the projectile strikes a surface.
+	 */
+	var() MaterialInterface Decal;
+};
+
+
+/**
  * This allows a material to be given certain properties that dictate how it interacts with various effects and abilities in-game.
  */
 var(Properties) array<string> MaterialProperties;
@@ -20,54 +42,9 @@ var(Properties) array<string> MaterialProperties;
 var(Properties) string MaterialType;
 
 /**
- * This is the default decal that is used on the material if no other material can be specified.
+ * The effects to use when this material is struck by a projectile.
  */
-var(HitEffects) MaterialInterface DefaultDecal;
-
-/**
- * This is the decal used when a bullet hits the material.
- */
-var(HitEffects) MaterialInterface BulletDecal;
-
-/**
- * This is the decal used when a photon beam hits the material.
- */
-var(HitEffects) MaterialInterface PhotonDecal;
-
-/**
- * This is the decal used when a plasma bolt hits the material.
- */
-var(HitEffects) MaterialInterface PlasmaDecal;
-
-/**
- * The default particle system to use when something hits the material if no other particle system can be specified.
- */
-var(HitEffects) ParticleSystem DefaultHitPS;
-
-/**
- * The particle system to use when a bullet hits the material.
- */
-var(HitEffects) ParticleSystem BulletHitPS;
-
-/**
- * The particle system to use when a photon beam hits the material.
- */
-var(HitEffects) ParticleSystem PhotonHitPS;
-
-/**
- * The particle system to use when a plasma bolt hits the material.
- */
-var(HitEffects) ParticleSystem PlasmaHitPS;
-
-/**
- * The particle system to use when something hits the material when it is wet.
- */
-var(HitEffects) ParticleSystem RainHitPS;
-
-/**
- * The particle system to use when something hits the material when it has snow on it.
- */
-var(HitEffects) ParticleSystem SnowHitPS;
+var(HitEffects) array<ProjectileEffect> ProjectileEffects;
 
 /**
  * Sometimes, a projectile will come with its own particle system for when it hits something.  This allows
@@ -91,40 +68,62 @@ var (Audio) SoundCue SnowFootsteps;
 var (Audio) SoundCue RainFootsteps;
 
 
-simulated function ParticleSystem GetHitParticleSystem(ArenaWeapon weapon)
+simulated function ParticleSystem GetProjectileParticleSystem(ArenaProjectile projectile)
 {
-	switch (weapon.Type)
+	local int i;
+	
+	for (i = 1; i < ProjectileEffects.Length; i++)
 	{
-	case WTRifle:
-	case WTShotgun:
-		return BulletHitPS;
-		
-	case WTHardLightRifle:
-		return PhotonHitPS;
-	
-	case WTPlasmaRifle:
-		return PlasmaHitPS;
+		if (ProjectileEffects[i].ProjectileTag == projectile.ProjectileTag)
+			return ProjectileEffects[i].ParticleSystem;
 	}
-	
-	return DefaultHitPS;
+
+	if (ProjectileEffects.Length > 0 && ProjectileEffects[0].ProjectileTag == "Default")
+		return ProjectileEffects[0].ParticleSystem;
+	else
+		return None;
 }
 
-simulated function MaterialInterface GetHitDecal(ArenaWeapon weapon)
+simulated function ParticleSystem GetParticleSystem(string tag)
 {
-	switch (weapon.Type)
+	local int i;
+	
+	for (i = 1; i < ProjectileEffects.Length; i++)
 	{
-	case WTRifle:
-	case WTShotgun:
-		return BulletDecal;
-		
-	case WTHardLightRifle:
-		return PhotonDecal;
-	
-	case WTPlasmaRifle:
-		return PlasmaDecal;
+		if (ProjectileEffects[i].ProjectileTag == tag)
+			return ProjectileEffects[i].ParticleSystem;
 	}
+
+	return None;
+}
+
+simulated function MaterialInterface GetProjectileDecal(ArenaProjectile projectile)
+{
+	local int i;
 	
-	return DefaultDecal;
+	for (i = 1; i < ProjectileEffects.Length; i++)
+	{
+		if (ProjectileEffects[i].ProjectileTag == projectile.ProjectileTag)
+			return ProjectileEffects[i].Decal;
+	}
+
+	if (ProjectileEffects.Length > 0 && ProjectileEffects[0].ProjectileTag == "Default")
+		return ProjectileEffects[0].Decal;
+	else
+		return None;
+}
+
+simulated function MaterialInterface GetDecal(string tag)
+{
+	local int i;
+	
+	for (i = 1; i < ProjectileEffects.Length; i++)
+	{
+		if (ProjectileEffects[i].ProjectileTag == tag)
+			return ProjectileEffects[i].Decal;
+	}
+
+	return None;
 }
 
 simulated function bool HasProperty(string property)
@@ -143,4 +142,9 @@ simulated function bool HasProperties(array<string> properties)
 	}
 	
 	return true;
+}
+
+defaultproperties
+{
+	ProjectileEffects[0]=(ProjectileTag="Default")
 }

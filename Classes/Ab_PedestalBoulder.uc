@@ -2,30 +2,60 @@
 	Ab_PedestalBoulder
 	
 	Creation date: 06/02/2013 22:59
-	Copyright (c) 2013, Zack Diller
+	Copyright (c) 2014, Strange Box Software
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 ******************************************************************************/
 
 class Ab_PedestalBoulder extends InterpActor;
 
-/* While rising, the amount it Falls by each step */
-var float RiseAmount;
+/**
+ * The instance of the ability that generated this pedestal.
+ */
+var Ab_Pedestal Ability;
 
-/* The float that determines how much the pedestal Falls the first couple of steps */
-var float Rising;
-var bool Fall;
+/**
+ * The particle system for the pillar crumbling effect.
+ */
+var ParticleSystem CrumbleTemplate;
 
-/* This is the variable the stores the time before the pedestal disappears */
-var float FallTimer;
+/**
+ * The sound cue to play when crumbling.
+ */
+var SoundCue CrumbleSound;
 
-// Determines the rate of falling/rising
-var float MoveAmount;
+/**
+ * The starting location of the pedestal.
+ */
+var vector StartLocation;
+
+/**
+ * The ending location of the pedestal.
+ */
+var vector EndLocation;
+
+/**
+ * The rotation of the pedestal object.
+ */
+var rotator PedestalRotation;
+
+/**
+ * Stores how fast the pillar rised from its start depth to its full height.
+ */
+var float RisingTime;
+
+/**
+ * The duration that the pillar exists for.
+ */
+var float Lifetime;
+
+/**
+ * The current internal time of the pedestal.
+ */
+var float Timer;
 
 
 simulated function Initialize()
 {
-	SetDrawScale( default.DrawScale );
-
 	ClearTimer('Recycle');
 	SetHidden(FALSE);
 	StaticMeshComponent.SetHidden(FALSE);
@@ -39,49 +69,58 @@ simulated function PostBeginPlay()
 	local Rotator newRot;
 	
 	super.PostBeginPlay();
-	
-
-	// The below lines makes the pedestal's rotation random
-	// In the unreal engine, 1 circle = 65536
-    newRot.Yaw += Rand(65536);
-	CollisionComponent.SetRBRotation(newRot);
 
 	if (ArenaPawn(Instigator).Controller != None) 
 	{
-		SetPhysics(PHYS_RigidBody);
+		SetPhysics(PHYS_RigidBody);	
+		
+		newRot.Yaw += Rand(65536);
+		CollisionComponent.SetRBRotation(newRot);
 		CollisionComponent.SetRBPosition(Location);
 		CollisionComponent.SetRBCollidesWithChannel(RBCC_Default, false);
+		
+		PedestalRotation = newRot;
 	}
-	
-	RiseAmount = Rising;
-	
-	SetTimer(FallTimer, false, 'FallDown');
 }
 
-// Have the pedestal Fall until it reaches its correct height
 simulated function Tick(float dt)
 {	
-	local int direction;
+	local float z;
 	
 	super.Tick(dt);
-	
-	direction = Fall ? -1 : ((RiseAmount > 0.0) ? 1 : 0);
-	
-	RiseAmount = RiseAmount - direction * MoveAmount;
-	
-	if (RiseAmount <= 0.0)
-		SetPhysics(PHYS_None);
-	
-	CollisionComponent.SetRBPosition(Location + (vect(0, 0, 1) * RiseAmount * direction));
-
-	if (Fall && RiseAmount > Rising)
-			self.Destroy();
+		
+	if (Timer < RisingTime)
+	{
+		z = Lerp(StartLocation.z, EndLocation.z, Timer / RisingTime);	
+		CollisionComponent.SetRBPosition(Location * vect(1, 1, 0) + vect(0, 0, 1) * z);
+		Timer += dt;
+		
+		if (Timer > RisingTime)
+		{
+			SetPhysics(PHYS_None);
+			SetTimer(Lifetime, false, 'DestroyPedestal'); 
+		}
+	}
 }
 
-simulated function FallDown() 
+simulated function DestroyPedestal() 
 {
-	Fall = true;
-	SetPhysics(PHYS_RigidBody);
+	local ParticleSystemComponent Crumble;
+	
+	if (WorldInfo.NetMode != NM_DedicatedServer && CrumbleTemplate != None)
+	{
+		Crumble = WorldInfo.MyEmitterPool.SpawnEmitter(CrumbleTemplate, Location, PedestalRotation);
+		Crumble.SetAbsolute(false, false, false);
+		Crumble.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		Crumble.bUpdateComponentInTick = true;
+	}
+	
+	Spawn(class'Arena.PedestalCSV', None, , Location);
+	
+	if (Ability != None)
+		Ability.AbilityPlaySound(CrumbleSound);
+		
+	Destroy();
 }
 
 simulated event FellOutOfWorld(class<DamageType> dmgType)
@@ -98,17 +137,17 @@ defaultproperties
 	bCollideWorld=false
 	bNoDelete=false
 	
-	Begin Object Class=StaticMeshComponent Name=CubeObject
-		StaticMesh=StaticMesh'ArenaAbilities.Meshes.PedestalPillarMesh'
+	Begin Object Class=StaticMeshComponent Name=PillarMesh
+		StaticMesh=StaticMesh'Solus.Meshes.Pillar'
 	End Object
-	StaticMeshComponent=CubeObject
-	Components.Add(CubeObject)
+	StaticMeshComponent=PillarMesh
+	Components.Add(PillarMesh)
 	
-	CollisionComponent=CubeObject
+	CrumbleTemplate=ParticleSystem'Solus.Particles.PedestalCrumblePS'
+	CollisionComponent=PillarMesh
 	
-	Rising=20
-	RiseAmount=0
-	FallTimer=8.0
-	Fall = false
-	MoveAmount = 0.6
+	CrumbleSound=SoundCue'Solus.Audio.PedestalCrumbleSC'
+	
+	RisingTime=2.5
+	Lifetime=10
 }

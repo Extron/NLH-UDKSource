@@ -67,6 +67,8 @@ defaultproperties
 	Begin Object Class=StaticMeshComponent Name=MeshObject
 		StaticMesh=StaticMesh'AO_ArenaFloor.Meshes.PillarSimple'
 		BoundsScale=3
+		LightEnvironment=None
+		bUsePrecomputedShadows=true
 	End Object
 	StaticMeshComponent=MeshObject
 	Components.Add(MeshObject)

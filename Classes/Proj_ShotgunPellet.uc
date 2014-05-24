@@ -25,4 +25,6 @@ defaultproperties
 	Damage=30
 	DamageRadius=0
 	MomentumTransfer=0
+	
+	ProjectileTag="ShotgunPellet"
 }

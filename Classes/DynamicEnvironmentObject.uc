@@ -241,3 +241,11 @@ simulated function TouchPawn(ArenaPawn pawn)
 	if (ActiveEffect != None)
 		ActiveEffect.AffectPawn(pawn);
 }
+
+defaultproperties
+{
+	Begin Object Name=StaticMeshComponent0
+		LightEnvironment=None
+		bUsePrecomputedShadows=true
+	End Object
+}

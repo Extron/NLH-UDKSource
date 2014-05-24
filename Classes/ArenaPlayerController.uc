@@ -121,7 +121,7 @@ function Possess(Pawn newPawn, bool bVehicleTransition)
 
 		PClass = new Loadout.AbilityClass;
 		PClass.Owner = self;
-		
+
 		ArenaPawn(newPawn).AddStatMod(PClass.Mod);
 	}
 	
@@ -132,7 +132,7 @@ function Possess(Pawn newPawn, bool bVehicleTransition)
 
 function SetWeaponFOV()
 {
-	ArenaWeapon(Pawn.Weapon).SetWeaponFOV(FOVAngle + WeaponFOVAddition);
+	ArenaPawn(Pawn).SetPlayerFOV(FOVAngle + WeaponFOVAddition);
 }
 
 function SetFOV(float NewFOV)
@@ -164,7 +164,7 @@ function AdjustFOV(float DeltaTime )
 	}
 	
 	if ((Aiming || ArenaPawn(Pawn).ADS) && ArenaWeapon(Pawn.Weapon).OnlyAlterWeaponFOV())
-		ArenaWeapon(Pawn.Weapon).SetWeaponFOV(FOVAngle);
+		ArenaPawn(Pawn).SetPlayerFOV(FOVAngle);
 	else
 		FOV(FOVAngle);
 }
@@ -182,10 +182,16 @@ function ClearLookAt()
 
 simulated function GetPlayerViewPoint(out vector loc, out Rotator rot)
 {
-	super.GetPlayerViewPoint(loc, rot);
+	local vector socketLocOffset;
+	local rotator socketRotOffset;
 	
-	DefaultLoc = loc;
-	
+	//if (ArenaPawn(Pawn) != None)
+		//ArenaPawn(Pawn).GetCameraSocketLocRot(socketLocOffset, socketRotOffset);
+
+	super.GetPlayerViewPoint(loc, rot);
+		
+	DefaultLoc = loc + socketLocOffset;	rot = rot + socketRotOffset;
+	
 	if (Pawn == None)
 		return;
 		
@@ -301,6 +307,20 @@ simulated function PlayerTick(float dt)
 			ArenaPawn(Pawn).ADS = !ArenaPawn(Pawn).ADS;
 		}
 	}
+
+	if (bool(ArenaPlayerInput(PlayerInput).UsePressed) && ArenaPawn(Pawn).NearestInterObject != None)
+	{
+		if ((ArenaPawn(Pawn).NearestInterObject.MustHold() && ArenaPlayerInput(PlayerInput).UseTimeEdgeDetect(ArenaPawn(Pawn).NearestInterObject.GetTriggerDuration())) || 
+			(!ArenaPawn(Pawn).NearestInterObject.MustHold() && ArenaPlayerInput(PlayerInput).UsePressEdgeDetect()))
+			ArenaPawn(Pawn).NearestInterObject.InteractWith(Pawn);
+	}
+	else if (ArenaPlayerInput(PlayerInput).UseReleaseEdgeDetect())
+	{
+		if (ArenaPawn(Pawn).NearestInterObject != None)
+			ArenaPawn(Pawn).NearestInterObject.Release(Pawn);
+	}
+	ArenaPlayerInput(PlayerInput).UpdateEdgeDetects();
+	
 }
 
 simulated function ReplicatedEvent(name property)
@@ -343,12 +363,13 @@ simulated function AimingComplete()
 	ArenaPawn(Pawn).ADS = !ArenaPawn(Pawn).ADS;
 }
 
+/*
 function bool PerformedUseAction()
 {
 	local bool ret;
 	
 	ret = super.PerformedUseAction();
-	
+
 	if (!ret && ArenaPawn(Pawn).NearestInterObject != None)
 	{
 		ArenaPawn(Pawn).NearestInterObject.InteractWith(Pawn);
@@ -356,7 +377,7 @@ function bool PerformedUseAction()
 	}
 	
 	return ret;
-}
+}*/
 
 simulated function AwardBBTokens(int tokens)
 {
@@ -528,8 +549,8 @@ function SavePlayerData()
 			
 	filename = "../../SaveData/" $ PlayerReplicationInfo.PlayerName $ "_data.bin";
 		
-	`log("Attepmting to save player data" @ filename);
-	`log("Player Data:\n" $ SaveData.Serialize());
+	//`log("Attepmting to save player data" @ filename);
+	//`log("Player Data:\n" $ SaveData.Serialize());
 	
 	if (!(class'Engine'.static.BasicSaveObject(SaveData, filename, false, class'Arena.PlayerData'.const.FileVersion)))
 		`warn("File save failed.");
@@ -547,7 +568,7 @@ function LoadPlayerData()
 			
 		filename = "../../SaveData/" $ PlayerReplicationInfo.PlayerName $ "_data.bin";
 		
-		`log("Loading file" @ filename);
+		//`log("Loading file" @ filename);
 		
 		SaveData = new class'Arena.PlayerData';
 		
@@ -559,8 +580,8 @@ function LoadPlayerData()
 				`log("File save failed.");
 		}
 		
-		`log("Save data contents:");
-		`log(SaveData.Serialize());
+		//`log("Save data contents:");
+		//`log(SaveData.Serialize());
 		
 		SaveData.Initialize();
 	}
@@ -683,6 +704,6 @@ defaultproperties
 	End Object
 	HUDSettings=PHS
 	
-	WeaponFOVAddition=-10
+	WeaponFOVAddition=-20
 	ADSDirection=-1
 }

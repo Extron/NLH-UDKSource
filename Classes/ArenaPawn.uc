@@ -39,6 +39,11 @@ var ArenaAbility ActiveAbility;
  */
 var ArenaWeapon HeldWeapon;
 
+/**
+ * The system that spawns weather particles around the players.
+ */
+var APWeatherCloud WeatherCloud;
+
 /* The camera animation to play when the pawn is idle (not moving). */
 var CameraAnim IdleCamAnim;
 
@@ -58,7 +63,7 @@ var GameSkelCtrl_Recoil RecoilControl;
 /**
  * The nearest interactive object to the actor.  Will be none if there aren't any.
  */
-var InteractiveObject NearestInterObject;
+var IInteractiveObject NearestInterObject;
 
 /**
  * The sensor device that the player is using.
@@ -208,6 +213,11 @@ function PossessedBy(Controller C, bool bVehicleTransition)
 		InitInventory();
 		initInv = False;
 	}
+	
+	if (ArenaPlayerController(C) != None && C.IsLocalPlayerController())
+	{
+		WeatherCloud = Spawn(class'Arena.APWeatherCloud', self, , Location);
+	}
 }
 	
 /**
@@ -264,7 +274,7 @@ simulated function Tick(float dt)
 	local int i;
 	
 	//super.Tick(dt);
-	
+
 	if (Health <= 0)
 		return;
 		
@@ -274,7 +284,7 @@ simulated function Tick(float dt)
 	if (HurtScreenMaterial != None)
 		HurtScreenMaterial.SetScalarParameterValue('Health', float(Health) / float(HealthMax));
 	
-	if (NearestInterObject != None && !NearestInterObject.WithinRadius(self))
+	if (NearestInterObject != None && (!NearestInterObject.IsPlayerNear(self) || !Controller.LineOfSightTo(Actor(NearestInterObject))))
 		NearestInterObject = None;
 		
 	if (CanRegenHealth && Health < HealthMax) 
@@ -588,6 +598,14 @@ simulated function Recover()
 
 	if (Physics == PHYS_RigidBody)
 		setPhysics(PHYS_Falling);
+}
+
+simulated function Destroyed()
+{
+	super.Destroyed();
+	
+	if (WeatherCloud != None)
+		WeatherCloud.Destroy();
 }
 
 simulated event PlayFootStepSound(int FootDown)
@@ -949,9 +967,13 @@ simulated event EndCrouch(float HeightAdjust)
 {
 }
 
-simulated function SetNearestInterObj(InteractiveObject object)
+simulated function SetNearestInterObj(IInteractiveObject object)
 {
-	NearestInterObject = object;
+	if (ArenaPlayerController(Controller) != None && bool(ArenaPlayerInput(ArenaPlayerController(Controller).PlayerInput).UsePressed))
+		return;
+		
+	if (NearestInterObject == None || (object.GetDistanceFrom(self) < NearestInterObject.GetDistanceFrom(self)))
+		NearestInterObject = object;
 }
 
 simulated function ReplicatedEvent(name property)
@@ -1192,6 +1214,12 @@ function GetWeaponSourceOffset(out vector l, out rotator r)
 	r = rot(0, 0 , 0);
 }
 
+function GetCameraSocketLocRot(out vector l, out rotator r)
+{
+	l = vect(0, 0, 0);
+	r = rot(0, 0 , 0);
+}
+
 function AttachToAbilitySource(ActorComponent component)
 {
 }
@@ -1201,9 +1229,23 @@ function name GetWeaponHandSocket()
 	return 'HandSocket';
 }
 
+function vector GetWeaponHandSocketScale()
+{
+	return vect(1, 1, 1);
+}
+
 function name GetAbilityHandSocket()
 {
 	return 'AbilitySourceSocket';
+}
+
+function AddAnimationSet(AnimSet animSet)
+{
+}
+
+function SetPlayerFOV(float angle)
+{
+	ArenaWeapon(Weapon).SetWeaponFOV(angle);
 }
 
 exec function KillMe()
@@ -1229,6 +1271,10 @@ exec function CurrentState()
 exec function SetCoolDownMod(float mod)
 {
 	Stats.Values[PSVAbilityCooldownFactor] = mod;
+}
+exec function HideHUD()
+{
+	ArenaHUD(PlayerController(Controller).MyHUD).SetVisible(false);
 }
 
 state Idle
@@ -1298,12 +1344,10 @@ defaultproperties
 	Components.Add(MyLightEnvironment)
 	LightEnvironment=MyLightEnvironment
 	
-	DefaultAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
-	
 	// TODO: This is just a temp mesh so that Unreal doesn't freak out that we don't have one.
 	Begin Object Class=SkeletalMeshComponent Name=WPawnSkeletalMeshComponent
 		//SkeletalMesh=SkeletalMesh'AC_Player.Meshes.PlayerMesh'
-		PhysicsAsset=PhysicsAsset'AC_Player.Physics.PlayerMeshPhysics'
+		//PhysicsAsset=PhysicsAsset'AC_Player.Physics.PlayerMeshPhysics'
 		Translation=(X=-10,Y=0,Z=0)
 		Scale=0.95
 		bCacheAnimSequenceNodes=FALSE
@@ -1321,8 +1365,6 @@ defaultproperties
 		LightEnvironment=MyLightEnvironment
 		bOverrideAttachmentOwnerVisibility=true
 		bAcceptsDynamicDecals=FALSE
-		AnimTreeTemplate=AnimTree'AC_Player.Animations.PlayerAnimTree'
-		AnimSets[0]=AnimSet'AC_Player.Animations.PlayerAnim'
 		bHasPhysicsAssetInstance=true
 		TickGroup=TG_PreAsyncWork
 		bChartDistanceFactor=true
@@ -1358,6 +1400,6 @@ defaultproperties
 	CrouchRadius=21.0
 	bCanCrouch=true
 	
-	Invisible=false
+	Invisible=true
 	initInv=True
 }

@@ -6,7 +6,7 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class ArenaFloor_Pillar extends StaticMeshActor;
+class ArenaFloor_Pillar extends EnvironmentObject;
 
 /**
  * The light component for the pillar.
@@ -147,6 +147,8 @@ defaultproperties
 		StaticMesh=StaticMesh'AO_ArenaFloor.Meshes.PillarSimple'
 		BoundsScale=3
 		RBCollideWithChannels=(Default=false)
+		bUsePrecomputedShadows=true
+		bCastDynamicShadow=false
 	End Object
 	StaticMeshComponent=MeshObject
 	Components.Add(MeshObject)

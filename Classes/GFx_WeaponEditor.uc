@@ -99,6 +99,11 @@ var vector WeaponOffset;
 var rotator Rotation;
 
 /**
+ * The last recorded position of the mouse.
+ */
+var vector2D MousePosition;
+
+/**
  * Since we use the weapon's name to index into the library, store the old name here for when we try and save the edited schematic, which may have a different name.
  */
 var string OriginalName;
@@ -126,6 +131,16 @@ var float Counter;
 var bool ChangedWeapon;
 
 var bool ChangedName;
+
+/**
+ * Indicates that the left mouse is being dragged, which should rotate the weapon.
+ */
+var bool DraggingMouse;
+
+/**
+ * Indicates that the right mouse is being dragged, which should rotate the weapon.
+ */
+var bool DraggingRightMouse;
 
 /**
  * The index of the selected part.
@@ -256,26 +271,13 @@ function bool Start(optional bool StartPaused = false)
 
 function Update(float dt)
 {
-	//if (submenu != None && submenu.bMovieIsOpen)
-	//{
-		//submenu.Update(dt);
-		//return;
-	//}
+	local vector playerViewLoc;
+	local rotator playerViewRot;
 	
-	//r.Pitch = 65536.0 / 6.0;
-	//r.Roll = 65536 / 4;
+	Pawn.Controller.GetPlayerViewPoint(playerViewLoc, playerViewRot);
 	
-	if (SelectedPart == -1)
-	{
-		Rotation.Yaw += 65536 * dt * SpinRate;
-		Rotation.Yaw = Rotation.Yaw % 65536;
-		
-		//r.Yaw = 65536 / 2 - 65536 / 16 + 65536 * Counter * SpinRate;
-		//r.Yaw = r.Yaw % 65536;
-	}
-	
-	Weapon.SetRotation(RTransform(Rotation, rot(0, 16384, 16384)));
-	//Weapon.Tick(dt);
+	Weapon.SetRotation(RTransform(Rotation, playerViewRot));
+	Weapon.SetWeaponScale(WeaponScale);
 	
 	if (SelectedPart > -1)
 		WeaponMaterials[SelectedPart].SetScalarParameterValue('EmissionFactor', Sin(Counter * HighlightPulseRate) ** 2);
@@ -291,12 +293,6 @@ function PostRender()
 	local vector traceLoc, traceNorm;
 	local bool hit;
 	local int index;
-	
-	//if (submenu != None && submenu.bMovieIsOpen)
-	//{
-		//submenu.PostRender();
-		//return;
-	//}
 	
 	mousePos.x = Cursor.GetFloat("x") * ArenaPlayerController(Pawn.Controller).MyHUD.SizeX / NativeWidth;
 	mousePos.y = Cursor.GetFloat("y") * ArenaPlayerController(Pawn.Controller).MyHUD.SizeY / NativeHeight;
@@ -361,12 +357,55 @@ function LookUp(out vector loc, out rotator rot)
 	rot.Pitch = 16384;
 }
 
+event OnMouseMove()
+{
+	local vector2D mousePos, delta;
+	
+	mousePos.x = Cursor.GetFloat("x");
+	mousePos.y = Cursor.GetFloat("y");
+	delta = mousePos - MousePosition;
+	
+	if (DraggingMouse && !DraggingRightMouse)
+	{
+		Rotation.Yaw = (Rotation.Yaw + 64 * -delta.x) % 65536;
+		Rotation.Roll = (Rotation.Roll + 64 * -delta.y) % 65536;
+	}
+	else if (DraggingRightMouse)
+	{
+		WeaponScale = FClamp(WeaponScale + delta.y * 0.01, 0.25, 2.5);
+	}
+	
+	MousePosition = mousePos;
+}
+
 event OnMouseClick()
 {
 	if (SelectedPart > -1)
 		GotoSubmenu();
 }
 
+event OnMouseDown()
+{	
+	if (Cursor.GetFloat("x") > 800)
+		DraggingMouse = true;
+}
+
+event OnMouseUp()
+{
+	DraggingMouse = false;
+}
+
+event OnRightMouseDown()
+{
+	`log("Right mouse down");
+	if (Cursor.GetFloat("x") > 800)
+		DraggingRightMouse = true;
+}
+
+event OnRightMouseUp()
+{
+	DraggingRightMouse = false;
+}
 event OnTextInputClick(GFxClikWidget.EventData ev)
 {
 	if (!ChangedName)
@@ -443,7 +482,6 @@ function GoBack()
 	Close();
 	
 	Parent.PlayOpenAnimation();
-	//GFx_CharacterView(Parent).Character = Character;
 	
 	ArenaPlayerController(Pawn.Controller).OnSetPlayerViewpoint = GFx_CharacterView(Parent).LookUp;
 	
@@ -582,7 +620,6 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 		
 	component.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
 	component.Mesh.SetOnlyOwnerSee(false);
-	component.SetDrawScale(WeaponScale);
 	
 	component.AttachToBaseSpecial(base, socket, MenuLightEnvironment);
 	
@@ -818,13 +855,10 @@ function SetWeaponParameters()
 		ArenaWeaponBase(Weapon).ClipMesh.SetOnlyOwnerSee(false);
 	}
 	
-	ArenaWeaponBase(Weapon).SetDrawScale(WeaponScale);
-	
 	foreach ArenaWeaponBase(Weapon).WeaponComponents(iter)
 	{
 		iter.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
 		iter.Mesh.SetOnlyOwnerSee(false);
-		iter.SetDrawScale(WeaponScale);
 	}
 	
 	mat = new class'MaterialInstanceConstant';
@@ -1132,10 +1166,10 @@ defaultproperties
 	End Object
 	
 	RightLight=RL
-	
+
 	MovieInfo=SwfMovie'ArenaUI.WeaponLockerUI'
-	Rotation=(Pitch=10922)
-	WeaponOffset=(X=10, Y=30, Z=128)
+	Rotation=()
+	WeaponOffset=(X=0,Y=30,Z=128)
 	WeaponScale=0.5
 	SpinRate=0.05
 	HighlightPulseRate=2.5
@@ -1144,5 +1178,4 @@ defaultproperties
 	bCaptureMouseInput=true
 	
 	FocusIgnoreKeys[0]=Escape
-	//bPauseGameWhileActive=true
 }

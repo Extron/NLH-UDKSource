@@ -12,10 +12,13 @@ defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
 		SkeletalMesh=SkeletalMesh'CheapRifle.Meshes.CheapRifle'
+		PhysicsAsset=PhysicsAsset'CheapRifle.Meshes.CheapRifle_Physics'
+		AnimSets[0]=AnimSet'CheapRifle.Animations.CRAnimationSet'
+		AnimTreeTemplate=AnimTree'CheapRifle.Animations.CRAnimationTree'
 	End Object
 	
 	Begin Object Name=Clip
-		//SkeletalMesh=SkeletalMesh'CheapRifle.Meshes.CheapRifleClip'
+		SkeletalMesh=SkeletalMesh'CheapRifle.Meshes.CheapRifleClip'
 	End Object
 	
 	Begin Object Name=NewStats
@@ -26,11 +29,13 @@ defaultproperties
 	End Object
 	
 	DefaultComponents[WCStock]=class'Arena.Wp_S_CheapStock'
-	DefaultComponents[WCBarrel]=class'Arena.Wp_B_BasicRifleBarrel'
+	DefaultComponents[WCBarrel]=class'Arena.Wp_B_ShortSimpleBarrel'
 	DefaultComponents[WCMuzzle]=class'Arena.Wp_M_NoMuzzle'
-	DefaultComponents[WCOptics]=class'Arena.Wp_O_NoOptics'
+	DefaultComponents[WCOptics]=class'Arena.Wp_O_VIronSights'
 	DefaultComponents[WCUnderAttachment]=class'Arena.Wp_UA_NoUnderAttachment'
 	DefaultComponents[WCSideAttachment]=class'Arena.Wp_SA_NoSideAttachment'
+	
+	PlayerAnimSet=AnimSet'AC_Player.Animations.CheapRifleMovementAnimations'
 	
 	WeaponFireTypes(0)=EWFT_Projectile
 	InstantHitDamageTypes(0)=None
@@ -45,6 +50,8 @@ defaultproperties
 	
 	FireSound=SoundCue'BasicRifleBase.Audio.GunshotSC'
 	
+	FireAnims[0]=Fire
+	EquipAnims[0]=CheapRifleTakeOut
 	//PlayerAnimSet=AnimSet'AC_Player.Animations.PlayerAnim'
 	
 	ViewOffset=(X=45, Y=5, Z=-22);

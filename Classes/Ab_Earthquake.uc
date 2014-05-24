@@ -27,6 +27,8 @@ var float EarthquakeDuration;
 
 simulated function CustomFire()
 {
+	`log("Earthquake custom fire:" @ IsHolding);
+	
 	if (!IsHolding)
 	{
 		`log("Spawning earthquake area");

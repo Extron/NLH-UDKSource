@@ -63,6 +63,10 @@ simulated function Tick(float dt)
 
 defaultproperties
 {
+	Begin Object Name=DominantDirectionalLightComponent0
+		WholeSceneDynamicShadowRadius=4096
+	End Object
+
 	MinSunColor=(R=160,G=160,B=180)
 	MaxSunColor=(R=255,G=219,B=182)
 	MinSunBrightness=0.65

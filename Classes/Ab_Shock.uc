@@ -15,8 +15,8 @@ defaultproperties
 	InstantHitDamageTypes(0)=class'Arena.Dmg_Shock'
 	InstantHitMomentum(0)=+0.0
 	
-	FireStartAnim=Arms1PShockStart
-	FireEndAnim=Arms1PShockEnd
+	FireStartAnim=ShockStart
+	FireEndAnim=ShockEnd
 	
 	FireSound=SoundCue'ArenaAbilities.Audio.ShockSC'
 	

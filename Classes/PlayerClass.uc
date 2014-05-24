@@ -34,6 +34,11 @@ var PlayerLoadout Loadout;
 var PlayerStatModifier Mod;
 
 /**
+ * The animation set to use with this ability class.
+ */
+var AnimSet AbilityAnimSet;
+
+/**
  * The modifier to apply during inclement weather.
  */
 var PlayerStatModifier WeatherMod;

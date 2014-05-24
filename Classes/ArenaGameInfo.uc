@@ -286,11 +286,11 @@ function NavigationPoint FindPlayerStart(Controller Player, optional byte InTeam
 	
 	if (InInitialIntermission)
 	{
-		`log("Finding initial window");
+		//`log("Finding initial window");
 		
 		foreach WorldInfo.AllNavigationPoints(class'Arena.InitialWindow', iter)
 		{
-			`log("Found" @ iter);
+			//`log("Found" @ iter);
 
 			windows.AddItem(iter);
 		}

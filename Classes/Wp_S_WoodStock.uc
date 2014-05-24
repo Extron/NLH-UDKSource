@@ -11,7 +11,7 @@ class Wp_S_WoodStock extends Wp_Stock;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'WoodStock.Meshes.WoodStockMesh_1P'
+		SkeletalMesh=SkeletalMesh'WoodStocks.Meshes.WoodStock1'
 	End Object
 	
 	Begin Object Name=NewStatMod

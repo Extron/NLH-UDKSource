@@ -25,6 +25,16 @@ var ParticleSystemComponent Projectile;
 /* The particle system component used to render the sparks when the projectile hits a wall. */
 var ParticleSystemComponent Sparks;
 
+/** 
+ * If the surface that this projectile hits does not have a decal material, spawn this one by default if it is not null.
+ */
+var MaterialInterface ProjectileDecal;
+
+/**
+ * Each projectile type has a unique tag stored here.
+ */
+var string ProjectileTag;
+
 /**
  * The width and height of the projectile's decal.
  */
@@ -58,11 +68,12 @@ simulated function HitWall(vector norm, Actor wall, PrimitiveComponent component
 			
 		SpawnPhysMatEffects(hitInfo.PhysMaterial);
 		SpawnDecal(Location, norm, hitInfo.PhysMaterial);
+		
+		if (ImpactSound != None)
+			PlaySound(ImpactSound);
 	}
 	else
 	{
-		`log("Trace" @ traceActor @ "Wall" @ wall);
-		
 		Spark(norm, None);
 	}
 }
@@ -110,46 +121,42 @@ simulated function Emit()
 simulated function SpawnDecal(vector loc, vector norm, PhysicalMaterial mat)
 {
 	local MaterialInterface decalMat;
+	local MaterialInstanceTimeVarying decal;
 	local PhysicalMaterial parentMat;
 	
 	parentMat = mat.Parent;
 
 	if (ArenaPMP(mat.PhysicalMaterialProperty) != None)
-		decalMat = ArenaPMP(mat.PhysicalMaterialProperty).GetHitDecal(Weapon);
+		decalMat = ArenaPMP(mat.PhysicalMaterialProperty).GetProjectileDecal(self);
 		
 	while (decalMat == None && parentMat != None)
 	{
 		if (ArenaPMP(parentMat.PhysicalMaterialProperty) != None)
-			decalMat = ArenaPMP(parentMat.PhysicalMaterialProperty).GetHitDecal(Weapon);
+			decalMat = ArenaPMP(parentMat.PhysicalMaterialProperty).GetProjectileDecal(self);
 			
 		parentMat = parentMat.Parent;
 	}
 
+	if (decalMat == None)
+		decalMat = ProjectileDecal;
+		
 	if (WorldInfo.NetMode != NM_DedicatedServer && decalMat != None)
-		WorldInfo.MyDecalManager.SpawnDecal(decalMat, loc, rotator(-norm), DecalWidth, DecalHeight, 10.0, true);
+	{
+		decal = new class'MaterialInstanceTimeVarying';
+		decal.SetParent(decalMat);
+		decal.SetDuration(5.0);
+		
+		WorldInfo.MyDecalManager.SpawnDecal(decal, loc, rotator(-norm), DecalWidth, DecalHeight, 10.0, true);
+	}
 }
 
 simulated function Spark(vector norm, PhysicalMaterial physMat)
 {
-	local vector v;
-	local vector a;
-	local vector n;
-	
-	n = Normal(norm);
-	a = vect(0, 0, 1);
-	
-	if (n == a)
-		a = vect(1, 0, 0);
-		
-	v = a + n cross a;
-	
 	if (WorldInfo.NetMode != NM_DedicatedServer && SparksTemplate != None)
 	{
-		Sparks = WorldInfo.MyEmitterPool.SpawnEmitter(SparksTemplate, Location);
+		Sparks = WorldInfo.MyEmitterPool.SpawnEmitter(SparksTemplate, Location, rotator(Normal(norm) - vect(0, 0, 1)));
 		Sparks.SetAbsolute(false, false, false);
 		Sparks.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
-		Sparks.SetVectorParameter('SparkVelocity', v + n * 0.25);
-		Sparks.SetVectorParameter('DustVelocity', a);
 		Sparks.bUpdateComponentInTick = true;
 	}
 }
@@ -163,12 +170,12 @@ simulated function SpawnPhysMatEffects(PhysicalMaterial mat)
 	parentMat = mat.Parent;
 
 	if (ArenaPMP(mat.PhysicalMaterialProperty) != None)
-		ps = ArenaPMP(mat.PhysicalMaterialProperty).GetHitParticleSystem(Weapon);
+		ps = ArenaPMP(mat.PhysicalMaterialProperty).GetProjectileParticleSystem(self);
 		
 	while (ps == None && parentMat != None)
 	{
 		if (ArenaPMP(parentMat.PhysicalMaterialProperty) != None)
-			ps = ArenaPMP(parentMat.PhysicalMaterialProperty).GetHitParticleSystem(Weapon);
+			ps = ArenaPMP(parentMat.PhysicalMaterialProperty).GetProjectileParticleSystem(self);
 			
 		parentMat = parentMat.Parent;
 	}
@@ -189,9 +196,9 @@ simulated function SpawnPhysMatEffects(PhysicalMaterial mat)
 		if (ArenaPMP(mat.PhysicalMaterialProperty) != None)
 		{
 			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
-				ps = ArenaPMP(mat.PhysicalMaterialProperty).RainHitPS;
+				ps = ArenaPMP(mat.PhysicalMaterialProperty).GetParticleSystem("Rain");
 			else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
-				ps = ArenaPMP(mat.PhysicalMaterialProperty).SnowHitPS;
+				ps = ArenaPMP(mat.PhysicalMaterialProperty).GetParticleSystem("Snow");
 		}
 			
 		while (ps == None && parentMat != None)
@@ -199,14 +206,17 @@ simulated function SpawnPhysMatEffects(PhysicalMaterial mat)
 			if (ArenaPMP(parentMat.PhysicalMaterialProperty) != None)
 			{
 				if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Raining)
-					ps = ArenaPMP(mat.PhysicalMaterialProperty).RainHitPS;
+					ps = ArenaPMP(mat.PhysicalMaterialProperty).GetParticleSystem("Rain");
 				else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
-					ps = ArenaPMP(mat.PhysicalMaterialProperty).SnowHitPS;
+					ps = ArenaPMP(mat.PhysicalMaterialProperty).GetParticleSystem("Snow");
 			}
 				
 			parentMat = parentMat.Parent;
 		}
 
+		if (ps == None)
+			ps = SparksTemplate;
+			
 		if (WorldInfo.NetMode != NM_DedicatedServer && ps != None)
 		{
 			psc = WorldInfo.MyEmitterPool.SpawnEmitter(ps, Location);

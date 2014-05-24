@@ -49,6 +49,7 @@ defaultproperties
 	Trees[4]=class'Arena.AT_Deflection'
 	Trees[5]=class'Arena.AT_EMP'
 	
+	AbilityAnimSet=AnimSet'AC_Player.Animations.TempestAbilityAnimations'
 	Begin Object Name=NewMod
 		ValueMods[PSVAccuracy]=1.1
 		ValueMods[PSVMobility]=1.1

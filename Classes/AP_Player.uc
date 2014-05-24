@@ -46,6 +46,10 @@ var name LeftArmControlName;
  */
 var vector ArmorTranslation;
 
+var vector DefaultCameraSocketLoc;
+
+var rotator DefaultCameraSocketRot;
+
 simulated event TickSpecial(float dt)
 {
 	local vector gripLoc;
@@ -134,15 +138,22 @@ function InitInventory()
 		{
 			armorComponent = Spawn(ArenaPlayerController(Controller).Loadout.Armor.Components[i], self);
 			armorComponent.MeshComponent.SetLightEnvironment(LightEnvironment);
-			`log("Adding armor component" @ armorComponent);
 			AttachArmor(armorComponent);
 		}
+		
+		AddAnimationSet(ArenaPlayerController(Controller).PClass.AbilityAnimSet);
 	}
 	
 	if (ArenaInventoryManager(InvManager) != None)
 	{	
 		if (newWeapon != None)
-		{
+		{			
+			if (newWeapon.MovementAnimSet != None)
+				AddAnimationSet(newWeapon.MovementAnimSet);
+				
+			if (newWeapon.PlayerAnimSet != None)
+				AddAnimationSet(newWeapon.PlayerAnimSet);
+				
 			InvManager.AddInventory(newWeapon);
 			InvManager.NextWeapon();
 			ArenaPlayerController(Controller).SetWeaponFOV();
@@ -163,7 +174,7 @@ function bool DoJump(bool bUpdating)
 	
 	ret = super.DoJump(bUpdating);
 	
-	PlayAnimation('Arms1PJump');
+	PlayAnimation('Jump1');
 	
 	return ret;
 }
@@ -172,7 +183,7 @@ event Landed(vector HitNormal, Actor FloorActor)
 {
 	super.Landed(HitNormal, FloorActor);
 	
-	PlayAnimation('Arms1PLand');
+	PlayAnimation('Land1');
 }
 
 simulated function Melee()
@@ -226,6 +237,38 @@ function GetWeaponSourceOffset(out vector l, out rotator r)
 		LeftArm.GetSocketWorldLocationAndRotation('HandSocket', l, r, 0);
 }
 
+
+function GetCameraSocketLocRot(out vector l, out rotator r)
+{
+	if (RightArm.GetSocketByName('CameraSocket') != None)
+	{
+		RightArm.GetSocketWorldLocationAndRotation('CameraSocket', l, r, 0);
+		
+		l = (l - Location) - DefaultCameraSocketLoc;
+		r = (r - Controller.Rotation) - DefaultCameraSocketRot;
+	}
+	else
+	{
+		l = vect(0, 0, 0);
+		r = rot(0, 0, 0);
+	}
+}
+
+function vector GetWeaponHandSocketScale()
+{
+	local SkeletalMeshSocket socket;
+	
+	socket = RightArm.GetSocketByName('HandSocket');
+	
+	if (socket == None)
+		socket = LeftArm.GetSocketByName('HandSocket');
+		
+	if (socket != None)
+		return socket.RelativeScale;
+	else
+		return vect(1, 1, 1);
+}
+
 function AttachToAbilitySource(ActorComponent component)
 {
 	LeftArm.AttachComponentToSocket(component, GetAbilityHandSocket());
@@ -236,6 +279,8 @@ simulated function PositionArms()
 	local rotator R;
 	local int i;
 	
+	local vector armOffset;
+	
 	R = CurrentRecoil;
 	
 	if (Controller != None)
@@ -243,20 +288,22 @@ simulated function PositionArms()
 	
 	for (i = 0; i < Armor.Length; i++)
 		Armor[i].MeshComponent.SetTranslation(ArmorTranslation);
+
+	armOffset = vect(1, -6, -40);
 	
-	RightArm.SetTranslation(64.432 * (vect(0, 0, 1) - (vect(0, 0, 1) >> R)));
+	RightArm.SetTranslation(64.432 * (vect(0, 0, 1) - (vect(0, 0, 1) >> R)) + vect(0, -1, 0) + (armOffset >> R));
 	RightArm.SetRotation(R);
 	
-	LeftArm.SetTranslation(64.432 * (vect(0, 0, 1) - (vect(0, 0, 1) >> R)));
+	LeftArm.SetTranslation(64.432 * (vect(0, 0, 1) - (vect(0, 0, 1) >> R)) + vect(0, -1, 0) + (armOffset >> R));
 	LeftArm.SetRotation(R);
 }
 
-simulated function PlayAnimation(name sequence, optional float duration, optional bool loop)
+simulated function PlayAnimation(name sequence, optional float duration, optional bool loop, optional float blendIn, optional float blendOut)
 {
 	local int i;
 	
 	for (i = 0; i < Armor.Length; i++)
-		Armor[i].PlayAnimation(sequence, duration, loop);
+		Armor[i].PlayAnimation(sequence, duration, loop, blendIn, blendOut);
 }
 
 simulated function EnableLeftHandPositioning(bool enable)
@@ -286,11 +333,29 @@ simulated function AttachArmor(ArmorComponent armorComponent)
 	AttachComponent(armorComponent.MeshComponent);
 	AddStatMod(armorComponent.StatMod);
 	
+	armorComponent.MeshComponent.SetScale(1.5);
 	if (armorComponent.Type == ACTRightArm)
 		RightArm = armorComponent.MeshComponent;
 	
 	if (armorComponent.Type == ACTLeftArm)
 		LeftArm = armorComponent.MeshComponent;
+}
+
+function AddAnimationSet(AnimSet animSet)
+{
+	local int i;
+	
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].MeshComponent.AnimSets.AddItem(animSet);
+}
+
+function SetPlayerFOV(float angle)
+{
+	local int i;
+	super.SetPlayerFOV(angle);
+
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].SetFOV(angle);
 }
 
 exec function GiveAbility(string ability)
@@ -507,6 +572,32 @@ exec function GiveAmmo()
 		ArenaWeapon(Weapon).AddMaxAmmo();
 }
 
+exec function PauseWeather()
+{
+	ArenaGRI(WorldInfo.GRI).WeatherMgr.TickDay = false;
+	ArenaGRI(WorldInfo.GRI).WeatherMgr.TickWeather = false;
+}
+
+exec function SetTimeOfDay(float time)
+{
+	ArenaGRI(WorldInfo.GRI).WeatherMgr.TimeOfDay = time;
+}
+
+exec function SetTemperature(float temperature)
+{
+	ArenaGRI(WorldInfo.GRI).WeatherMgr.Temperature = temperature;
+}
+
+exec function SetWeatherIntensity(float intensity)
+{
+	ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity = intensity;
+}
+
+exec function SetCloudCoverage(float coverage)
+{
+	ArenaGRI(WorldInfo.GRI).WeatherMgr.CloudCoverage = coverage;
+}
+
 defaultproperties
 {	
 	Begin Object Class=AudioComponent Name=NDHB
@@ -516,16 +607,11 @@ defaultproperties
 	Components.Add(NDHB)
 	NearDeathHeartbeat=NDHB
 	
-	Begin Object Class=RainCylinder Name=RC
-	End Object
-	//RainCylinder=RC
-	//Components.Add(RC)
-	
 	IdleCamAnim=CameraAnim'CameraAssets.Animations.IdleAnimation'
 	WalkCamAnim=CameraAnim'CameraAssets.Animations.WalkAnimation'
 	
 	bScriptTickSpecial=true
 	RecoilControlName=RecoilNode
 	LeftArmControlName=LeftArmNode
-	ArmorTranslation=(X=-15,Y=0,Z=0)
+	ArmorTranslation=(X=-30,Y=-5,Z=-30)
 }

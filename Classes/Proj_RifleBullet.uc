@@ -40,4 +40,6 @@ defaultproperties
 	Damage=100
 	DamageRadius=0
 	MomentumTransfer=0
+	
+	ProjectileTag="RifleBullet"
 }

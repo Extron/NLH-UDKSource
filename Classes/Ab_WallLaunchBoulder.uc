@@ -37,35 +37,6 @@ simulated function StopLaunch() {
 	Launching = false;
 }
 
-simulated function Tick(float dt)
-{
-	local int direction;
-	
-	// Needed?
-	super.Tick(dt);
-	
-	direction = Fall ? -1 : ((RiseAmount > 0.0) ? 1 : 0);
-
-	RiseAmount = RiseAmount - direction * MoveAmount;
-	
-	if (RiseAmount <= 0.0)
-		SetPhysics(PHYS_None);
-		
-	if (Launching) {
-		CollisionComponent.SetRBPosition(Location + ((vect(0, 1, 0) * LaunchDist) << LaunchDirection));
-	}
-	else if ((direction != -1) && Moving) {
-		CollisionComponent.SetRBPosition((vect(1, 0, 0) * MovingDistance) << Instigator.Rotation);
-		CollisionComponent.SetRBRotation(Instigator.Rotation);
-	}
-	else if (direction != -1) {
-		CollisionComponent.SetRBPosition(Location + (vect(0, 0, 1) * RiseAmount * direction));
-	}
-	
-	if (Fall && RiseAmount > Rising)
-		self.Destroy();
-}
-
 defaultproperties
 {
 	LaunchDist=0.5

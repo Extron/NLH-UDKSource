@@ -36,7 +36,7 @@ defaultproperties
 	CycleTime=0.15
 	BurstCount=3
 	
-	FireSound=SoundCue'A_Weapon_Link.Cue.A_Weapon_Link_FireCue'
+	FireSound=SoundCue'PhotonEmitterBase.Audio.FireSC'
 	IHBeamTemplate=ParticleSystem'ArenaParticles.Particles.PhotonBeam'
 	
 	ViewOffset=(X=45, Y=10, Z=-22);

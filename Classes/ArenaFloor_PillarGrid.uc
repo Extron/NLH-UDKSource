@@ -47,7 +47,7 @@ simulated function UpdateGridLighting()
 	{
 		if (Pillars[i] != None)
 		{
-			`log("Initializing pillar" @ Pillars[i]);
+			//`log("Initializing pillar" @ Pillars[i]);
 			Pillars[i].UpdateLighting();
 			
 			if (Pillars[i].RandomMotion)

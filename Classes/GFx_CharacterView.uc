@@ -20,7 +20,27 @@ var SkeletalMeshComponent Cube;
  */
 var AP_Specter Pawn;
 
+/**
+ * The figure used to draw the player's loadout.
+ */
+var PlayerFigure Figure;
+
 var LoadoutData Character;
+
+/**
+ * The location to spawn the figure, relative to the viewer's location.
+ */
+var vector FigureLocation;
+
+/**
+ * The rotation of the figure relative to the viewer's rotation.
+ */
+var rotator FigureRotation;
+
+/**
+ * The scale of the figure.
+ */
+var float FigureScale;
 
 var string SelectedWeapon;
 
@@ -44,6 +64,8 @@ delegate OnClose();
 function bool Start(optional bool StartPaused = false)
 {
 	local SkeletalMeshActor iter;
+	local vector playerViewLoc;
+	local rotator playerViewRot;
 
 	super.Start(StartPaused);
 			
@@ -66,6 +88,12 @@ function bool Start(optional bool StartPaused = false)
 	}
 			
 	BuildCharacterProfile();
+	
+	Pawn.Controller.GetPlayerViewPoint(playerViewLoc, playerViewRot);
+
+	Figure = Pawn.Spawn(class'Arena.PlayerFigure', , , Pawn.Location + (FigureLocation >> Pawn.Controller.Rotation), RTransform(FigureRotation, playerViewRot), , true);
+	Figure.LoadFigure(Character, ArenaPlayerController(Pawn.Controller));
+	Figure.SetFigureScale(FigureScale);
 	
 	return true;
 }
@@ -319,6 +347,7 @@ function PlayOpenAnimation()
 
 function CloseAnimCompleted()
 {
+	Figure.Destroy();
 	OnClose();
 }
 
@@ -466,4 +495,7 @@ defaultproperties
 	LookDirection=1
 	LookUpTime=0.33
 	bCaptureInput=true
+	FigureLocation=(X=24,Y=-30,Z=128)
+	FigureRotation=(Roll=16384,Yaw=16384,Pitch=-10923)
+	FigureScale=0.5
 }

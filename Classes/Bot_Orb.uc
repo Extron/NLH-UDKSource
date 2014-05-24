@@ -24,10 +24,10 @@ event PostBeginPlay()
 							"<BTAction_InRange Range=" $ BotRange $ " OnRunning=InRangeFocus></BTAction_InRange>," $
 							"<BTSelector_Random>" $
 								"<BTAction_Orbit ZenithMin=0.7853981 ZenithMax=2.3561944 RadialMin=200 RadialMax=1000 OnRunning=Orbit></BTAction_Orbit>," $
-								"<BTAction_Idle OnRunning=Idle NodeBias=2></BTAction_Idle>" $
+								"<BTAction_Idle MinDuration=0.25 MaxDuration=1.5 NodeBias=2></BTAction_Idle>" $
 							"</BTSelector_Random>," $
 							"<BTSelector_Repeater>" $ 
-								"<BTSelector_Delayer Delay=" $ Lerp(FireIntervalMin, FireIntervalMax, FRand()) $ " OnSucceeded=DelayFire>" $
+								"<BTSelector_Delayer MinDelay=" $ FireIntervalMin $ " MaxDelay=" $ FireIntervalMax $ ">" $
 									"<BTSelector_Sequence>" $
 										"<BTAction_Turn></BTAction_Turn>," $
 										"<BTAction_ShootAt></BTAction_ShootAt>" $
@@ -41,11 +41,11 @@ event PostBeginPlay()
 						"</BTSelector_Sequence>," $
 						"<BTSelector_Sequence>" $
 							"<BTAction_NavigateTo OnRunning=Investigate></BTAction_NavigateTo>," $
-							"<BTAction_Idle OnRunning=Idle></BTAction_Idle>," $
+							"<BTAction_Idle MinDuration=0.25 MaxDuration=1.5></BTAction_Idle>," $
 							"<BTAction_NavigateTo OnRunning=Search></BTAction_NavigateTo>," $
 							"<BTSelector_Repeater Repetitions=2>" $
 								"<BTSelector_Sequence>" $
-									"<BTAction_Idle OnRunning=Idle></BTAction_Idle>," $
+									"<BTAction_Idle MinDuration=0.25 MaxDuration=1.5></BTAction_Idle>," $
 									"<BTAction_NavigateTo OnRunning=MoveToRandom BuildConstraintsAndGoals=NavGoalsRandom></BTAction_NavigateTo>" $
 								"</BTSelector_Sequence>" $
 							"</BTSelector_Repeater>" $
@@ -53,7 +53,7 @@ event PostBeginPlay()
 						"<BTSelector_Sequence>" $
 							"<BTSelector_Repeater>" $
 								"<BTSelector_Sequence>" $
-									"<BTAction_Idle OnRunning=LongIdle></BTAction_Idle>," $
+									"<BTAction_Idle MinDuration=5 MaxDuration=15></BTAction_Idle>," $
 									"<BTAction_NavigateTo OnRunning=MoveToRandom BuildConstraintsAndGoals=NavGoalsRandom ShouldWalk=true></BTAction_NavigateTo>" $
 								"</BTSelector_Sequence>" $
 							"</BTSelector_Repeater>" $
@@ -110,16 +110,7 @@ event AssignNodeDelegate(BehaviorTreeNode node, string delegateTarget, string fu
 {
 	if (funcName == "Orbit" && delegateTarget == "OnRunning")
 		node.OnRunning = Orbit;
-	
-	if (funcName == "Idle" && delegateTarget == "OnRunning")
-		node.OnRunning = Idle;
-	
-	if (funcName == "LongIdle" && delegateTarget == "OnRunning")
-		node.OnRunning = LongIdle;
-		
-	if (funcName == "DelayFire" && delegateTarget == "OnSucceeded")
-		node.OnSucceeded = DelayFire;
-		
+
 	if (funcName == "Investigate" && delegateTarget == "OnRunning")
 		node.OnRunning = Investigate;
 		
@@ -196,22 +187,6 @@ event Evade(BehaviorTreeNode sender)
 	{
 		sender.GotoState('Failed');
 	}
-}
-
-event Idle(BehaviorTreeNode sender)
-{
-	BTAction_Idle(sender).Duration = Lerp(0.25, 1.5, FRand());
-}
-
-event LongIdle(BehaviorTreeNode sender)
-{
-	BTAction_Idle(sender).Duration = Lerp(5, 15, FRand());
-}
-
-
-event DelayFire(BehaviorTreeNode sender)
-{
-	BTSelector_Delayer(sender).Delay = Lerp(FireIntervalMin, FireIntervalMax, FRand());
 }
 
 event Investigate(BehaviorTreeNode sender)

@@ -19,13 +19,16 @@ enum ArmorComponentType
 	ACTLeftLeg,
 	ACTRightLeg,
 	ACTTorso,
+	ACTUpperBody,
+	ACTLowerBody,
+	ACTFeet,
 	ACTAttachment
 };
 
 /**
  * The mesh component used to draw the armor.
  */
-var SkeletalMeshComponent MeshComponent;
+var UDKSkeletalMeshComponent MeshComponent;
 
 /**
  * The player stat modifier for the armor.
@@ -60,19 +63,20 @@ event Activate()
 {
 }
 
-simulated function PlayAnimation(name sequence, optional float duration, optional bool loop)
+simulated function PlayAnimation(name sequence, optional float duration, optional bool loop, optional float blendIn, optional float blendOut)
 {
 	local AnimNodePlayCustomAnim node;
 
-	if (WorldInfo.NetMode == NM_DedicatedServer || ArenaPawn(Owner) == None|| !ArenaPawn(Owner).IsFirstPerson() || MeshComponent == None)
+	if (WorldInfo.NetMode == NM_DedicatedServer || ArenaPawn(Owner) == None || 
+		!ArenaPawn(Owner).IsFirstPerson() || MeshComponent == None || MeshComponent.Animations == None)
 		return;
 
 	node = AnimNodePlayCustomAnim(AnimTree(MeshComponent.Animations).Children[0].Anim);
-
+	
 	if (node == None)
 		return;
-
-	node.PlayCustomAnim(sequence, 1.0, , , loop);
+		
+	node.PlayCustomAnim(sequence, 1.0, blendIn, blendOut, loop);
 }
 
 simulated function AnimNodePlayCustomAnim GetAnimNode()
@@ -83,13 +87,18 @@ simulated function AnimNodePlayCustomAnim GetAnimNode()
 	return None;
 }
 
+function SetFOV(float angle)
+{
+	MeshComponent.SetFOV(angle);
+}
+
 defaultproperties
 {
 	Begin Object Class=PlayerStatModifier Name=PSM
 	End Object
 	StatMod=PSM
 	
-	Begin Object Class=SkeletalMeshComponent Name=Mesh
+	Begin Object Class=UDKSkeletalMeshComponent Name=Mesh
 		bCacheAnimSequenceNodes=FALSE
 		AlwaysLoadOnClient=true
 		AlwaysLoadOnServer=true

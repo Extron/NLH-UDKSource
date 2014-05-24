@@ -2,8 +2,8 @@
 	ArenaPlayerInput
 
 	Creation date: 07/07/2012 23:11
-	Copyright (c) 2012, Trystan
-	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
+	Created by: Trystan
+	Copyright (c) 2014, Strange Box Software
 *******************************************************************************/
 
 class ArenaPlayerInput extends UDKPlayerInput within ArenaPlayerController;
@@ -13,6 +13,63 @@ class ArenaPlayerInput extends UDKPlayerInput within ArenaPlayerController;
  */
 var input byte Forward;
 
+/**
+ * This is set when the user is pressing the use key.
+ */
+var input byte UsePressed;
+
+/**
+ * The previous use flag, for edge detection.
+ */
+var byte PrevUsePressed;
+
+/**
+ * The number of seconds the use key has been held down.
+ */
+var float UseTimer;
+
+/**
+ * The previous Use timer, used for edge detection.
+ */
+var float PrevUseTimer;
+
+
+simulated function Tick(float dt)
+{
+	if (dt < 0)
+		return;
+
+	if (bool(UsePressed))
+	{
+		PrevUseTimer = UseTimer;
+		UseTimer = UseTimer + dt;
+	}
+	else
+	{
+		PrevUseTimer = 0;
+		UseTimer = 0;
+	}
+}
+
+simulated function UpdateEdgeDetects()
+{
+	PrevUsePressed = UsePressed;
+}
+
+simulated function bool UsePressEdgeDetect()
+{
+	return bool(UsePressed) && !bool(PrevUsePressed);
+}
+
+simulated function bool UseReleaseEdgeDetect()
+{
+	return !bool(UsePressed) && bool(PrevUsePressed);
+}
+
+simulated function bool UseTimeEdgeDetect(float time)
+{
+	return UseTimer > time  && PrevUseTimer < time;
+}
 
 simulated exec function StartFireAbility()
 {
@@ -32,7 +89,6 @@ simulated exec function StopFireAbility()
 {
 	if (FiringAbility && ArenaPawn(Pawn) != None)
 	{
-		`log("Unfiring ability");
 		ArenaPawn(Pawn).StopFireAbility();
 		FiringAbility = false;
 	}

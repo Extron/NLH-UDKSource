@@ -36,6 +36,8 @@ defaultproperties
 {
 	ClassName="Earth"
 	
+	AbilityAnimSet=AnimSet'AC_Player.Animations.SolusAbilityAnimations'
+
 	Trees[0]=class'Arena.AT_Earthquake'
 	Trees[1]=class'Arena.AT_RockWall'
 	Trees[2]=class'Arena.AT_Sand'

@@ -175,7 +175,7 @@ defaultproperties
 	//AirSpeed=200
 	//MovementSpeedModifier = 0.5;
 	
-	ControllerClass=class'Arena.ArenaBot'
+	ControllerClass=class'Arena.Bot_Orb'
 	
 	Location=(Z=100)
 	

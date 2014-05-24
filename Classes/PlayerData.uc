@@ -151,18 +151,21 @@ simulated function Initialize()
 	
 	WeapData.BoughtBases[0] = class'Arena.Wp_CheapRifleBase';
 	
-	defaultWeap.BaseClass = class'Arena.Wp_CheapRifleBase';
-	
-	defaultWeap.Components[WCStock] = class'Arena.Wp_S_CheapStock';
-	defaultWeap.Components[WCBarrel] = class'Arena.Wp_B_BasicRifleBarrel';
-	defaultWeap.Components[WCMuzzle] = class'Arena.Wp_M_NoMuzzle';
-	defaultWeap.Components[WCOptics] = class'Arena.Wp_O_CheapIronSights';
-	defaultWeap.Components[WCUnderAttachment] = class'Arena.Wp_UA_NoUnderAttachment';
-	defaultWeap.Components[WCSideAttachment] = class'Arena.Wp_SA_NoSideAttachment';
-	defaultWeap.WeaponName = "Default Weapon";
-	defaultWeap.FireModes[0] = FMFullAuto;
-	
-	WeapData.WeaponLibrary.AddItem(defaultWeap);
+	if (WeapData.WeaponLibrary.Length == 0)
+	{
+		defaultWeap.BaseClass = class'Arena.Wp_CheapRifleBase';
+		
+		defaultWeap.Components[WCStock] = class'Arena.Wp_S_CheapStock';
+		defaultWeap.Components[WCBarrel] = class'Arena.Wp_B_BasicRifleBarrel';
+		defaultWeap.Components[WCMuzzle] = class'Arena.Wp_M_NoMuzzle';
+		defaultWeap.Components[WCOptics] = class'Arena.Wp_O_CheapIronSights';
+		defaultWeap.Components[WCUnderAttachment] = class'Arena.Wp_UA_NoUnderAttachment';
+		defaultWeap.Components[WCSideAttachment] = class'Arena.Wp_SA_NoSideAttachment';
+		defaultWeap.WeaponName = "Default Weapon";
+		defaultWeap.FireModes[0] = FMFullAuto;
+
+		WeapData.WeaponLibrary.AddItem(defaultWeap);
+	}
 }
 
 simulated function string Serialize()

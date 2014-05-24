@@ -113,6 +113,21 @@ simulated function float GetBloomCost()
 	return ArenaPawn(Weapon.Instigator).Stats.GetBloomFactor() * (class'GlobalGameConstants'.static.GetFactorMin("Bloom Cost") * x + class'GlobalGameConstants'.static.GetFactorMax("Bloom Cost") * (1 - x));
 }
 
+simulated function float GetHeatCost()
+{
+	return FMax(Values[WSVHeatCost], 0);
+}
+
+simulated function float GetCooldownRate()
+{
+	return FMax(Values[WSVCoolDownRate], 0);
+}
+
+simulated function float GetOverheatDelay()
+{
+	return FMax(Values[WSVOverheatDelay], 0);
+}
+ 
 /**
  * Gets the damage modifer of the weapon, which is based on all of its stats.
  */

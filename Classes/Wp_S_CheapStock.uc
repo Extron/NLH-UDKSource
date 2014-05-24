@@ -25,6 +25,7 @@ defaultproperties
 	CompatibleTypes[1]=WTShotgun
 	CompatibleTypes[2]=WTHardLightRifle
 	CompatibleTypes[3]=WTGrenadeLauncher
+	CompatibleTypes[4]=WTPlasmaRifle
 	
 	CompatibleSizes[0]=WSSmall
 	CompatibleSizes[1]=WSRegular

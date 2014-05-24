@@ -65,7 +65,7 @@ simulated function SpawnWeather(WeatherManager manager)
 		pos.x  = bounds.x * (i % emitterCountX) / emitterCountX + (Location.X - bounds.x * 0.5);
 		pos.y = bounds.y * (i / emitterCountX) / emitterCountY + (Location.Y - bounds.y * 0.5);
 		//pos.z = 128;
-		Emitters.AddItem(Spawn(class'Arena.WeatherEmitter', Parent, , pos));
+		//Emitters.AddItem(Spawn(class'Arena.WeatherEmitter', Parent, , pos));
 	}
 	
 	if (SpawnSnowMounds)
@@ -91,16 +91,12 @@ simulated function SpawnWeather(WeatherManager manager)
 
 event PawnEnteredVolume(Pawn Other)
 {
-	`log("Pawn entered volume" @ Other);
-	
 	if (ArenaPawn(Other) != None)
 		ArenaPawn(Other).EnterWeatherVolume(Parent);
 }
 
 event PawnLeavingVolume(Pawn Other)
 {
-	`log("Pawn left volume" @ Other);
-	
 	if (ArenaPawn(Other) != None)
 		ArenaPawn(Other).ExitWeatherVolume();
 }

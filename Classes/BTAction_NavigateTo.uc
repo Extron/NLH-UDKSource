@@ -97,7 +97,9 @@ simulated function Reset()
 			Controller.NavigationHandle.ClearConstraints();
 			
 		Controller.StopLatentExecution();
-		Controller.Pawn.ZeroMovementVariables();
+		
+		if (Controller.Pawn != None)
+			Controller.Pawn.ZeroMovementVariables();
 		
 		IterCount = 0;
 	}
@@ -135,6 +137,9 @@ simulated function bool FindPath()
 state Running
 {	
 Begin:
+	if (Controller == None || Controller.Pawn == None)
+		GotoState('Failed');
+		
 	if (FindPath())
 	{
 		if (Controller.PointReachable(Destination))

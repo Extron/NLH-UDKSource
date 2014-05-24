@@ -143,5 +143,5 @@ defaultproperties
 	EmitterRangeRain=768
 	EmitterRangeSnow=2048
 	SnowflakesTemplate=ParticleSystem'ArenaWeather.Particles.SnowParticles'
-	RainSplashTemplate=ParticleSystem'ArenaWeather.Particles.RainDropSplashes'
+	RainSplashTemplate=ParticleSystem'ArenaWeather.Particles.RainParticles'
 }

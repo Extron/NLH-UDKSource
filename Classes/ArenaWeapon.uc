@@ -42,6 +42,21 @@ enum FireMode
 	FMBeam
 };
 
+/**
+ * Allows the weapon to have its own set of movement animations.
+ */
+var AnimSet MovementAnimSet;
+
+/**
+ * The animation set that contains every animation specific to the weapon, such as reloading, cycling, etc.
+ */
+var AnimSet WeaponAnimSet;
+
+/**
+ * The animation set for the first person player when this weapon is equipped.
+ */
+var AnimSet PlayerAnimSet;
+
 /** A list of names of the reload animations to use when the weapon reloads. */
 var array<name> ReloadAnims;
 
@@ -63,6 +78,11 @@ var array<name> MeleeAnims;
  * A list of all fire modes the weapon can be in.
  */
 var array<FireMode> FireModes;
+
+/**
+ * The allowed fire mode types for the base.
+ */
+var array<FireMode> AllowedFireModes;
 
 /**
  * The clip mesh component that the weapon uses to draw the clip/magazine.
@@ -88,11 +108,6 @@ var SoundCue CycleSound;
 
 /** The weapon's fire mode. */
 var int Mode;
-
-/**
- * The animation set for the first person player when this weapon is equipped.
- */
-var AnimSet PlayerAnimSet;
  
 /**
  * The particle system template to use when drawing the beam for an instant hit shot.
@@ -144,6 +159,16 @@ var float BaseDamage;
     weapon is fired, and will only decrease once the weapon is not fired for a short time. */ 
 var float Bloom;
 
+/** 
+ * The current temperature of the weapon.  Some weapons, such as beam rifles, can overheat if used to frequently.
+ */
+var float Temperature;
+
+/**
+ * The maximum temperature that the weapon can handle before overheating.
+ */
+var float CriticalTemperature;
+
 /**
  * The amount of time needed to pass in between cycling.  For example, semi-auto weapons
  * can only fire again after this time has passed.
@@ -170,6 +195,11 @@ var bool Equipping;
  * Indicates that the weapon is being cycled (only used with bolt action).
  */
 var bool Cycling;
+
+/**
+ * Indicates that the weapon can not fire due to overheating.
+ */
+var bool Overheated;
 
 /**
  * Indicates that we have ended firing.
@@ -231,6 +261,14 @@ simulated function Tick(float dt)
 		
 		if (Bloom < 0)
 			Bloom = 0;
+	}
+	
+	if (Temperature > 0)
+	{
+		Temperature -= Stats.GetCooldownRate() * dt;
+		
+		if (Temperature < 0)
+			Temperature = 0;
 	}
 	
 	RecoilAccel += (-10 * RecoilPos - 15 * RecoilVel);
@@ -305,7 +343,7 @@ simulated function bool HasAmmo(byte FireModeNum, optional int Amount)
 
 simulated function bool ShouldRefire()
 {
-	if (EndedFire || Clip <= 0)
+	if (EndedFire || Clip <= 0 || Overheated)
 		return false;
 	 
 	if (FireModes[Mode] == FMFullAuto)
@@ -417,18 +455,15 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 		AttachClip();
 		EnsureWeaponOverlayComponentLast();
 		SetHidden(false);
-		Mesh.SetLightEnvironment(pawn.LightEnvironment);
 		SetBase(pawn, , MeshCpnt, SocketName);
 		MeshCpnt.AttachComponentToSocket(Mesh, SocketName);
 	}
 	else
 	{
 		SetHidden(True);
+		
 		if (pawn != None)
-		{
-			Mesh.SetLightEnvironment(pawn.LightEnvironment);
 			AttachComponent(Mesh);
-		}
 	}
 
 	//SetWeaponOverlayFlags(pawn);
@@ -448,20 +483,14 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 
 function AttachClip()
 {
-	local ArenaPawn pawn;
 	local name socket;
 	
 	socket = 'ClipSocket';
 
 	if (ClipMesh != None)
 	{
-		pawn = ArenaPawn(Instigator);
-		
 		if (SkeletalMeshComponent(Mesh).GetSocketByName(socket) != None)
 			SkeletalMeshComponent(Mesh).AttachComponentToSocket(ClipMesh, socket);
-		
-		if (pawn != None)
-			ClipMesh.SetLightEnvironment(pawn.LightEnvironment);
 	}
 }
 
@@ -488,7 +517,6 @@ simulated event SetPosition(UDKPawn Holder)
 simulated function PlayArmAnimation(name sequence, float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
 {
 	local AP_Player player;
-	local AnimNodeSequence node;
 	
 	if( WorldInfo.NetMode == NM_DedicatedServer || Instigator == None || !Instigator.IsFirstPerson())
 		return;
@@ -496,26 +524,7 @@ simulated function PlayArmAnimation(name sequence, float duration, optional bool
 	player = AP_Player(Instigator);
 
 	if (player != None)
-	{
-		
-		// Check we have access to mesh and animations
-		if (player.RightArm == None || player.LeftArm == None || PlayerAnimSet == none || GetArmAnimNodeSeq() == None)
-			return;
-
-		// If we are not specifying a duration, use the default play rate.
-		if (duration > 0.0)
-		{
-			// @todo - this should call GetWeaponAnimNodeSeq, move 'duration' code into AnimNodeSequence and use that.
-			player.RightArm.PlayAnim(sequence, duration, loop);
-			player.LeftArm.PlayAnim(sequence, duration, loop);
-		}
-		else
-		{
-			node = AnimNodeSequence(player.RightArm.Animations);
-			node.SetAnim(sequence);
-			node.PlayAnim(loop, DefaultAnimSpeed);
-		}
-	}
+		player.PlayAnimation(sequence, duration, loop);
 }
 
 simulated function AnimNodeSequence GetArmAnimNodeSeq()
@@ -530,6 +539,30 @@ simulated function AnimNodeSequence GetArmAnimNodeSeq()
 	return None;
 }
 
+simulated function PlayWeaponAnimation(Name sequence, float duration, optional bool loop, optional SkeletalMeshComponent skelMesh)
+{
+	local AnimNodeSequence WeapNode;
+
+	if (WorldInfo.NetMode == NM_DedicatedServer)
+		return;
+
+	if (skelMesh == None)
+		skelMesh = SkeletalMeshComponent(Mesh);
+
+	WeapNode = GetWeaponAnimNodeSeq();
+	
+	if(skelMesh == None || WeapNode == None)
+		return;
+	
+	if (duration <= 0.0)
+		duration = WeapNode.GetAnimPlaybackLength();
+		
+	if (duration <= 0.0)
+		return;
+
+	WeapNode.SetAnim(sequence);
+	WeapNode.PlayAnim(loop, duration / WeapNode.GetAnimPlaybackLength());
+}
 /**
  * This function handles playing sounds for weapons.  How it plays the sound depends on the following:
  *
@@ -685,22 +718,24 @@ simulated function float GetIdealRange()
 simulated function FireWeapon()
 {
 	local SoundCue fs;
-	local float duration;
 	local int anim;
 	
 	if (FireAnims.Length > 0)
-	{	
-		duration = FireInterval[0];
+	{
 		anim = rand(FireAnims.Length);
-		
-		PlayWeaponAnimation(FireAnims[anim], duration);
+		PlayWeaponAnimation(FireAnims[anim], 0.0);
 	}
 	
 	Bloom += Stats.GetBloomCost();
+	Temperature += Stats.GetHeatCost();
 	
 	if (Bloom > class'GlobalGameConstants'.static.GetStatMax("Bloom"))
-	{
 		Bloom = class'GlobalGameConstants'.static.GetStatMax("Bloom");
+		
+	if (CriticalTemperature > 0 && Temperature > CriticalTemperature)
+	{
+		Temperature = CriticalTemperature;
+		GotoState('WeaponOverheated');
 	}
 
 	if (ArenaPawn(Instigator) != None)
@@ -786,23 +821,26 @@ simulated function EquipWeapon(ArenaPawn pawn)
 	local float actualDuration;
 	local SkeletalMeshComponent skelMesh;
 	local int anim;
-	
-	if (PlayerAnimSet != None)
-		pawn.Mesh.AnimSets[0] = PlayerAnimSet;
 		
+	if (AP_Player(pawn) != None)
+		skelMesh = AP_Player(pawn).RightArm;
+
 	if (EquipAnims.Length > 0)
-	{
+	{		
+		`log("Equipping weapon");
+	
 		Equipping = true;
 		anim = rand(EquipAnims.Length);
-		skelMesh = SkeletalMeshComponent(Mesh);
 		
 		normDuration = skelMesh.GetAnimLength(EquipAnims[anim]);
 		actualDuration = normDuration * Stats.GetEquipSpeed();
+
+		if (pawn != None)
+			actualDuration *= pawn.Stats.GetEquipSpeed();
+					
+		`log("Normal duration" @ normDuration @ "Actual duration" @ actualDuration);
 		
-		if (ArenaPawn(Owner) != None)
-			actualDuration *= ArenaPawn(Owner).Stats.GetEquipSpeed();
-			
-		PlayWeaponAnimation(EquipAnims[anim], actualDuration);
+		PlayArmAnimation(EquipAnims[anim], actualDuration);
 		SetTimer(actualDuration, false, 'OnEquippingAnimEnd');
 	}
 	else
@@ -825,7 +863,10 @@ simulated function SetFireModes(array<FireMode> modes, optional int selectedMode
 	FireModes.Length = 0;
 	
 	for (i = 0; i < modes.Length; i++)
-		FireModes.AddItem(modes[i]);
+	{
+		if (AllowedFireModes.Find(modes[i]) > -1)
+			FireModes.AddItem(modes[i]);
+	}
 		
 	Mode = selectedMode;
 }
@@ -858,16 +899,21 @@ simulated function SetWeaponFOV(float angle)
 {
 	`log("Setting weapon FOV" @ angle);
 	
-	if (AP_Player(Instigator) != None)
+	/*if (AP_Player(Instigator) != None)
 	{
 		UDKSkeletalMeshComponent(AP_Player(Instigator).RightArm).SetFOV(angle);
 		UDKSkeletalMeshComponent(AP_Player(Instigator).LeftArm).SetFOV(angle);
-	}
+	}*/
 	
 	if (ClipMesh != None)
 		ClipMesh.SetFOV(angle);
 	
 	UDKSkeletalMeshComponent(Mesh).SetFOV(angle);
+}
+
+simulated function SetWeaponScale(float scale)
+{
+	Mesh.SetScale(scale);
 }
 
 simulated function rotator GetRecoilForce()
@@ -959,6 +1005,14 @@ simulated function OnEquippingAnimEnd()
 	GoToState('Active');
 }
 
+simulated function Overheat()
+{
+}
+
+simulated function CoolDown()
+{
+}
+
 /**
  * State Reloading
  * The weapon is currently reloading, running reloading animations and putting ammo into the weapon.
@@ -972,6 +1026,28 @@ simulated state WeaponReloading
 		{
 			ReloadWeapon();
 		}
+	}
+}
+
+simulated state WeaponOverheated
+{
+	simulated event BeginState(name prev)
+	{
+		SetTimer(Stats.GetOverheatDelay(), false, 'CooledDown');
+		Overheat();
+		Overheated = true;
+	}
+	
+	simulated function StartFire(byte FireModeNum)
+	{
+		//Cannot fire while overheated.
+	}
+	
+	simulated function CooledDown()
+	{
+		Overheated = false;
+		CoolDown();
+		GotoState('Active');
 	}
 }
 

@@ -58,10 +58,14 @@ var name HoldingAnim;
  */
 var name HoldEndAnim;
 
-/** The target of the ability. */
+/** 
+ * The target of the ability. 
+ */
 var ArenaPawn Target;
 
-/** The sound of the ability firing. */
+/** 
+ * The sound of the ability firing. 
+ */
 var SoundCue FireSound;
 
 /**
@@ -120,7 +124,9 @@ var UDKExplosionLight DischargeLight;
  */
 var vector SourceOffset;
 
-/** The name of the ability. */
+/** 
+ * The name of the ability. 
+ */
 var string AbilityName;
 
 /**
@@ -144,13 +150,19 @@ var string AbilityIcon;
  */
 var float BaseDamage;
 
-/* The amount of energy using this ability requires.  For abilities that can be sustained, this is on a per-tick basis. */
+/**
+ * The amount of energy using this ability requires.  For abilities that can be sustained, this is on a per-tick basis. 
+ */
 var float EnergyCost;
 
-/* The cool down time of the ability. */
+/**
+ * The cool down time of the ability. 
+ */
 var float CoolDown;
 
-/** The amount of time that the ability has been held. */
+/** 
+ * The amount of time that the ability has been held. 
+ */
 var float HeldTime;
 
 /**
@@ -168,10 +180,14 @@ var float MaxCharge;
  */
 var float MinCharge;
 
-/** The last cached dt. */
+/** 
+ * The last cached dt. 
+ */
 var float DeltaTime;
 
-/** Indicates that the ability is being sustained; held down like a machine gun. */
+/** 
+ * Indicates that the ability is being sustained; held down like a machine gun. 
+ */
 var bool IsHolding;
 
 /**
@@ -179,13 +195,19 @@ var bool IsHolding;
  */
 var bool IsCharging;
 
-/* Indicates if the player can use the ability right now. */
+/** 
+ * Indicates if the player can use the ability right now. 
+ */
 var bool CanFire;
 
-/* Indicates that the player can hold down the fire ability button to sustain the ability. */
+/**
+ * Indicates that the player can hold down the fire ability button to sustain the ability. 
+ */
 var bool CanHold;
 
-/* Indicates that the player can charge the ability. */
+/**
+ * Indicates that the player can charge the ability. 
+ */
 var bool CanCharge;
 
 /**
@@ -209,7 +231,9 @@ var bool InterruptedChargeStartAnim;
  */
 var bool PlayingChargeFireAnim;
 
-/* Indicates that the ability is passive, and non-equippable. */
+/**
+ * Indicates that the ability is passive, and non-equippable. 
+ */
 var bool IsPassive;
 
 /**
@@ -246,10 +270,12 @@ simulated function StartFire(byte FireModeNum)
 {
 	if (IsPassive) return;
 
+	//`log("Firing ability" @ self);
+	
 	if (CanCharge && !IsCharging && CanFire)
 	{
 		CanFire = false;
-		AP_Player(Instigator).PlayAnimation(ChargeStartAnim, 0.0, true);
+		AP_Player(Instigator).PlayAnimation(ChargeStartAnim, 0.0, true, 0.15, 0.0);
 		SetTimer(GetArmAnimLength(ChargeStartAnim) - 0.1, false, 'ChargeAnimComplete');
 		PlayingChargeStartAnim = true;
 		InterruptedChargeStartAnim = false;
@@ -257,10 +283,14 @@ simulated function StartFire(byte FireModeNum)
 	
 	if (CanFire && ArenaPawn(Instigator) != None && ArenaPawn(Instigator).Energy >= EnergyCost)
 	{
+		//`log(self @ "Can fire ability (is not cooling down and has energy to spend)");
+		
 		if (PlayedStartAnim || AP_Player(Instigator) == None)
 		{
+			//`log(self @ "Start fire animation completed. Proceding with fire animation.");
+			
 			if (CanHold && AP_Player(Instigator) != None)
-				AP_Player(Instigator).PlayAnimation(HoldingAnim, 0.0, true);
+				AP_Player(Instigator).PlayAnimation(HoldingAnim, 0.0, true, 0.15, 0.0);
 				
 			super.StartFire(FireModeNum);
 		}
@@ -268,13 +298,18 @@ simulated function StartFire(byte FireModeNum)
 		{
 			if (CanHold)
 			{
-				AP_Player(Instigator).PlayAnimation(HoldStartAnim, 0.0);
+				AP_Player(Instigator).PlayAnimation(HoldStartAnim, 0.0, false, 0.15, 0.0);
 				SetTimer(GetArmAnimLength(HoldStartAnim), false, 'FireAnimComplete');
 			}
 			else
 			{
-				AP_Player(Instigator).PlayAnimation(FireStartAnim, 0.0);
-				SetTimer(GetArmAnimLength(FireStartAnim), false, 'FireAnimComplete');
+				AP_Player(Instigator).PlayAnimation(FireStartAnim, 0.0, false, 0.15, 0.0);
+				StartFireAnimation();
+				
+				if (GetArmAnimLength(FireStartAnim) > 0)
+					SetTimer(GetArmAnimLength(FireStartAnim), false, 'FireAnimComplete');
+				else
+					FireAnimComplete();
 			}
 		}
 	}
@@ -291,7 +326,7 @@ simulated function StopFire(byte FireModeNum)
 		HeldTime = 0;
 		
 		if (AP_Player(Instigator) != None)
-			AP_Player(Instigator).PlayAnimation(HoldEndAnim, 0.0);
+			AP_Player(Instigator).PlayAnimation(HoldEndAnim, 0.0, , 0.0, 0.15);
 			
 		PlayedStartAnim = false;
 	}
@@ -301,7 +336,7 @@ simulated function StopFire(byte FireModeNum)
 		
 		if (!PlayedStartAnim && AP_Player(Instigator) != None)
 		{
-			AP_Player(Instigator).PlayAnimation(ChargeFireAnim, 0.0);
+			AP_Player(Instigator).PlayAnimation(ChargeFireAnim, 0.0, , 0.15, 0.0);
 			SetTimer(GetArmAnimLength(ChargeFireAnim) - 0.1, false, 'ChargeFireAnimComplete');
 			PlayingChargeFireAnim = true;
 		}
@@ -321,7 +356,7 @@ simulated function StopFire(byte FireModeNum)
 		ChargeTime = 0;
 		
 		if (AP_Player(Instigator) != None)
-			AP_Player(Instigator).PlayAnimation(ChargeAbortAnim, 0.0);
+			AP_Player(Instigator).PlayAnimation(ChargeAbortAnim, 0.0, , 0.0, 0.15);
 		
 		if (ChargeParticles != None)
 				ChargeParticles.DeactivateSystem();
@@ -332,6 +367,13 @@ simulated function StopFire(byte FireModeNum)
 	}
 	
 	super.StopFire(FireModeNum);
+}
+
+/**
+ * Allows abilities to perform actions the moment the fire animaiton starts.
+ */
+simulated function StartFireAnimation()
+{
 }
 
 simulated function FireAmmunition()
@@ -349,7 +391,7 @@ simulated function FireAmmunition()
 		if (CanCharge)
 		{
 			if (AP_Player(Instigator) != None)
-				AP_Player(Instigator).PlayAnimation(ChargeEndAnim, 0.0);
+				AP_Player(Instigator).PlayAnimation(ChargeEndAnim, 0.0, , 0.0, 0.15);
 			
 			if (ChargeParticles != None)
 				ChargeParticles.DeactivateSystem();
@@ -357,7 +399,7 @@ simulated function FireAmmunition()
 		else
 		{
 			if (AP_Player(Instigator) != None)
-				AP_Player(Instigator).PlayAnimation(FireEndAnim, 0.0);
+				AP_Player(Instigator).PlayAnimation(FireEndAnim, 0.0, false, 0.0, 0.15);
 		}
 			
 		PlayedStartAnim = false;
@@ -393,19 +435,6 @@ function ConsumeAmmo(byte FireModeNum)
 	}
 }
 
-// Function added by Zack Diller - for when ability failed to be casted, refreshed energy spent and
-// refreshes some of the cooldown, as determined by the RefreshRatio variable (0.0 - 1.0). Note: meant
-//  only for abilities that cannot be held down.
-function RefundAmmo(float RefreshRatio)
-{
-	if (ArenaPawn(Instigator) != None)
-	{
-		ArenaPawn(Instigator).AddEnergy(EnergyCost);
-
-		SetTimer(CoolDown * RefreshRatio, false, 'ReactivateAbility');
-	}
-}
-
 /*
  * This function checks to see if the weapon has any ammo available for a given fire mode.
  *
@@ -417,6 +446,7 @@ simulated function bool HasAmmo( byte FireModeNum, optional int Amount )
 {
 	if (ArenaPawn(Instigator) != None)
 	{
+		`log("Ability" @ self @ "checking ammo.  Has Ammo?" @ ArenaPawn(Instigator).CanSpendEnergy(EnergyCost));
 		return ArenaPawn(Instigator).CanSpendEnergy(EnergyCost);
 	}
 	else
@@ -467,6 +497,8 @@ simulated function float GetArmAnimLength(name sequence)
 		if (player.LeftArm == None)
 			return 0;
 			
+		`log("Animation Sets" @ player.LeftArm.AnimSets.Length);
+		
 		return player.LeftArm.GetAnimLength(sequence);
 	}
 	
@@ -475,6 +507,7 @@ simulated function float GetArmAnimLength(name sequence)
 
 simulated function FireAnimComplete()
 {
+	`log(self @ "fire anim timer completed");
 	PlayedStartAnim = true;
 	StartFire(0);
 }

@@ -202,7 +202,7 @@ defaultproperties
 	PlayerReplicationInfoClass=class'Arena.PRI_BotBattle'
 	//bDelayedStart=true
 	InitialIntermission=true
-	InitialIntermissionTime=10
+	InitialIntermissionTime=5
 	SettingsClass=class'Arena.GISettings_BotBattle'
 	
 	RespawnTime=3

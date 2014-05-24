@@ -3,7 +3,6 @@
 
 	Creation date: 24/08/2013 03:18
 	Copyright (c) 2013, Trystan
-	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
 /**
@@ -13,9 +12,14 @@
 class BTSelector_Delayer extends BTSelector;
 
 /**
- * The amount of time to delay the child.
+ * The minimum amount of time to delay the child.
  */
-var float Delay;
+var float MinDelay;
+
+/**
+ * The maximum amount of time to delay the child.
+ */
+var float MaxDelay;
 
 /**
  * Indicates that the child can be run.
@@ -39,8 +43,10 @@ simulated function SetParameters(array<string> parameters)
 		
 		if (binding.Length == 2)
 		{
-			if (binding[0] == "Delay")
-				Delay = float(binding[1]);
+			if (binding[0] == "MinDelay")
+				MinDelay = float(binding[1]);
+			else if (binding[0] == "MaxDelay")
+				MaxDelay = float(binding[1]);
 			else if (binding[0] == "CanRun")
 				CanRun = bool(binding[1]);
 		}
@@ -77,7 +83,11 @@ state Running
 				
 				GotoState('Succeeded');
 				CanRun = false;
-				SetTimer(Delay, false, 'RestartDelay');
+				
+				if (MinDelay < 0)
+					MinDelay = MaxDelay;
+					
+				SetTimer(Lerp(MinDelay, MaxDelay, FRand()), false, 'RestartDelay');
 			}
 		}
 		else
@@ -90,4 +100,5 @@ state Running
 defaultproperties
 {
 	CanRun=true
+	MinDelay=-1
 }

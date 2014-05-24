@@ -60,6 +60,8 @@ simulated function bool CanEquipSideAttachment(Wp_SideAttachment attachment)
 defaultproperties
 {
 	Subclasses[0]=class'Arena.Wp_B_NoBarrel'
-	Subclasses[1]=class'Arena.Wp_B_BasicRifleBarrel'
+	Subclasses[1]=class'Arena.Wp_B_ShortSimpleBarrel'
 	Subclasses[2]=class'Arena.Wp_B_ShortRailedBarrel'
+	Subclasses[3]=class'Arena.Wp_B_SpinningBarrel'
+	Subclasses[4]=class'Arena.Wp_B_CrossbowBarrel'
 }

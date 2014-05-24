@@ -10,7 +10,7 @@ class Ab_StoneSlabBoulder extends Ab_RockWallBoulder;
 
 defaultproperties
 {
-	Begin Object Name=CubeObject
+	Begin Object Name=RockWallMesh
 		Scale3D=(X=1.5, Y=1.5, Z=1.25)
 	End Object
 }

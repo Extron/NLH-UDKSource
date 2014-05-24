@@ -46,10 +46,14 @@ function Update(WeatherManager weather, float delta)
 {
 	local int i;
 
+	//`log("Updating landscape");
+	
 	if (weather.Snowing)
-	{
+	{;
+		
 		SnowLevel += delta * weather.WeatherIntensity * weather.SnowBuildupRate;
 		RainLevel = 0;
+		//`log("Adding snow to landscape" @ SnowLevel);
 	}
 	else if (weather.Thawing)
 	{
@@ -58,6 +62,8 @@ function Update(WeatherManager weather, float delta)
 		
 	if (weather.Raining)
 	{
+		//`log("Its raining");
+		
 		RainLevel += delta * weather.WeatherIntensity * weather.RainBuildupRate;
 		SnowLevel = 0;
 	}

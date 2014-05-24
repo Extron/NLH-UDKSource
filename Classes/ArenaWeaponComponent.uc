@@ -60,6 +60,13 @@ var name AttachSock;
  */
 var int Cost;
 
+simulated function StartFire()
+{
+}
+
+simulated function StopFire()
+{
+}
 
 /**
  * Attaches this component to a weapon base.
@@ -70,17 +77,22 @@ var int Cost;
 simulated function AttachToBase(ArenaWeaponBase weap, name socket)
 {
 	local ArenaPawn pawn;
+	local SkeletalMeshSocket weaponSocket;
+	local vector scale;
 	
 	pawn = ArenaPawn(weap.Instigator);
 	
-	if (SkeletalMeshComponent(weap.Mesh).GetSocketByName(socket) != None)
+	weaponSocket = SkeletalMeshComponent(weap.Mesh).GetSocketByName(socket);
+	
+	if (weaponSocket != None)
 	{		
 		SetBase(pawn, , SkeletalMeshComponent(weap.Mesh), socket);
+		scale = weaponSocket.RelativeScale * pawn.GetWeaponHandSocketScale();
 	}
 	
 	AttachComponent(Mesh);
 	SetHidden(false);
-	Mesh.SetLightEnvironment(ArenaPawn(weap.Instigator).LightEnvironment);
+	Mesh.SetScale3D(scale);
 	
 	WeaponBase = weap;
 	
@@ -189,6 +201,16 @@ simulated function AnimNodeSequence GetAnimNodeSeq()
 simulated function bool CanAttachToBase(ArenaWeaponBase weap)
 {
 	return CompatibleTypes.Find(weap.Type) > -1 && CompatibleSizes.Find(weap.Size) > -1 && EnergyCost + weap.GetEnergyUsed() <= weap.EnergyMax;
+}
+
+simulated function SetComponentFOV(float angle)
+{
+	UDKSkeletalMeshComponent(Mesh).SetFOV(angle);
+}
+
+simulated function SetWeaponScale(float scale)
+{
+	Mesh.SetScale(scale);
 }
 
 /**

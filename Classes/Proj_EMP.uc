@@ -105,4 +105,6 @@ defaultproperties
 	Damage=0
 	DamageRadius=1000
 	MomentumTransfer=0
+	
+	ProjectileTag="EMP"
 }
