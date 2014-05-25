@@ -37,7 +37,7 @@ defaultproperties
 	BurstCount=3
 	
 	FireSound=SoundCue'PhotonEmitterBase.Audio.FireSC'
-	IHBeamTemplate=ParticleSystem'ArenaParticles.Particles.PhotonBeam'
+	IHBeamTemplate=ParticleSystem'PhotonEmitter.Particles.PhotonBeam'
 	
 	ViewOffset=(X=45, Y=10, Z=-22);
 	BaseName="Photon Emitter Base"

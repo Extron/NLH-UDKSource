@@ -40,7 +40,7 @@ defaultproperties
 	BurstCount=1
 	
 	FireSound=SoundCue'RailGun.Audio.FireSC'
-	IHBeamTemplate=ParticleSystem'ArenaParticles.Particles.PhotonBeam'
+	IHBeamTemplate=ParticleSystem'PhotonEmitter.Particles.PhotonBeam'
 	
 	FireAnims[0]=Fire
 	

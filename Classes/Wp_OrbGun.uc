@@ -56,7 +56,7 @@ defaultproperties
 	BurstCount=3
 	
 	FireSound=SoundCue'PhotonEmitterBase.Audio.FireSC'
-	IHBeamTemplate=ParticleSystem'ArenaParticles.Particles.PhotonBeam'
+	IHBeamTemplate=ParticleSystem'PhotonEmitter.Particles.PhotonBeam'
 	
 	Type=WTHardLightRifle
 	Size=WSSmall
