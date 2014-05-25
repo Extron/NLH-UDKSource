@@ -572,6 +572,12 @@ exec function GiveAmmo()
 		ArenaWeapon(Weapon).AddMaxAmmo();
 }
 
+exec function GiveCash(int amount)
+{
+	if (ArenaPlayerController(Controller).SaveData != None)
+		ArenaPlayerController(Controller).SaveData.Cash += amount;
+}
+
 exec function PauseWeather()
 {
 	ArenaGRI(WorldInfo.GRI).WeatherMgr.TickDay = false;

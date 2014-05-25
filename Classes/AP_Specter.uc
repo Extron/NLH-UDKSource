@@ -31,6 +31,12 @@ simulated function SetMenu(GFx_Menu menu)
 		MenuHUD(PlayerController(Controller).MyHUD).Menu = menu;
 }
 
+exec function GiveCash(int amount)
+{
+	if (ArenaPlayerController(Controller).SaveData != None)
+		ArenaPlayerController(Controller).SaveData.Cash += amount;
+}
+
 defaultproperties
 {
 	HasFootsteps=false
