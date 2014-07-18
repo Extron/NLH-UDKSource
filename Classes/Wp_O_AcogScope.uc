@@ -11,7 +11,7 @@ class Wp_O_AcogScope extends Wp_O_Scope;
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'AcogScope.Meshes.AcogScopeMesh'
+		SkeletalMesh=SkeletalMesh'AcogScopes.Meshes.SimpleScope'
 	End Object
 	
 	Begin Object Name=NewStatMod

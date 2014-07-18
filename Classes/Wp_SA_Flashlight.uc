@@ -14,11 +14,25 @@ class Wp_SA_Flashlight extends Wp_SideAttachment;
  */
 var SpotLightComponent Light;
 
+var MaterialInstanceConstant Material;
+
+var float EmissionFactor;
+
+var bool On;
+
 simulated function PostBeginPlay()
 {
 	super.PostBeginPlay();
 
 	SkeletalMeshComponent(Mesh).AttachComponentToSocket(Light, 'LightSocket');
+	
+	Material = new class'MaterialInstanceConstant';
+	Material.SetParent(Mesh.GetMaterial(0));
+	Material.SetScalarParameterValue('EmissionFactor', On ? EmissionFactor : 0.0);
+	
+	Mesh.SetMaterial(0, Material);
+	
+	Light.SetEnabled(On);
 }
 
 event Destroyed()
@@ -34,12 +48,14 @@ event Destroyed()
 simulated function Toggle()
 {
 	Light.SetEnabled(!Light.bEnabled);
+	On = !On;
+	Material.SetScalarParameterValue('EmissionFactor', On ? EmissionFactor : 0.0);
 }
 
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'SAFlashlight.Meshes.FlashlightMesh'
+		SkeletalMesh=SkeletalMesh'RailSideAttachments.Meshes.Flashlight'
 	End Object
 	
 	Begin Object Class=SpotLightComponent Name=SLC
@@ -63,6 +79,9 @@ defaultproperties
 	CompatibleSizes[2]=WSLarge
 	CompatibleSizes[3]=WSHand
 	CompatibleSizes[4]=WSHeavy
+	
+	On=true
+	EmissionFactor=50
 	
 	Weight=1
 	Cost=2

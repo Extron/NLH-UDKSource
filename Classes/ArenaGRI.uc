@@ -115,8 +115,7 @@ simulated function SetSettings()
 			WeatherMgr.StartCloudCoverage = FRand();
 		else
 			WeatherMgr.StartCloudCoverage = 1 - GameSettings.StartCloudCoverage;
-			
-		`log("Cloud Coverage" @ WeatherMgr.CloudCoverage @ GameSettings.StartCloudCoverage);
+
 		
 		if (GameSettings.StartTemperature < 0)
 			WeatherMgr.StartTemperature = FRand();
@@ -127,6 +126,8 @@ simulated function SetSettings()
 			WeatherMgr.StartWeatherIntensity = FRand();
 		else
 			WeatherMgr.StartWeatherIntensity = GameSettings.StartWeatherIntensity;
+			
+		`log(self @ "Weather Intensity" @ WeatherMgr.WeatherIntensity @ GameSettings.StartWeatherIntensity);
 	}
 }
 

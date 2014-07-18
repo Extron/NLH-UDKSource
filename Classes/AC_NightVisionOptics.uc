@@ -51,6 +51,8 @@ event Activate()
 defaultproperties
 {
 	NVEffect=PostProcessChain'ArenaMaterials.PostProcess.NightVisionPPC'
-	Type=ACTAttachment
+	Type=ACTEyeImplant
 	Slot=1
+	
+	ComponentName="Night Vision Implant"
 }

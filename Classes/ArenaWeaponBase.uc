@@ -124,8 +124,6 @@ function AttachWeapon(LightEnvironmentComponent lightEnv)
 {
 	super.AttachWeapon(lightEnv);
 
-	`log("Weapon Components" @ WeaponComponents.Length);
-
 	WeaponComponents[WCStock].AttachToBaseSpecial(self, Sockets[WCStock], lightEnv);
 	WeaponComponents[WCBarrel].AttachToBaseSpecial(self, Sockets[WCBarrel], lightEnv);
 	WeaponComponents[WCMuzzle].AttachToBaseSpecial(self, Sockets[WCMuzzle], lightEnv);
@@ -360,6 +358,9 @@ simulated function SetWeaponScale(float scale)
 
 function AttachStock(Wp_Stock s)
 {
+	if (s == None)
+		s = spawn(class'Arena.Wp_S_NoStock', self, , Location, Rotation);
+		
 	if (s.CanAttachToBase(Self))
 		WeaponComponents[WCStock] = s;
 }

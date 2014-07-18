@@ -24,18 +24,26 @@ const SEG_Electromagnetism = 1;
 const SEG_Water = 2;
 const SEG_Earth = 4;
 
+/**
+ * Contains a list of explosions and their triggers that the status effect can generate.
+ */
+struct ExplosionData
+{
+	/**
+	 * The damage effect that can trigger the explosion.
+	 */
+	var class<AbilityDamageType> Trigger;
+	
+	/**
+	 * The explosion that is generated.
+	 */
+	var class<AbilityExplosion> ExplosionType;
+};
 
 /**
- * The weights for the player stat modifiers.
+ * A list of explosion types that this status effect can generate when struct by a secondary damage type.
  */
-var array<float> PSMWeights;
-
-/**
- * Indicates which direction the weights are applied.  A positive number indicates that 
- * the values are only modified when the added effect trumps the initial effect, and 
- * a negative number works vice versa.
- */
-var array<int> PSMDirections;
+var array<ExplosionData> Explosions;
 
 /**
  * The list of display colors to use when showing this status effect.  Length should agree with Combinations variable.
@@ -56,10 +64,6 @@ var class<StatusDamageType> DamageType;
 
 /** A reference to the screen effect to use while this effect is active. */
 var PostProcessChain ScreenEffect;
-
-var StatusEffect ParentA;
-
-var StatusEffect ParentB;
 
 /* The name of the effect. */
 var string EffectName;
@@ -153,97 +157,6 @@ var float KilledWhilePoints;
  */
 var int SEGroup;
 
-/**
- * The number of base status effects that make up this status effect.  Will be 1 if this is a base status effect.
- */
-var int Combinations;
-
-
-static function StatusEffect AddEffects(StatusEffect A, StatusEffect B)
-{
-	local StatusEffect se;
-	local int advantage;
-	local int i;
-	
-	se = A.Spawn(class'Arena.StatusEffect', None);
-	advantage = GetAdvantageValue(A.SEGroup, B.SEGroup);
-	
-	se.SEGroup = A.SEGroup | B.SEGroup;
-	se.EffectName = A.EffectName @ "+" @ B.EffectName;
-	se.Combinations = A.Combinations + B.Combinations;
-	
-	se.Duration = WeightedAddition(A.Duration - A.Counter, B.Duration - B.Counter, B.DurationWeight, -advantage);
-	se.HealthDamage = WeightedAddition(A.HealthDamage, B.HealthDamage, B.HealthDamageWeight, advantage);
-	se.EnergyDamage = WeightedAddition(A.EnergyDamage, B.EnergyDamage, B.EnergyDamageWeight, advantage);
-	se.StaminaDamage = WeightedAddition(A.StaminaDamage, B.StaminaDamage, B.StaminaDamageWeight, -advantage);
-	se.InitialHealthDamage = WeightedAddition(A.InitialHealthDamage, B.InitialHealthDamage, B.IHDWeight, advantage);
-	se.InitialEnergyDamage = WeightedAddition(A.InitialEnergyDamage, B.InitialEnergyDamage, B.IEDWeight, advantage);
-	se.InitialStaminaDamage = WeightedAddition(A.InitialStaminaDamage, B.InitialStaminaDamage, B.ISDWeight, -advantage);
-	
-	for (i = 0; i < se.StatsModifier.ValueMods.Length; i++)
-		se.StatsModifier.ValueMods[i] = WeightedAddition(A.StatsModifier.ValueMods[i], B.StatsModifier.ValueMods[i], B.PSMWeights[i], advantage * B.PSMDirections[i]);
-	
-	for (i = 0; i < B.PSMWeights.Length; i++)
-		se.PSMWeights[i] = WeightedAddition(A.PSMWeights[i], B.PSMWeights[i], 1.0, advantage);
-	
-	for (i = 0; i < A.DisplayColors.length; i++)
-		se.DisplayColors.AddItem(A.DisplayColors[i]);
-		
-	for (i = 0; i < B.DisplayColors.length; i++)
-		se.DisplayColors.AddItem(B.DisplayColors[i]);
-		
-	se.ScreenEffect = A.ScreenEffect;
-	se.Affectee = A.Affectee;
-	se.ParentA = A;
-	se.ParentB = B;
-	
-	se.KilledByPoints = FMax((A.KilledByPoints + B.KilledByPoints) / 2 + se.Combinations * advantage, 0.0);
-	se.KilledWhilePoints = FMax((A.KilledWhilePoints + B.KilledWhilePoints) / 2 + se.Combinations  * advantage, 0.0);
-	
-	return se;
-}
-
-static function int GetAdvantageValue(int SEG_A, int SEG_B)
-{
-	local int value;
-	
-	value = 0;
-	
-	if ((SEG_A & SEG_Electromagnetism) == SEG_Electromagnetism)
-	{
-		if ((SEG_B & SEG_Water) == SEG_Water)
-			value += 1;
-			
-		if ((SEG_B & SEG_Earth) == SEG_Earth)
-			value -= 1;
-	}
-	
-	if ((SEG_A & SEG_Water) == SEG_Water)
-	{
-		if ((SEG_B & SEG_Electromagnetism) == SEG_Electromagnetism)
-			value -= 1;
-			
-		if ((SEG_B & SEG_Earth) == SEG_Earth)
-			value += 1;
-	}
-	
-	if ((SEG_A & SEG_Earth) == SEG_Earth)
-	{
-		if ((SEG_B & SEG_Electromagnetism) == SEG_Electromagnetism)
-			value += 1;
-			
-		if ((SEG_B & SEG_Water) == SEG_Water)
-			value -= 1;
-	}
-	
-	return value;
-}
-
-static function float WeightedAddition(float a, float b, float weight, int advantage)
-{
-	return FMax(a, b) + Clamp(advantage, 0, 1) * (2 ** advantage) * b * weight;
-}
-
 
 /**
  * Gets the health damage per tick of the effect.
@@ -333,12 +246,6 @@ simulated function Tick(float dt)
 		if (ApplyStaminaDamage())
 			ArenaPawn(Affectee.Pawn).SpendStamina(GetStaminaDamage(dt));
 	}
-	
-	if (ParentA != None)
-		ParentA.Tick(dt);
-	
-	if (ParentB != None)
-		ParentB.Tick(dt);
 }
 
 simulated function ActivateEffect(ArenaPawn pawn)
@@ -379,62 +286,40 @@ function DeactivateEffect()
 	}
 }
 
+simulated function bool CanTriggleExplosion(class<AbilityDamageType> triggerDamageType)
+{
+	local int i;
+	
+	for (i = 0; i < Explosions.Length; i++)
+	{
+		if (Explosions[i].Trigger == triggerDamageType)
+			return true;
+	}
+	
+	return false;
+}
+
+simulated function Explode(class<AbilityDamageType> triggerDamageType)
+{
+	
+	local int i;
+	
+	for (i = 0; i < Explosions.Length; i++)
+	{
+		if (Explosions[i].Trigger == triggerDamageType)
+		{
+			Spawn(Explosions[i].ExplosionType, self, , Affectee.Pawn.Location);
+			DeactivateEffect();
+			return;
+		}
+	}
+}
+
 defaultproperties
 {
 	Begin Object Class=PlayerStatModifier Name=NewStatMod
 	End Object
 	StatsModifier=NewStatMod
 	
-	Combinations = 1;
 	DisplayColors[0]=0xFFFFFF
-	
-	PSMWeights[PSVWeight]=0
-	PSMWeights[PSVMobility]=0
-	PSMWeights[PSVAccuracy]=0
-	PSMWeights[PSVStability]=0
-	PSMWeights[PSVMovement]=0
-	PSMWeights[PSVJump]=0
-	PSMWeights[PSVMaxHealth]=0
-	PSMWeights[PSVMaxEnergy]=0
-	PSMWeights[PSVMaxStamina]=0
-	PSMWeights[PSVObstruction]=0
-	PSMWeights[PSVGlobalDamageInput]=0
-	PSMWeights[PSVHealthRegenDelay]=0
-	PSMWeights[PSVEnergyRegenDelay]=0
-	PSMWeights[PSVStaminaRegenDelay]=0
-	PSMWeights[PSVHealthRegenRate]=0
-	PSMWeights[PSVEnergyRegenRate]=0
-	PSMWeights[PSVStaminaRegenRate]=0
-	PSMWeights[PSVEnergyCostFactor]=0
-	PSMWeights[PSVStaminaCostFactor]=0
-	PSMWeights[PSVEnergyDamageFactor]=0
-	PSMWeights[PSVMeleeDamage]=0
-	PSMWeights[PSVMeleeRange]=0
-	PSMWeights[PSVGlobalDamageOutput]=0
-	PSMWeights[PSVAbilityCooldownFactor]=0
-	
-	PSMDirections[PSVWeight]=0
-	PSMDirections[PSVMobility]=0
-	PSMDirections[PSVAccuracy]=0
-	PSMDirections[PSVStability]=0
-	PSMDirections[PSVMovement]=0
-	PSMDirections[PSVJump]=0
-	PSMDirections[PSVMaxHealth]=0
-	PSMDirections[PSVMaxEnergy]=0
-	PSMDirections[PSVMaxStamina]=0
-	PSMDirections[PSVObstruction]=0
-	PSMDirections[PSVGlobalDamageInput]=0
-	PSMDirections[PSVHealthRegenDelay]=0
-	PSMDirections[PSVEnergyRegenDelay]=0
-	PSMDirections[PSVStaminaRegenDelay]=0
-	PSMDirections[PSVHealthRegenRate]=0
-	PSMDirections[PSVEnergyRegenRate]=0
-	PSMDirections[PSVStaminaRegenRate]=0
-	PSMDirections[PSVEnergyCostFactor]=0
-	PSMDirections[PSVStaminaCostFactor]=0
-	PSMDirections[PSVEnergyDamageFactor]=0
-	PSMDirections[PSVMeleeDamage]=0
-	PSMDirections[PSVMeleeRange]=0
-	PSMDirections[PSVGlobalDamageOutput]=0
-	PSMDirections[PSVAbilityCooldownFactor]=0
 }

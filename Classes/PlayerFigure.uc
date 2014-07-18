@@ -11,15 +11,16 @@
  */
 class PlayerFigure extends Actor;
 
-/**
- * The list of armor that the player is wearing.
- */
-var array<ArmorComponent> Armor;
 
 /**
  * The list of weapons the player has equipped.
  */
 var array<ArenaWeapon> Weapons;
+
+/**
+ * The player's avatar.
+ */
+var PlayerAvatar Avatar;
 
 /**
  * The loadout used to define the figure.
@@ -36,46 +37,27 @@ var DynamicLightEnvironmentComponent LightEnvironment;
  */
 var int HeldWeapon;
 
-/**
- * The index of the armor component (should be an arm) that is holding the held weapon.
- */
-var int HoldingArm;
-
 simulated function LoadFigure(LoadoutData figureLoadout, ArenaPlayerController controller, optional bool drawInForeground = true)
 {
 	local ArenaWeapon newWeapon;
-	local ArmorComponent armorComponent;
-	local int i;
 	
 	DetachArmor();
 	ClearWeapons();
 	
 	Loadout.SetLoadout(figureLoadout, controller);
 
-	if (Loadout != None && Loadout.Armor != None)
+	Avatar = Spawn(class'Arena.PlayerAvatar', self);
+	
+	if (Loadout != None && Loadout.Avatar != None)
 	{
-		for (i = 0; i < Loadout.Armor.Components.Length; i++)
-		{
-			armorComponent = Spawn(Loadout.Armor.Components[i], self);
-			armorComponent.MeshComponent.SetLightEnvironment(LightEnvironment);
-			
-			if (drawInForeground)
-				armorComponent.MeshComponent.SetDepthPriorityGroup(SDPG_Foreground);
-				
-			armorComponent.MeshComponent.SetOnlyOwnerSee(false);
-			
-			AttachArmor(armorComponent);
-			
-			if (armorComponent.Type == ACTRightArm)
-				HoldingArm = i;
-		}
+		Avatar.LoadFigureAvatar(self, Loadout.Avatar, drawInForeground);
 	}
 	
 	if (Loadout != None && Loadout.PrimaryWeapon != None)
 	{
 		newWeapon = CreateWeapon(Loadout.PrimaryWeapon, drawInForeground);
 		newWeapon.SetOwner(self);
-		newWeapon.AttachWeaponTo(Armor[HoldingArm].MeshComponent, 'HandSocket');
+		newWeapon.AttachWeaponTo(Avatar.BodyParts[BPTRightArm].MeshComponent, 'HandSocket');
 		Weapons.AddItem(newWeapon);
 	}
 	
@@ -118,7 +100,7 @@ function ArenaWeapon CreateWeapon(WeaponSchematic schematic, bool drawInForegrou
 		
 		foreach ArenaWeaponBase.WeaponComponents(iter)
 		{
-			iter.Mesh.SetDepthPriorityGroup(SDPG_Foreground);
+			iter.SetDepthPriorityGroup(SDPG_Foreground);
 			iter.Mesh.SetOnlyOwnerSee(false);
 		}
 	}
@@ -126,22 +108,17 @@ function ArenaWeapon CreateWeapon(WeaponSchematic schematic, bool drawInForegrou
 	return ArenaWeaponBase;
 }
 
+/*
 simulated function AttachArmor(ArmorComponent armorComponent)
 {
 	Armor.AddItem(armorComponent);
 	AttachComponent(armorComponent.MeshComponent);
-}
+}*/
 
 simulated function DetachArmor()
 {
-	local ArmorComponent iter;
-	
-	foreach Armor(iter)
-	{
-		iter.Destroy();
-	}
-	
-	Armor.Length = 0;
+	if (Avatar != None)
+		Avatar.Destroy();
 }
 
 simulated function ClearWeapons()
@@ -158,14 +135,31 @@ simulated function ClearWeapons()
 
 simulated function SetFigureScale(float scale)
 {
-	local ArmorComponent armorIter;
 	local ArenaWeapon weaponIter;
-	
-	foreach Armor(armorIter)
-		armorIter.MeshComponent.SetScale(scale);
+
+	Avatar.SetScale(scale);
 		
 	foreach Weapons(weaponIter)
 		weaponIter.SetWeaponScale(scale);
+}
+
+simulated function SetFigureDrawScale(float scale)
+{
+	local ArenaWeapon weaponIter;
+	local ArenaWeaponComponent componentIter;
+	
+	SetDrawScale(scale);
+
+	foreach Weapons(weaponIter)
+	{
+		foreach ArenaWeaponBase(weaponIter).WeaponComponents(componentIter)
+			componentIter.SetWeaponScale(scale);
+	}
+}
+
+simulated function SetFigureTranslation(vector translation)
+{
+	Avatar.SetTranslation(translation);
 }
 
 defaultproperties

@@ -208,6 +208,12 @@ function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, int Damage, 
 		
 	WasHit = true;
 	
+	if (InstigatedBy == None)
+	{
+		`log(self @ "NotifyTakeHit contained a null instigator for" @ damageType);
+		return;
+	}
+	
 	if (!IsAggressive() && LastShotAtDuration < 5 && Pawn.Health < ArenaPawn(Pawn).HealthMax * 0.85 && FRand() > 0.5)
 	{
 		dir.x = FRand() * 2 - 1;

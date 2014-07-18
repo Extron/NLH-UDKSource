@@ -6,13 +6,18 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class Door extends SkeletalMeshActor
+class Door extends SkeletalMeshActorMAT
 	abstract;
 
 /**
  * The sound to play when the door opens.
  */
 var(Door) SoundCue OpenSound;
+
+/**
+ * The sound to play when the door closes.
+ */
+var(Door) SoundCue CloseSound;
 
 /**
  * The toggle animation node used to control the door animations.
@@ -30,14 +35,20 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 	super.PostInitAnimTree(SkelComp);
 
 	ToggleAnimNode = AN_Toggle(SkelComp.FindAnimNode('Toggle'));
+	
+	//`log(self @ "Toggle node" @ ToggleAnimNode);
 }
 
 simulated function OpenDoor()
 {
 	if (!Open)
 	{
+		//`log(self @ "toggle node" @ ToggleAnimNode);
 		if (ToggleAnimNode != None)
+		{
 			ToggleAnimNode.Toggle();
+			//`log(self @ "toggling animation");
+		}
 		
 		Open = true;
 		
@@ -54,5 +65,23 @@ simulated function CloseDoor()
 			ToggleAnimNode.Toggle();
 			
 		Open = false;
+		
+		if (CloseSound != None)
+			PlaySound(CloseSound);
 	}
+}
+
+defaultproperties
+{
+	Begin Object Name=SkeletalMeshComponent0
+		BlockNonZeroExtent=true
+		BlockZeroExtent=true
+		BlockActors=true
+		CollideActors=true
+	End Object
+	
+	CollisionComponent=SkeletalMeshComponent0
+	bCollideActors=true
+	bBlockActors=true
+	CollisionType=COLLIDE_BlockAll
 }

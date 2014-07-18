@@ -68,6 +68,7 @@ function string Serialize()
 	serialization $= string(StartTime) $ "!";
 	serialization $= string(StartTemperature) $ "!";
 	serialization $= string(StartCloudCoverage) $ "!";
+	serialization $= string(StartWeatherIntensity) $ "!";
 	serialization $= string(WeatherProgression) $ "!";
 	serialization $= string(DayCycleProgression) $ "!";
 	serialization $= string(Lives);
@@ -81,16 +82,17 @@ function Deserialize(string serialization)
 	
 	substr = SplitString(serialization, "!");
 
-	if (substr.Length == 8)
+	if (substr.Length == 9)
 	{
 		TimeLimit = float(substr[0]);
 		RespawnTime = float(substr[1]);
 		StartTime = float(substr[2]);
 		StartTemperature = float(substr[3]);
 		StartCloudCoverage = float(substr[4]);
-		WeatherProgression = bool(substr[5]);
-		DayCycleProgression = bool(substr[6]);
-		Lives = int(substr[7]);
+		StartWeatherIntensity = float(substr[5]);
+		WeatherProgression = bool(substr[6]);
+		DayCycleProgression = bool(substr[7]);
+		Lives = int(substr[8]);
 	}
 }
 

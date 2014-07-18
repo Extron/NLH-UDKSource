@@ -109,6 +109,13 @@ simulated function SetWeaponScale(float scale)
 		PostSightMeshComponent.SetScale(scale);
 }
 
+simulated function SetDepthPriorityGroup(ESceneDepthPriorityGroup group)
+{
+	super.SetDepthPriorityGroup(group);
+	
+	PostSightMeshComponent.SetDepthPriorityGroup(group);
+}
+
 defaultproperties
 {
 	Begin Object Class=UDKSkeletalMeshComponent Name=PostMesh
@@ -126,4 +133,5 @@ defaultproperties
 	Subclasses[0]=class'Arena.Wp_O_NoOptics'
 	Subclasses[1]=class'Arena.Wp_O_VIronSights'
 	Subclasses[2]=class'Arena.Wp_O_AcogScope'
+	Subclasses[3]=class'Arena.Wp_O_SimpleReflex'
 }

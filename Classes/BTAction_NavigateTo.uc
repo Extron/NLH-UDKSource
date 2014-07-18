@@ -212,14 +212,17 @@ Begin:
 state Failed
 {
 Begin:
-	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
+	if (Controller != None)
 	{
-		if (Controller.NavigationHandle != None)
-			Controller.NavigationHandle.ClearConstraints();
+		if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
+		{
+			if (Controller.NavigationHandle != None)
+				Controller.NavigationHandle.ClearConstraints();
+				
+			Controller.StopLatentExecution();
+			Controller.Pawn.ZeroMovementVariables();
 			
-		Controller.StopLatentExecution();
-		Controller.Pawn.ZeroMovementVariables();
-		
-		IterCount = 0;
+			IterCount = 0;
+		}
 	}
 }

@@ -81,7 +81,9 @@ event Activate()
 defaultproperties
 {
 	TVEffect=PostProcessChain'ArenaMaterials.PostProcess.ThermalVisionPPC'
-	Type=ACTAttachment
+	Type=ACTEyeImplant
 	Slot=1
 	HeatReadingRange=2560
+	
+	ComponentName="Thermal Visio Implant"
 }

@@ -10,7 +10,19 @@ class EnvironmentObject extends StaticMeshActor implements(IEnvObj)
 	placeable;
 
 /* A list of properties that the object has.  These define how elemental abilities affect the object.*/
-var(Porperties) Array<string> ObjectProperties;
+var(Properties) Array<string> ObjectProperties;
+
+/**
+ * The scaling of the x coordinate of the mesh's UV coordinates.  Use this to tile the texture put onto it.  A value of zero 
+ * means that the default material settings will be used.
+ */
+var(Properties) float MatUVXScale;
+
+/**
+ * The scaling of the y coordinate of the mesh's UV coordinates.  Use this to tile the texture put onto it.  A value of zero 
+ * means that the default material settings will be used.
+ */
+var(Properties) float MatUVYScale;
 
 /**
  * The currently active effect on the object.
@@ -60,8 +72,8 @@ simulated function Tick(float delta)
 	
 	if (ArenaGRI(WorldInfo.GRI) != None && ArenaGRI(WorldInfo.GRI).WeatherMgr != None)
 	{
-		if (FastTrace(Location + vect(0, 0, 1000)))
-		{
+		//if (FastTrace(Location + vect(0, 0, 1000)))
+		//{
 			if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Snowing)
 				SnowLevel += delta * ArenaGRI(WorldInfo.GRI).WeatherMgr.WeatherIntensity * ArenaGRI(WorldInfo.GRI).WeatherMgr.SnowBuildupRate;
 			else if (ArenaGRI(WorldInfo.GRI).WeatherMgr.Thawing)
@@ -89,7 +101,7 @@ simulated function Tick(float delta)
 			{
 				StaticMeshComponent.SetMaterial(0, BaseMaterial);
 			}
-		}
+		//}
 	}
 	
 	super.Tick(delta);	
@@ -127,6 +139,7 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 simulated function LoadMaterials()
 {
 	local Texture Diffuse, Normal, Specular, Height;
+	local float UVx, UVy, RainUVx, RainUVy, SnowUVx, SnowUVy, SpecularStrength, LightGradient;
 	
 	BaseMaterial = new class'MaterialInstanceConstant';
 	BaseMaterial.SetParent(StaticMeshComponent.GetMaterial(0));
@@ -135,13 +148,41 @@ simulated function LoadMaterials()
 	BaseMaterial.GetTextureParameterValue('NormalMap', Normal);
 	BaseMaterial.GetTextureParameterValue('Specular', Specular);
 	BaseMaterial.GetTextureParameterValue('Heightmap', Height);
+	BaseMaterial.GetScalarParameterValue('UVXScale', UVx);
+	BaseMaterial.GetScalarParameterValue('UVYScale', UVy);
+	BaseMaterial.GetScalarParameterValue('RainUVXScale', RainUVx);
+	BaseMaterial.GetScalarParameterValue('RainUVYScale', RainUVy);
+	BaseMaterial.GetScalarParameterValue('SnowUVXScale', SnowUVx);
+	BaseMaterial.GetScalarParameterValue('SnowUVYScale', SnowUVy);
+	BaseMaterial.GetScalarParameterValue('SpecularStrength', SpecularStrength);
+	BaseMaterial.GetScalarParameterValue('LightGradient', LightGradient);
+	
+	if (MatUVXScale != 0)
+	{
+		UVx = MatUVXScale;
+		BaseMaterial.SetScalarParameterValue('UVXScale', UVx);
+	}
+	
+	if (MatUVYScale != 0)
+	{
+		UVy = MatUVYScale;
+		BaseMaterial.SetScalarParameterValue('UVYScale', UVy);
+	}
 	
 	SnowMaterial = new class'MaterialInstanceConstant';
 	SnowMaterial.SetParent(Material'ArenaMaterials.Materials.SnowMat');
 	SnowMaterial.SetTextureParameterValue('Diffuse', Diffuse);
 	SnowMaterial.SetTextureParameterValue('NormalMap', Normal);
 	SnowMaterial.SetTextureParameterValue('Specular', Specular);
-	SnowMaterial.SetTextureParameterValue('Heightmap', Height);
+	SnowMaterial.SetTextureParameterValue('Heightmap', Height);	
+	SnowMaterial.SetScalarParameterValue('UVXScale', UVx);
+	SnowMaterial.SetScalarParameterValue('UVYScale', UVy);
+	SnowMaterial.SetScalarParameterValue('RainUVXScale', RainUVx);
+	SnowMaterial.SetScalarParameterValue('RainUVYScale', RainUVy);
+	SnowMaterial.SetScalarParameterValue('SnowUVXScale', SnowUVx);
+	SnowMaterial.SetScalarParameterValue('SnowUVYScale', SnowUVy);
+	SnowMaterial.SetScalarParameterValue('SpecularStrength', SpecularStrength);
+	SnowMaterial.SetScalarParameterValue('LightGradient', LightGradient);
 	
 	RainMaterial = new class'MaterialInstanceConstant';
 	RainMaterial.SetParent(Material'ArenaMaterials.Materials.RainMat');
@@ -149,6 +190,14 @@ simulated function LoadMaterials()
 	RainMaterial.SetTextureParameterValue('NormalMap', Normal);
 	RainMaterial.SetTextureParameterValue('Specular', Specular);
 	RainMaterial.SetTextureParameterValue('Heightmap', Height);
+	RainMaterial.SetScalarParameterValue('UVXScale', UVx);
+	RainMaterial.SetScalarParameterValue('UVYScale', UVy);
+	RainMaterial.SetScalarParameterValue('RainUVXScale', RainUVx);
+	RainMaterial.SetScalarParameterValue('RainUVYScale', RainUVy);
+	RainMaterial.SetScalarParameterValue('SnowUVXScale', SnowUVx);
+	RainMaterial.SetScalarParameterValue('SnowUVYScale', SnowUVy);
+	RainMaterial.SetScalarParameterValue('SpecularStrength', SpecularStrength);
+	RainMaterial.SetScalarParameterValue('LightGradient', LightGradient);
 	
 	StaticMeshComponent.SetMaterial(0, BaseMaterial);
 }

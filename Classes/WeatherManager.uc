@@ -235,7 +235,7 @@ simulated function PostBeginPlay()
 	local int i;
 	local WeatherVolume volume;
 	local Landscape iter;
-	
+
 	for (i = 0; i < ArraySize; i++)
 	{
 		WhiteNoise[i] = FRand();
@@ -348,10 +348,10 @@ simulated function Tick(float dt)
 			
 			if (CloudCoverage <= LightningCloudThreshold && WeatherIntensity >= LightningIntensityThreshold)
 			{
+				
 				if (!ThunderStorm)
 				{
 					time = FRand() * (LightningRateMax - LightningRateMin) + LightningRateMin;
-					//PlaySound(ThunderstormSound);
 					SetTimer(time, false, 'LightningStrike');
 				}
 				
@@ -488,6 +488,8 @@ function LightningStrike()
 			Light = Spawn(class'Arena.LightningLight', self, , l);
 			SetTimer(0.5, false, 'DisableLight');
 		}
+		
+		Spawn(class'Arena.SA_LightningStrike', self, , l);
 		
 		if (ThunderStorm)
 			SetTimer(time, false, 'LightningStrike');

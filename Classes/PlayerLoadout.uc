@@ -21,9 +21,9 @@ enum PlayerModel
 var WeaponSchematic PrimaryWeapon;
 
 /**
- * The armor that the player is wearing.
+ * The player's avatar schematic.
  */
-var ArmorSchematic Armor;
+var AvatarSchematic Avatar;
 
 /**
  * The model that the loadout uses.
@@ -91,7 +91,7 @@ defaultproperties
 	LoadoutName="Custom Loadout"
 	AbilityClass=class'Arena.PC_Electricity'
 	
-	Begin Object Class=ArmorSchematic Name=ArmorSchematic
+	Begin Object Class=AvatarSchematic Name=AvatarSchematic
 	End Object
-	Armor=ArmorSchematic
+	Avatar=AvatarSchematic
 }

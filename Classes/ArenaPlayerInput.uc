@@ -222,10 +222,10 @@ simulated exec function ActivateArmor(int slot)
 	
 	if (AP_Player(Pawn) != None)
 	{
-		for (i = 0; i < AP_Player(Pawn).Armor.Length; i++)
+		for (i = 0; i < AP_Player(Pawn).Avatar.Armor.Length; i++)
 		{
-			if (AP_Player(Pawn).Armor[i].Slot == slot)
-				AP_Player(Pawn).Armor[i].Activate();
+			if (AP_Player(Pawn).Avatar.Armor[i].Slot == slot)
+				AP_Player(Pawn).Avatar.Armor[i].Activate();
 		}
 	}
 }

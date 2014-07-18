@@ -243,7 +243,7 @@ event PostLogin( PlayerController NewPlayer )
 
 	GenericPlayerInitialization(NewPlayer);
 
-	if (ArenaPlayerController(NewPlayer) != None)
+	if (ArenaPlayerController(NewPlayer) != None && ArenaHUD(ArenaPlayerController(NewPlayer).MyHUD) != None)
 	{
 		ArenaHUD(ArenaPlayerController(NewPlayer).MyHUD).DisplayOverlayMenu(class'Arena.GFx_InitialIntermission', false);
 		GFx_InitialIntermission(ArenaHUD(ArenaPlayerController(NewPlayer).MyHUD).OverlayMenu).Duration = InitialIntermissionTime;

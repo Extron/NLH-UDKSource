@@ -85,8 +85,9 @@ simulated function AttachToBase(ArenaWeaponBase weap, name socket)
 	weaponSocket = SkeletalMeshComponent(weap.Mesh).GetSocketByName(socket);
 	
 	if (weaponSocket != None)
-	{		
-		SetBase(pawn, , SkeletalMeshComponent(weap.Mesh), socket);
+	{
+		`log(self @ "Weapon Owner" @ weap.Owner);
+		SetBase(weap.Owner, , SkeletalMeshComponent(weap.Mesh), socket);
 		scale = weaponSocket.RelativeScale * pawn.GetWeaponHandSocketScale();
 	}
 	
@@ -104,6 +105,7 @@ simulated function AttachToBaseSpecial(ArenaWeaponBase weap, name socket, LightE
 {
 	if (SkeletalMeshComponent(weap.Mesh).GetSocketByName(socket) != None)
 	{		
+		`log(self @ "Weapon Owner" @ weap.Owner);
 		SetBase(weap, , SkeletalMeshComponent(weap.Mesh), socket);
 	}
 	
@@ -211,6 +213,11 @@ simulated function SetComponentFOV(float angle)
 simulated function SetWeaponScale(float scale)
 {
 	Mesh.SetScale(scale);
+}
+
+simulated function SetDepthPriorityGroup(ESceneDepthPriorityGroup group)
+{
+	Mesh.SetDepthPriorityGroup(group);
 }
 
 /**

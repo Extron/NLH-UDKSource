@@ -31,7 +31,17 @@ var bool Frozen;
 
 function Initialize(Landscape lscp)
 {
+	local int i;
+	
 	Landscape = lscp;
+	
+	if (Landscape != None)
+	{			
+		for (i = 0; i < Landscape.LandscapeComponents.Length; i++)
+		{
+			Landscape.LandscapeComponents[i].SetLightEnvironment(None);
+		}
+	}
 }
 	
 function Destroyed()

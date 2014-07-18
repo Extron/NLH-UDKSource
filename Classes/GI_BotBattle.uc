@@ -99,11 +99,11 @@ function Killed( Controller Killer, Controller KilledPlayer, Pawn KilledPawn, cl
 		
 		if (AP_Bot(KilledPawn).ActiveEffect != None)
 		{
-			if (AP_Bot(KilledPawn).ActiveEffect.Combinations > 1)
+			/*if (AP_Bot(KilledPawn).ActiveEffect.Combinations > 1)
 			{
 				killMessage.AddItem("Effect Combo!");
 				messageColors.AddItem(0xFFFF00);
-			}
+			}*/
 			
 			effects = SplitString(AP_Bot(KilledPawn).ActiveEffect.EffectName, "+");
 			
@@ -182,8 +182,8 @@ simulated function ComputePointsAndTokens(AP_Bot killedBot, class<ArenaDamageTyp
 			else
 				points += killedBot.ActiveEffect.KilledWhilePoints;
 				
-			if (killedBot.ActiveEffect.Combinations > 1)
-				tokens += FFloor(killedBot.ActiveEffect.Combinations / 2);
+			/*if (killedBot.ActiveEffect.Combinations > 1)
+				tokens += FFloor(killedBot.ActiveEffect.Combinations / 2);*/
 		}
 	}
 	else

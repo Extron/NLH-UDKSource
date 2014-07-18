@@ -67,7 +67,9 @@ simulated function Reset()
 	
 	if (Controller.CurrentLatentNode == None || Controller.CurrentLatentNode == self)
 	{
-		Controller.Pawn.ZeroMovementVariables();
+		if (Controller.Pawn != None)
+			Controller.Pawn.ZeroMovementVariables();
+			
 		Controller.StopLatentExecution();
 		Controller.GotoState('Idle');
 	}

@@ -8,11 +8,10 @@
 
 class AP_Player extends ArenaPawn;
 
-
 /**
- * The list of armor that the player is wearing.
+ * The player's avatar, which stores all the meshes used to draw the player.
  */
-var array<ArmorComponent> Armor;
+var PlayerAvatar Avatar;
 
 /**
  * The sound cue to play when the player is near death.
@@ -49,6 +48,13 @@ var vector ArmorTranslation;
 var vector DefaultCameraSocketLoc;
 
 var rotator DefaultCameraSocketRot;
+
+/**
+ * Indicates whether the currently playing animation can be interrupted or not.
+ */
+var bool CurrentAnimationUninterruptable;
+
+delegate OnLanded();
 
 simulated event TickSpecial(float dt)
 {
@@ -122,7 +128,6 @@ simulated event PostInitAnimTree(SkeletalMeshComponent SkelComp)
 function InitInventory()
 {
 	local ArenaWeapon newWeapon;
-	local ArmorComponent armorComponent;
 	local int i;
 	
 	super.InitInventory();
@@ -132,17 +137,15 @@ function InitInventory()
 		newWeapon = CreateWeapon(ArenaPlayerController(Controller).Loadout.PrimaryWeapon);
 	}
 	
-	if (ArenaPlayerController(Controller) != None && ArenaPlayerController(Controller).Loadout != None && ArenaPlayerController(Controller).Loadout.Armor != None)
-	{
-		for (i = 0; i < ArenaPlayerController(Controller).Loadout.Armor.Components.Length; i++)
-		{
-			armorComponent = Spawn(ArenaPlayerController(Controller).Loadout.Armor.Components[i], self);
-			armorComponent.MeshComponent.SetLightEnvironment(LightEnvironment);
-			AttachArmor(armorComponent);
-		}
-		
-		AddAnimationSet(ArenaPlayerController(Controller).PClass.AbilityAnimSet);
-	}
+	Avatar = Spawn(class'Arena.PlayerAvatar', self);
+	Avatar.Pawn = self;
+	
+	if (ArenaPlayerController(Controller) != None && ArenaPlayerController(Controller).Loadout != None && ArenaPlayerController(Controller).Loadout.Avatar != None)
+		Avatar.LoadAvatar(ArenaPlayerController(Controller).Loadout.Avatar);
+	
+	Avatar.SetScale(1.5);
+	RightArm = Avatar.BodyParts[BPTRightArm].MeshComponent;
+	LeftArm = Avatar.BodyParts[BPTLeftArm].MeshComponent;
 	
 	if (ArenaInventoryManager(InvManager) != None)
 	{	
@@ -184,6 +187,8 @@ event Landed(vector HitNormal, Actor FloorActor)
 	super.Landed(HitNormal, FloorActor);
 	
 	PlayAnimation('Land1');
+	
+	OnLanded();
 }
 
 simulated function Melee()
@@ -277,7 +282,6 @@ function AttachToAbilitySource(ActorComponent component)
 simulated function PositionArms()
 {
 	local rotator R;
-	local int i;
 	
 	local vector armOffset;
 	
@@ -286,8 +290,7 @@ simulated function PositionArms()
 	if (Controller != None)
 		R.Pitch += Controller.Rotation.Pitch;
 	
-	for (i = 0; i < Armor.Length; i++)
-		Armor[i].MeshComponent.SetTranslation(ArmorTranslation);
+	Avatar.SetTranslation(ArmorTranslation);
 
 	armOffset = vect(1, -6, -40);
 	
@@ -298,12 +301,33 @@ simulated function PositionArms()
 	LeftArm.SetRotation(R);
 }
 
-simulated function PlayAnimation(name sequence, optional float duration, optional bool loop, optional float blendIn, optional float blendOut)
+simulated function PlayAnimation(name sequence, optional float duration, optional bool loop, optional float blendIn, optional float blendOut, optional bool uninterruptable = false)
 {
-	local int i;
-	
-	for (i = 0; i < Armor.Length; i++)
-		Armor[i].PlayAnimation(sequence, duration, loop, blendIn, blendOut);
+	if (CurrentAnimationUninterruptable)
+		return;
+		
+	`log(self @ "Playing animation" @ sequence);
+		
+	Avatar.PlayAnimation(sequence, duration, loop, blendIn, blendOut);
+		
+	if (uninterruptable)
+	{
+		CurrentAnimationUninterruptable = true;
+		SetTimer(GetArmAnimLength(sequence), false, 'EnableAnimation');
+	}
+}
+
+simulated function EnableAnimation()
+{
+	CurrentAnimationUninterruptable = false;
+}
+
+simulated function float GetArmAnimLength(name sequence)
+{
+	if (LeftArm == None)
+		return 0;
+			
+	return LeftArm.GetAnimLength(sequence);
 }
 
 simulated function EnableLeftHandPositioning(bool enable)
@@ -326,6 +350,7 @@ simulated function RebootElectronics(ArenaPawn pawn)
 	}
 }
 
+/*
 simulated function AttachArmor(ArmorComponent armorComponent)
 {
 	Armor.AddItem(armorComponent);
@@ -341,21 +366,30 @@ simulated function AttachArmor(ArmorComponent armorComponent)
 		LeftArm = armorComponent.MeshComponent;
 }
 
-function AddAnimationSet(AnimSet animSet)
+simulated function AttachArmorAttachment(ArmorAttachment attachment)
 {
 	local int i;
 	
 	for (i = 0; i < Armor.Length; i++)
-		Armor[i].MeshComponent.AnimSets.AddItem(animSet);
+	{
+		if (Armor[i].Type == attachment.AttachComponentType)
+		{
+			Armor[i].AttachArmor(attachment);
+			break;
+		}
+	}
+}
+*/
+function AddAnimationSet(AnimSet animSet)
+{
+	Avatar.AddAnimationSet(animSet);
 }
 
 function SetPlayerFOV(float angle)
 {
-	local int i;
 	super.SetPlayerFOV(angle);
 
-	for (i = 0; i < Armor.Length; i++)
-		Armor[i].SetFOV(angle);
+	Avatar.SetFOV(angle);
 }
 
 exec function GiveAbility(string ability)

@@ -20,7 +20,7 @@ enum DrawMode
 var array<AN_BlendBySprint> SprintAnimNodes;
 
 /**
- * The current active effect of the player, which is the added effect of all effects on the user.
+ * The current active effect of the player.
  */
 var StatusEffect ActiveEffect;
 
@@ -99,6 +99,11 @@ var ESceneDepthPriorityGroup DefaultDPG;
  * The current draw mode of the pawn.
  */
 var DrawMode CurrentDrawMode;
+
+/**
+ * The pawn's local ambience component.
+ */
+var ParametrizedSkyLightComponent Ambience;
 
 /**
  * The current recoil value for the pawn.
@@ -217,6 +222,7 @@ function PossessedBy(Controller C, bool bVehicleTransition)
 	if (ArenaPlayerController(C) != None && C.IsLocalPlayerController())
 	{
 		WeatherCloud = Spawn(class'Arena.APWeatherCloud', self, , Location);
+		AttachComponent(Ambience);
 	}
 }
 	
@@ -1140,14 +1146,12 @@ simulated function bool CanSpendEnergy(float energyAmount)
  */
 simulated function AddEffect(StatusEffect effect)
 {
-	local StatusEffect sum;
-	
 	if (ActiveEffect != None)
 	{
-		sum = class'Arena.StatusEffect'.static.AddEffects(effect, ActiveEffect);
+		//sum = class'Arena.StatusEffect'.static.AddEffects(effect, ActiveEffect);
 		
-		RemoveEffect();
-		ActiveEffect = sum;
+		//RemoveEffect();
+		//ActiveEffect = sum;
 	}
 	else
 	{
@@ -1336,13 +1340,17 @@ state Running
 
 defaultproperties
 {
-	Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
+	Begin Object Class=ParametrizedSkyLightComponent Name=PSLC
+	End Object
+	Ambience=PSLC
+	
+	/*Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
 		bSynthesizeSHLight=TRUE
 		bIsCharacterLightEnvironment=TRUE
 		bUseBooleanEnvironmentShadowing=FALSE
 	End Object
 	Components.Add(MyLightEnvironment)
-	LightEnvironment=MyLightEnvironment
+	LightEnvironment=MyLightEnvironment*/
 	
 	// TODO: This is just a temp mesh so that Unreal doesn't freak out that we don't have one.
 	Begin Object Class=SkeletalMeshComponent Name=WPawnSkeletalMeshComponent
@@ -1362,7 +1370,7 @@ defaultproperties
 		bCastDynamicShadow=true
 		RBChannel=RBCC_Untitled3
 		RBCollideWithChannels=(Untitled3=true)
-		LightEnvironment=MyLightEnvironment
+		//LightEnvironment=MyLightEnvironment
 		bOverrideAttachmentOwnerVisibility=true
 		bAcceptsDynamicDecals=FALSE
 		bHasPhysicsAssetInstance=true

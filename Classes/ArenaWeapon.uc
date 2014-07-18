@@ -455,7 +455,8 @@ simulated function AttachWeaponTo(SkeletalMeshComponent MeshCpnt, optional Name 
 		AttachClip();
 		EnsureWeaponOverlayComponentLast();
 		SetHidden(false);
-		SetBase(pawn, , MeshCpnt, SocketName);
+		
+		SetBase(Owner, , MeshCpnt, SocketName);
 		MeshCpnt.AttachComponentToSocket(Mesh, SocketName);
 	}
 	else

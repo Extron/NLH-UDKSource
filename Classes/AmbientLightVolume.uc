@@ -15,12 +15,55 @@ class AmbientLightVolume extends PhysicsVolume implements(IToggleableObject);
 /**
  * Since PawnEnteredVolume can be called before a pawn's controller is set, we will retest these pawns again.
  */
-var array<Pawn> PendingPawns;
+var array<ArenaPawn> PendingPawns;
 
 /**
- * The ambient light for this volume.
+ * The pawns that have just entered the volume whose ambient parameters are still changing.
  */
-var(Light) SkylightComponent AmbientLight;
+var array<ArenaPawn> EnteringPawns;
+
+/**
+ * The pawns that have just left the volume whose ambient parameters are still changing.
+ */
+var array<ArenaPawn> LeavingPawns;
+
+/**
+ * All of the pawns that are inside the volume.
+ */
+var array<ArenaPawn> ContainedPawns;
+
+/**
+ * The color of the ambient light within the volume when turned on.
+ */
+var(Light) color OnAmbienceColor;
+
+/**
+ * The brightness of the ambient light within the volume when turned on.
+ */
+var(Light) float OnAmbienceBrightness;
+
+/**
+ * The color of the ambient light within the volume when turned off.
+ */
+var(Light) color OffAmbienceColor;
+
+/**
+ * The brightness of the ambient light within the volume when turned off.
+ */
+var(Light) float OffAmbienceBrightness;
+
+/**
+ * The amount of mixing between the global outdoor ambience and this volume's ambience that is needed to form the final ambient light.
+ * A 1 means the volume's light dominates, A 0 means the global ambience dominates.  This helps simulate more dynamic lighting, and
+ * can be used to change indoor ambience when windows are open versus closed.
+ */
+var(Light) float AmbienceParameter;
+
+/**
+ * When pawns enter or leave the volume, this indicates how fast the new ambient light they see reaches its final mixed value of global light
+ * and volume light.
+ */
+var(Light) float TransitionTime;
 
 /**
  * The number of players that are inside the volume.
@@ -35,48 +78,79 @@ var(Light) bool On;
 
 simulated function Toggle()
 {
+	local ArenaPawn iter;
 	On = !On;
+	
+	foreach ContainedPawns(iter)
+		UpdateAmbienceParameters(iter);
+}
 
-	AmbientLight.SetEnabled(On);
+simulated function Tick(float dt)
+{
+	local int i;
+	
+	super.Tick(dt);
+	
+	for (i = 0; i < EnteringPawns.Length; i++)
+	{
+		if (EnteringPawns[i].Ambience.Parameter < AmbienceParameter)
+		{
+			EnteringPawns[i].Ambience.SetParameter(EnteringPawns[i].Ambience.Parameter + dt * AmbienceParameter / TransitionTime);
+		}
+		else
+		{
+			EnteringPawns[i].Ambience.SetParameter(AmbienceParameter);
+			EnteringPawns.Remove(i, 1);
+			i--;
+		}
+	}
+	
+	for (i = 0; i < LeavingPawns.Length; i++)
+	{
+		if (LeavingPawns[i].Ambience.Parameter > 0)
+		{
+			LeavingPawns[i].Ambience.SetParameter(LeavingPawns[i].Ambience.Parameter - dt * AmbienceParameter / TransitionTime);
+		}
+		else
+		{
+			LeavingPawns[i].Ambience.SetParameter(0);
+			LeavingPawns.Remove(i, 1);
+			i--;
+		}
+	}
 }
 
 event PawnEnteredVolume(Pawn Other)
 {
-	`log(self @ Other @ Other.Owner);
-	
-	if (Other.Controller == None)
+	if (ArenaPawn(Other) != None)
 	{
-		PendingPawns.AddItem(Other);
-		return;
+		EnteringPawns.AddItem(ArenaPawn(Other));
+		UpdateAmbienceParameters(ArenaPawn(Other));
+		ContainedPawns.AddItem(ArenaPawn(Other));
 	}
-	
-	if (Other.Controller.IsLocalPlayerController())
-		PlayerCount = PlayerCount + 1;
-
-	if (PlayerCount > 0)
-		AmbientLight.SetEnabled(On);
 }
 
 event PawnLeavingVolume(Pawn Other)
 {
-	if (Other.Controller.IsLocalPlayerController())
-		PlayerCount = PlayerCount - 1;
-		
-	if (PlayerCount < 0)
-		PlayerCount = 0;
-		
-	if (PlayerCount == 0)
-		AmbientLight.SetEnabled(false);
+	if (ArenaPawn(Other) != None)
+	{
+		LeavingPawns.AddItem(ArenaPawn(Other));
+		ContainedPawns.RemoveItem(ArenaPawn(Other));
+	}
+}
+
+function UpdateAmbienceParameters(ArenaPawn newPawn)
+{
+	if (On)
+		newPawn.Ambience.SetOverlayProperties(OnAmbienceColor, OnAmbienceBrightness);
+	else
+		newPawn.Ambience.SetOverlayProperties(OffAmbienceColor, OffAmbienceBrightness);
 }
 
 defaultproperties
 {
-	Begin Object Class=SkyLightComponent Name=SkyLightComponent
-		UseDirectLightMap=TRUE
-		bCanAffectDynamicPrimitivesOutsideDynamicChannel=TRUE
-	End Object
-	AmbientLight=SkylightComponent
-	Components.Add(SkyLightComponent)
-	
 	On=true
+	bStatic=false
+	AmbienceParameter=1
+	TransitionTime=0.15
 }

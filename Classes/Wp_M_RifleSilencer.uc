@@ -22,7 +22,7 @@ simulated function bool OverrideDefaultFireSound()
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
-		SkeletalMesh=SkeletalMesh'RifleSilencer.Meshes.SilencerMesh'
+		SkeletalMesh=SkeletalMesh'RifleMuzzles.Meshes.Silencer'
 	End Object
 	
 	Begin Object Name=NewStatMod
@@ -32,8 +32,8 @@ defaultproperties
 		ValueMods[WSVRecoil]=0.9
 	End Object
 	
-	MuzzleFlashTemplate=ParticleSystem'RifleSilencer.Particles.MuzzleFlashPS'
-	FireSound=SoundCue'RifleSilencer.Audio.GunshotSC'
+	MuzzleFlashTemplate=ParticleSystem'RifleMuzzles.Particles.MuzzleFlashPS'
+	FireSound=SoundCue'RifleMuzzles.Audio.GunshotSC'
 	
 	CompatibleTypes[0]=WTRifle
 	

@@ -9,51 +9,28 @@
 /**
  * A piece of armor that the player can attach or wear.
  */
-class ArmorComponent extends Actor;
+class ArmorComponent extends PlayerAppearanceComponent;
 
 enum ArmorComponentType
 {
-	ACTHead,
-	ACTLeftArm,
-	ACTRightArm,
-	ACTLeftLeg,
-	ACTRightLeg,
+	ACTHelmet,
+	ACTEyeImplant,
+	ACTLeftUpperArm,
+	ACTLeftForearm,
+	ACTRightUpperArm,
+	ACTRightForearm,
+	ACTLeftThigh,
+	ACTLeftFoot,
+	ACTRightThigh,
+	ACTRightFoot,
 	ACTTorso,
-	ACTUpperBody,
-	ACTLowerBody,
-	ACTFeet,
-	ACTAttachment
+	ACTSpinalImplant
 };
 
 /**
- * The mesh component used to draw the armor.
- */
-var UDKSkeletalMeshComponent MeshComponent;
-
-/**
- * The player stat modifier for the armor.
- */
-var PlayerStatModifier StatMod;
-
-/**
- * The type of the armor.
+ * The armor type, which defines which armor slot the armor component can fill.
  */
 var ArmorComponentType Type;
-
-/**
- * The energy cost of attaching the armor.
- */
-var float EnergyCost;
-
-/**
- * Allows armor to indicate that they are active or not.
- */
-var bool Active;
-
-/**
- * The slot that the armor will go in to specify which button activates it.
- */
-var int Slot; 
 
 
 /**
@@ -85,46 +62,4 @@ simulated function AnimNodePlayCustomAnim GetAnimNode()
 		return AnimNodePlayCustomAnim(AnimTree(MeshComponent.Animations).Children[0].Anim);
 
 	return None;
-}
-
-function SetFOV(float angle)
-{
-	MeshComponent.SetFOV(angle);
-}
-
-defaultproperties
-{
-	Begin Object Class=PlayerStatModifier Name=PSM
-	End Object
-	StatMod=PSM
-	
-	Begin Object Class=UDKSkeletalMeshComponent Name=Mesh
-		bCacheAnimSequenceNodes=FALSE
-		AlwaysLoadOnClient=true
-		AlwaysLoadOnServer=true
-		bOwnerNoSee=false
-		bOnlyOwnerSee=true
-		CastShadow=FALSE
-		BlockRigidBody=TRUE
-		bUpdateSkelWhenNotRendered=false
-		bIgnoreControllersWhenNotRendered=TRUE
-		bUpdateKinematicBonesFromAnimation=true
-		bCastDynamicShadow=true
-		RBChannel=RBCC_Untitled3
-		RBCollideWithChannels=(Untitled3=true)
-		bOverrideAttachmentOwnerVisibility=true
-		bAcceptsDynamicDecals=FALSE
-		AnimTreeTemplate=AnimTree'AC_Player.Animations.MovementAnimationTree'
-		AnimSets[0]=AnimSet'AC_Player.Animations.MovementAnimations'
-		bHasPhysicsAssetInstance=true
-		TickGroup=TG_PreAsyncWork
-		bChartDistanceFactor=true
-		MinDistFactorForKinematicUpdate=0.2
-		RBDominanceGroup=20
-		bUseOnePassLightingOnTranslucency=TRUE
-		bPerBoneMotionBlur=true
-	End Object
-	MeshComponent=Mesh
-	
-	Slot=-1
 }
