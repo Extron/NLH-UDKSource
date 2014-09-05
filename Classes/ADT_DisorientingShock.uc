@@ -10,5 +10,5 @@ class ADT_DisorientingShock extends Dmg_Shock;
 
 defaultproperties
 {
-	StatusEffects[1]=class'Arena.SE_Disorient'
+	EntityEffects[2]=class'Arena.SE_Disorient'
 }

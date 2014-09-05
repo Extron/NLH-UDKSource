@@ -57,8 +57,9 @@ function SetSchematic(WeaponSchematicData data)
 defaultproperties
 {
 	WeaponStock=class'Arena.Wp_S_WoodStock'
-	WeaponBarrel=class'Arena.Wp_B_BasicRifleBarrel'
-	WeaponMuzzle=class'Arena.Wp_M_BasicRifleMuzzle'
+	WeaponBarrel=class'Arena.Wp_B_ShortSimpleBarrel'
+	WeaponMuzzle=class'Arena.Wp_M_NoMuzzle'
+	WeaponOptics=class'Arena.Wp_O_VIronSights'
 	WeaponSideAttachment=class'Arena.Wp_SA_NoSideAttachment'
 	WeaponUnderAttachment=class'Arena.Wp_UA_NoUnderAttachment'
 	WeaponName="New Weapon"

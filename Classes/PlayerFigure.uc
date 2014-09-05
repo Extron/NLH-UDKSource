@@ -37,6 +37,12 @@ var DynamicLightEnvironmentComponent LightEnvironment;
  */
 var int HeldWeapon;
 
+simulated function Destroyed()
+{
+	if (Avatar != None)
+		Avatar.Destroy();
+}
+
 simulated function LoadFigure(LoadoutData figureLoadout, ArenaPlayerController controller, optional bool drawInForeground = true)
 {
 	local ArenaWeapon newWeapon;
@@ -108,12 +114,10 @@ function ArenaWeapon CreateWeapon(WeaponSchematic schematic, bool drawInForegrou
 	return ArenaWeaponBase;
 }
 
-/*
-simulated function AttachArmor(ArmorComponent armorComponent)
+simulated function ReattachWeapon()
 {
-	Armor.AddItem(armorComponent);
-	AttachComponent(armorComponent.MeshComponent);
-}*/
+	Weapons[HeldWeapon].AttachWeaponTo(Avatar.BodyParts[BPTRightArm].MeshComponent, 'HandSocket');
+}
 
 simulated function DetachArmor()
 {
@@ -149,7 +153,8 @@ simulated function SetFigureDrawScale(float scale)
 	local ArenaWeaponComponent componentIter;
 	
 	SetDrawScale(scale);
-
+	Avatar.SetAvatarDrawScale(scale);
+	
 	foreach Weapons(weaponIter)
 	{
 		foreach ArenaWeaponBase(weaponIter).WeaponComponents(componentIter)

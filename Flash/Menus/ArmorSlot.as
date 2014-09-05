@@ -6,6 +6,8 @@
 	import flash.display.Loader;
 	import flash.display.Bitmap;
 	import flash.net.URLRequest;
+	import flash.external.ExternalInterface;
+	import scaleform.clik.events.ButtonEvent;
 	
 	public class ArmorSlot extends MovieClip
 	{
@@ -26,6 +28,8 @@
 			
 			componentName.text = "Empty";
 			energyCostLabel.text = "";
+			
+			equipButton.addEventListener(ButtonEvent.CLICK, EquipSlot);
 		}
 
 		public function EquipArmor(armor:Object)
@@ -70,6 +74,11 @@
 			image.height = 64;
 			
 			addChild(image);
+		}
+		
+		function EquipSlot(e:ButtonEvent)
+		{
+			if (ExternalInterface.available) ExternalInterface.call("EquipSlot", SlotName);
 		}
 	}
 

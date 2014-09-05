@@ -146,8 +146,8 @@ simulated function Initialize()
 	WeapData.BoughtComponents[3] = class'Arena.Wp_SA_NoSideAttachment';
 	
 	WeapData.BoughtComponents[4] = class'Arena.Wp_S_CheapStock';
-	WeapData.BoughtComponents[5] = class'Arena.Wp_O_CheapIronSights';
-	WeapData.BoughtComponents[6] = class'Arena.Wp_B_BasicRifleBarrel';
+	WeapData.BoughtComponents[5] = class'Arena.Wp_O_VIronSights';
+	WeapData.BoughtComponents[6] = class'Arena.Wp_B_ShortSimpleBarrel';
 	
 	WeapData.BoughtBases[0] = class'Arena.Wp_CheapRifleBase';
 	
@@ -156,9 +156,9 @@ simulated function Initialize()
 		defaultWeap.BaseClass = class'Arena.Wp_CheapRifleBase';
 		
 		defaultWeap.Components[WCStock] = class'Arena.Wp_S_CheapStock';
-		defaultWeap.Components[WCBarrel] = class'Arena.Wp_B_BasicRifleBarrel';
+		defaultWeap.Components[WCBarrel] = class'Arena.Wp_B_ShortSimpleBarrel';
 		defaultWeap.Components[WCMuzzle] = class'Arena.Wp_M_NoMuzzle';
-		defaultWeap.Components[WCOptics] = class'Arena.Wp_O_CheapIronSights';
+		defaultWeap.Components[WCOptics] = class'Arena.Wp_O_VIronSights';
 		defaultWeap.Components[WCUnderAttachment] = class'Arena.Wp_UA_NoUnderAttachment';
 		defaultWeap.Components[WCSideAttachment] = class'Arena.Wp_SA_NoSideAttachment';
 		defaultWeap.WeaponName = "Default Weapon";

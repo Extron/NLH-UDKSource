@@ -22,7 +22,7 @@ var array<AN_BlendBySprint> SprintAnimNodes;
 /**
  * The current active effect of the player.
  */
-var StatusEffect ActiveEffect;
+var array<StatusEffect> ActiveEffects;
 
 /* The player's gameplay stats. */
 var PlayerStats Stats;
@@ -439,7 +439,8 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 	{
 		if (PlayerController(Controller) != None && ArenaHUD(PlayerController(Controller).MyHUD) != None && ArenaHUD(PlayerController(Controller).MyHUD).HUDMovie != None && HitLocation != Location)
 		{
-			ArenaHUD(PlayerController(Controller).MyHUD).HUDMovie.AddHitIndicator(Normal(HitLocation - Location));
+			if (DamageAmount > 0)
+				ArenaHUD(PlayerController(Controller).MyHUD).HUDMovie.AddHitIndicator(Normal(HitLocation - Location));
 			
 			projNorm.x = HitLocation.x - Location.x;
 			projNorm.y = HitLocation.y - Location.y;
@@ -455,20 +456,25 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 			RecoilAcceleration.Roll = -projNorm.y * 65536 * recoilMag;
 		}
 		
-		if (class<AbilityDamageType>(DamageType) != None && (ArenaPlayerController(EventInstigator) != None || ArenaBot(EventInstigator) != None))
+		if (class<ElementDamageType>(DamageType) != None && (ArenaPlayerController(EventInstigator) != None || ArenaBot(EventInstigator) != None))
 		{
-			`log("You were hit by an ability.");
+			//`log("You were hit by an ability.");
 			
-			for (i = 0; i < class<AbilityDamageType>(DamageType).Default.StatusEffects.Length; i++)
+			for (i = 0; i < class<ElementDamageType>(DamageType).Default.EntityEffects.Length; i++)
 			{
-				seClass = class<AbilityDamageType>(DamageType).Default.StatusEffects[i];
-				
-				if (/*HasProperties(e.Default.Properties) &&*/ !HasStatus(seClass.Default.EffectName))
+				if (class<StatusEffect>(class<ElementDamageType>(DamageType).Default.EntityEffects[i]) != None)
 				{
-					effect = spawn(seClass, Self);
-					AddEffect(effect);
+					seClass = class<StatusEffect>(class<ElementDamageType>(DamageType).Default.EntityEffects[i]);
 					
-					super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+					if (/*HasProperties(e.Default.Properties) &&*/ !HasStatus(seClass.Default.EffectName))
+					{
+						effect = spawn(seClass, Self);
+						effect.Instigator = EventInstigator.Pawn;
+						
+						AddEffect(effect);
+						
+						super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+					}
 				}
 			}
 		}
@@ -483,9 +489,12 @@ simulated function NotifyTakeHit(Controller InstigatedBy, vector HitLocation, in
 {
 	super.NotifyTakeHit(InstigatedBy, HitLocation, Damage, DamageType, Momentum, DamageCauser);
 	
-	EmitBloodSplatter();
-	CanRegenHealth = false;
-	SetTimer(Stats.GetRegenHealthDelay(), false, 'AllowRegenHealth');
+	if (Damage > 0)
+	{
+		EmitBloodSplatter();
+		CanRegenHealth = false;
+		SetTimer(Stats.GetRegenHealthDelay(), false, 'AllowRegenHealth');
+	}
 }
 
 simulated function HitWall(Vector HitNormal, Actor Wall, PrimitiveComponent WallComp)
@@ -514,8 +523,17 @@ simulated function Bump(Actor other, PrimitiveComponent otherComp, Vector hitNor
 
 function bool Died(Controller Killer, class<DamageType> DamageType, vector HitLocation)
 {
-	if (ActiveEffect != None)
-		ActiveEffect.DeactivateEffect();
+	local int i;
+	
+	for (i = 0; i < ActiveEffects.Length; i++)
+	{
+		if (ActiveEffects[i] != None)
+			ActiveEffects[i].DeactivateEffect();
+		
+		ActiveEffects[i] = None;
+	}
+	
+	ActiveEffects.Length = 0;
 	
 	`log("Pawn died" @ Killer @ DamageType);
 	
@@ -1146,26 +1164,13 @@ simulated function bool CanSpendEnergy(float energyAmount)
  */
 simulated function AddEffect(StatusEffect effect)
 {
-	if (ActiveEffect != None)
-	{
-		//sum = class'Arena.StatusEffect'.static.AddEffects(effect, ActiveEffect);
-		
-		//RemoveEffect();
-		//ActiveEffect = sum;
-	}
-	else
-	{
-		ActiveEffect = effect;
-	}
-	
-	ActiveEffect.ActivateEffect(self);
+	ActiveEffects.AddItem(effect);
+	effect.ActivateEffect(self);
 }
 
-simulated function RemoveEffect()
+simulated function RemoveEffect(StatusEffect effect)
 {
-	ActiveEffect.DeactivateEffect();
-	ActiveEffect.Destroy();
-	ActiveEffect = None;
+	effect.DeactivateEffect();
 }
 
 simulated function AddStatMod(PlayerStatModifier mod)
@@ -1196,10 +1201,18 @@ simulated function AllowRegenStamina()
 
 function bool HasStatus(string effectName)
 {
-	if (ActiveEffect == None)
-		return false;
-		
-	return InStr(ActiveEffect.EffectName, effectName) > -1;
+	local int i;
+	
+	for (i = 0; i < ActiveEffects.Length; i++)
+	{
+		if (ActiveEffects[i] != None)
+		{
+			if (ActiveEffects[i].EffectName == effectName)
+				return true;
+		}
+	}
+	
+	return false;
 }
 
 /**

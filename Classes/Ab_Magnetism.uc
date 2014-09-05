@@ -60,7 +60,7 @@ simulated function Magnetize()
 						effect = Spawn(class'Arena.EE_Magnetized', iter);
 						EE_Magnetized(effect).Charge = CurrentCharge;
 						
-						IEnvObj(iter).AddEffect(Spawn(class'Arena.EE_Magnetized', iter), ArenaPlayerController(Instigator.Controller));
+						IEnvObj(iter).AddEffect(Spawn(class'Arena.EE_Magnetized', iter));
 					}
 					else
 					{

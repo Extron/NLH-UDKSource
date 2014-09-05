@@ -56,6 +56,9 @@ simulated function HitWall(vector norm, Actor wall, PrimitiveComponent component
 	local vector l, n;
 	local TraceHitInfo hitInfo;
 	local Actor traceActor;
+	local float dmg;
+	
+	`log(self @ "hit wall" @ wall);
 	
 	super.HitWall(norm, wall, component);
 	
@@ -76,23 +79,33 @@ simulated function HitWall(vector norm, Actor wall, PrimitiveComponent component
 	{
 		Spark(norm, None);
 	}
+	
+	if (ArenaPawn(Instigator) != None)
+		dmg = ArenaPawn(Instigator).Stats.GetDamageGiven(Damage, MyDamageType);
+	else
+		dmg = Damage;
+		
+	wall.TakeDamage(dmg, InstigatorController, Location, MomentumTransfer * Normal(Velocity), MyDamageType,, self);
 }
  
 simulated function ProcessTouch(Actor Other, Vector HitLocation, Vector HitNormal)
 {
 	local float dmg;
 	
+	`log(self @ "touched" @ Other);
+	
 	if (Other != Instigator)
 	{
 		if (!Other.bStatic && DamageRadius == 0.0)
 		{
-			if (ArenaPawn(Instigator) != None && Weapon != None)
-				dmg = ArenaPawn(Instigator).Stats.GetDamageGiven(Damage * Weapon.Stats.GetDamageModifier(), MyDamageType);
+			if (ArenaPawn(Instigator) != None)
+				dmg = ArenaPawn(Instigator).Stats.GetDamageGiven(Damage, MyDamageType);
 			else
 				dmg = Damage;
 				
 			Other.TakeDamage(dmg, InstigatorController, Location, MomentumTransfer * Normal(Velocity), MyDamageType,, self);
 		}
+		
 		Explode(HitLocation, HitNormal);
 	}
 }

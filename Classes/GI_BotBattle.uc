@@ -72,7 +72,6 @@ function Killed( Controller Killer, Controller KilledPlayer, Pawn KilledPawn, cl
 {
 	local array<string> killMessage;
 	local array<int> messageColors;
-	local array<string> effects;
 	local BotKillDisplay display;
 	local float points;
 	local int tokens;
@@ -97,20 +96,19 @@ function Killed( Controller Killer, Controller KilledPlayer, Pawn KilledPawn, cl
 			messageColors.AddItem(0xFFFFFF);
 		}
 		
-		if (AP_Bot(KilledPawn).ActiveEffect != None)
+		for (i = 0; i < AP_Bot(KilledPawn).ActiveEffects.Length; i++)
 		{
-			/*if (AP_Bot(KilledPawn).ActiveEffect.Combinations > 1)
+			if (AP_Bot(KilledPawn).ActiveEffects[i] != None)
 			{
-				killMessage.AddItem("Effect Combo!");
-				messageColors.AddItem(0xFFFF00);
-			}*/
-			
-			effects = SplitString(AP_Bot(KilledPawn).ActiveEffect.EffectName, "+");
-			
-			for (i = 0; i < effects.length; i++)
-			{
-				killMessage.AddItem("+" @ effects[i]);
-				messageColors.AddItem(AP_Bot(KilledPawn).ActiveEffect.DisplayColors[i]);
+				/*
+				if (AP_Bot(KilledPawn).ActiveEffect.Combinations > 1)
+				{
+					killMessage.AddItem("Effect Combo!");
+					messageColors.AddItem(0xFFFF00);
+				}*/
+				
+				killMessage.AddItem(AP_Bot(KilledPawn).ActiveEffects[i].EffectName);
+				messageColors.AddItem(AP_Bot(KilledPawn).ActiveEffects[i].DisplayColor);
 			}
 		}
 		
@@ -171,19 +169,24 @@ simulated function WaveComplete(BBWaveComponent wave)
 
 simulated function ComputePointsAndTokens(AP_Bot killedBot, class<ArenaDamageType> damage, out float points, out int tokens)
 {
+	local int i;
+	
 	if (damage != None)
 	{
 		points = damage.default.Points;
 		
-		if (killedBot.ActiveEffect != None)
+		for (i = 0; i < killedBot.ActiveEffects.Length; i++)
 		{
-			if (class<StatusDamageType>(damage) != None)
-				points += killedBot.ActiveEffect.KilledByPoints;
-			else
-				points += killedBot.ActiveEffect.KilledWhilePoints;
-				
-			/*if (killedBot.ActiveEffect.Combinations > 1)
-				tokens += FFloor(killedBot.ActiveEffect.Combinations / 2);*/
+			if (killedBot.ActiveEffects[i] != None)
+			{
+				if (class<StatusDamageType>(damage) != None)
+					points += killedBot.ActiveEffects[i].KilledByPoints;
+				else
+					points += killedBot.ActiveEffects[i].KilledWhilePoints;
+					
+				/*if (killedBot.ActiveEffect.Combinations > 1)
+					tokens += FFloor(killedBot.ActiveEffect.Combinations / 2);*/
+			}
 		}
 	}
 	else

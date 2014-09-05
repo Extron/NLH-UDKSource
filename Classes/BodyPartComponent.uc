@@ -44,3 +44,23 @@ function SetFOV(float angle)
 	foreach Attachments(iter)
 		iter.MeshComponent.SetFOV(angle);
 }
+
+function bool IsOfSameType(class<PlayerAppearanceComponent> component)
+{
+	if (class<BodyPartComponent>(component) == None)
+		return false;
+		
+	return class<BodyPartComponent>(component).default.Type == Type;
+}
+
+defaultproperties
+{
+	Subclasses[0]=class'Arena.BPC_Head';
+	Subclasses[1]=class'Arena.BPC_LeftArmNude';
+	Subclasses[2]=class'Arena.BPC_RightArmNude';
+	Subclasses[3]=class'Arena.BPC_LeftLegNude';
+	Subclasses[4]=class'Arena.BPC_RightLegNude';
+	Subclasses[5]=class'Arena.BPC_TorsoNude';
+	Subclasses[6]=class'Arena.BPC_LeftArmRobotForearm';
+	Subclasses[7]=class'Arena.BPC_RightArmRobotForearm';
+}

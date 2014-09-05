@@ -16,4 +16,7 @@ defaultproperties
 	
 	Type=BPTRightArm
 	ComponentName="Robotic Forearm"
+	ComponentDescription="The arm is amputated at the elbow and the forearm is replaced with a robotic prosthesis.  Requires energy to operate, but provides additional stability and increased strength.  However, suseptible to electromagnetic damage."
+	EnergyCost=5
+	Cost=15;
 }

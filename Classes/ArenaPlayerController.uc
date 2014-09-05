@@ -687,9 +687,9 @@ defaultproperties
 		Begin Object Class=WeaponSchematic Name=DefaultSchematic
 			ArenaWeaponBase=class'Wp_CheapRifleBase';
 			WeaponStock=class'Wp_S_WoodStock';
-			WeaponBarrel=class'Wp_B_ShortRailedBarrel';
+			WeaponBarrel=class'Wp_B_ShortSimpleBarrel';
 			WeaponMuzzle=class'Wp_M_NoMuzzle';
-			WeaponOptics=class'Wp_O_CheapIronSights';
+			WeaponOptics=class'Wp_O_VIronSights';
 			WeaponSideAttachment=class'Wp_SA_NoSideAttachment';
 			WeaponUnderAttachment=class'Wp_UA_Shotgun';
 			WeaponName="Cheap Rifle"

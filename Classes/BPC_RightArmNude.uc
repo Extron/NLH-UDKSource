@@ -16,4 +16,7 @@ defaultproperties
 	
 	Type=BPTRightArm
 	ComponentName="Organic Arm"
+	ComponentDescription="A fully organic arm, with no special modifications."
+	EnergyCost=0
+	Cost=0;
 }

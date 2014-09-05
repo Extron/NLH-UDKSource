@@ -85,5 +85,8 @@ defaultproperties
 	Slot=1
 	HeatReadingRange=2560
 	
-	ComponentName="Thermal Visio Implant"
+	ComponentName="Thermal Vision Implant"
+	ComponentDescription="Through the use of corneal implant technology, thermal vision implants give the wearer the ability to see in the infrared spectrum, granting them the ability to detect variations in the terperature of their environment.  Due to the nature of infared light, these optics allow the wearer to see through some thin materials.  These implants can be activated at will."
+	EnergyCost=5
+	Cost=25
 }

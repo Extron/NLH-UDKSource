@@ -160,6 +160,8 @@ function Activate()
 	StartingLocation = Location;
 	StartingRotation = Rotation;
 	StartingScale = SkeletalMeshComponent.Scale * 0.25;
+	
+	SkeletalMeshComponent.SetDepthPriorityGroup(SDPG_PostProcess);
 }
 
 function Deactivate()
@@ -171,6 +173,8 @@ function Deactivate()
 	StartingLocation = Location;
 	StartingRotation = Rotation;
 	StartingScale = SkeletalMeshComponent.Scale * 0.25;
+	
+	SkeletalMeshComponent.SetDepthPriorityGroup(SDPG_World);
 }
 
 function GetCornerWorldLoc(out vector topLeft, out vector bottomRight)
@@ -184,7 +188,6 @@ defaultproperties
 	Begin Object Name=SkeletalMeshComponent0
 		SkeletalMesh=SkeletalMesh'ArenaObjects.Meshes.InfoBoxDisplay'
 		PhysicsAsset=PhysicsAsset'ArenaObjects.Meshes.InfoBoxDisplay_Physics'
-		DepthPriorityGroup=SDPG_Foreground
 	End Object
 	
 	bNoDelete=false

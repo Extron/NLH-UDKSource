@@ -6,9 +6,9 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class ADT_Sand extends AbilityDamageType;
+class ADT_Sand extends ElementDamageType;
 
 defaultproperties
 {
-	StatusEffects[0]=class'Arena.SE_Blind'
+	EntityEffects[0]=class'Arena.SE_Blind'
 }

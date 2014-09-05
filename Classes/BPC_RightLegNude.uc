@@ -16,4 +16,7 @@ defaultproperties
 	
 	Type=BPTRightLeg
 	ComponentName="Organic Leg"
+	ComponentDescription="A fully organic leg, with no special modifications."
+	EnergyCost=0
+	Cost=0;
 }

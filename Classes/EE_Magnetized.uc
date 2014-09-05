@@ -8,10 +8,14 @@
 
 class EE_Magnetized extends EnvironmentEffect;
 
-/** The range that the magnetized effect can affect other objects. */
+/** 
+ * The range that the magnetized effect can affect other objects. 
+ */
 var float Range;
 
-/** The magnitude of the force dealt by this effect. */
+/** 
+ * The magnitude of the force dealt by this effect. 
+ */
 var float Magnitude;
 
 /**
@@ -20,7 +24,7 @@ var float Magnitude;
 var int Charge;
 
 
-simulated function UpdateEffect(float dt)
+simulated function Tick(float dt)
 {
 	local DynamicEnvironmentObject obj;
 	local EE_Magnetized effect;
@@ -29,18 +33,20 @@ simulated function UpdateEffect(float dt)
 	local int direction;
 	local int otherCharge;
 
-	foreach Actor(Affectee).CollidingActors(class'Arena.DynamicEnvironmentObject', obj, Range, Actor(Affectee).Location)
+	super.Tick(dt);
+	
+	foreach Affectee.CollidingActors(class'Arena.DynamicEnvironmentObject', obj, Range, Affectee.Location)
 	{
 		if (obj == Affectee)
 			continue;
 			
-		displacement = obj.Location - Actor(Affectee).Location;
+		displacement = obj.Location - Affectee.Location;
 		
 		if (obj.HasProperties(Properties))
 		{		
 			if (obj.HasEffect(EffectName))
 			{
-				effect = EE_Magnetized(obj.ActiveEffect.FindEffect('EE_Magnetized'));
+				effect = EE_Magnetized(obj.FindEffect('EE_Magnetized'));
 				
 				if (effect != None)
 					otherCharge = effect.Charge;

@@ -9,15 +9,4 @@
 /**
  * An explosion caused by the combination of a status effect with an ability damage type.
  */
-class AbilityExplosion extends Actor;
-
-/**
- * The damage type of the explosion.
- */
-var class<AbilityDamageType> DamageType;
-
-/**
- * The explosion particle system template.
- */
-var ParticleSystem ExlposionTemplate;
-
+class AbilityExplosion extends Explosion;

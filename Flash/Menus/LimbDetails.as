@@ -4,6 +4,8 @@
 
 	public class LimbDetails extends InformationBoxDetails
 	{
+		public var modsTabButton:TabButton;
+		public var clothesTabButton:TabButton;
 		public var limbSlot:ArmorSlot;
 		public var upperArmorSlot:ArmorSlot;
 		public var lowerArmorSlot:ArmorSlot;
@@ -32,6 +34,25 @@
 		
 		public function LimbDetails()
 		{
+		}
+		
+		protected override function SetTabContents():void
+		{
+			limbSlot.visible = false;
+			upperArmorSlot.visible = false;
+			lowerArmorSlot.visible = false;
+		
+			switch (tabButtons[selectedTab].label)
+			{
+			case "Mods":
+				limbSlot.visible = true;
+				upperArmorSlot.visible = true;
+				lowerArmorSlot.visible = true;
+				break;
+				
+			case "Clothes":
+				break;
+			}
 		}
 		
 		public override function SetData(data:Object):void

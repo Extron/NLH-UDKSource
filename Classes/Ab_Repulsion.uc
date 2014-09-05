@@ -83,7 +83,7 @@ simulated function Repulse()
 					`log("Dot" @ Normal(d) Dot (vect(1, 0, 0) >> r));
 				
 					if (!DynamicEnvironmentObject(iter).HasEffect("Magnetized"))
-						DynamicEnvironmentObject(iter).AddEffect(Spawn(class'Arena.EE_Magnetized', iter), ArenaPlayerController(Instigator.Controller));
+						DynamicEnvironmentObject(iter).AddEffect(Spawn(class'Arena.EE_Magnetized', iter));
 						
 					DynamicEnvironmentObject(iter).StaticMeshComponent.AddImpulse(impulse, iter.Location);
 				}

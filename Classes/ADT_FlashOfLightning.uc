@@ -13,5 +13,5 @@ class ADT_FlashOfLightning extends Dmg_Shock;
 
 defaultproperties
 {
-	StatusEffects[1]=class'Arena.SE_Flash'
+	EntityEffects[2]=class'Arena.SE_Flash'
 }

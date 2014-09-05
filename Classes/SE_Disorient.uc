@@ -11,50 +11,19 @@
  */
 class SE_Disorient extends StatusEffect;
 
-
 /**
  * The length that a ghost will last in a pawn's sensors.
  */
 var float GhostDuration;
 
-
-simulated function float GetHealthDamage(float dt)
+simulated function ActivateEffect(Actor target)
 {
-	return 0;
-}
-
-simulated function float GetEnergyDamage(float dt)
-{
-	return 0;
-}
-
-simulated function float GetStaminaDamage(float dt)
-{
-	return 0;
-}
-
-simulated function bool ApplyHealthDamage()
-{
-	return false;
-}
-
-simulated function bool ApplyEnergyDamage()
-{
-	return false;
-}
-
-simulated function bool ApplyStaminaDamage()
-{
-	return false;
-}
-
-simulated function ActivateEffect(ArenaPawn pawn)
-{
-	super.ActivateEffect(pawn);
+	super.ActivateEffect(target);
 	
-	if (pawn.Sensor != None)
+	if (ArenaPawn(target) != None)
 	{
-		pawn.Sensor.AddGhost(duration);
+		if (ArenaPawn(target).Sensor != None)
+			ArenaPawn(target).Sensor.AddGhost(GhostDuration);
 	}
 }
 
@@ -62,23 +31,7 @@ defaultproperties
 {	
 	EffectName="Disoriented"
 	Duration=15
-	SEGroup=SEG_Electromagnetism
-	
-	InitialHealthDamage=0
-	InitialEnergyDamage=0
-	InitialStaminaDamage=0
-	
-	HealthDamage=0
-	EnergyDamage=0
-	StaminaDamage=0
-	
-	DurationWeight=0
-	HealthDamageWeight=0
-	EnergyDamageWeight=0
-	StaminaDamageWeight=0
-	IHDWeight=0
-	IEDWeight=0
-	ISDWeight=0
+	Group=EG_Electromagnetism
 	
 	GhostDuration=15
 }

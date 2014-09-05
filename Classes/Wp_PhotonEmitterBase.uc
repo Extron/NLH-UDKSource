@@ -23,7 +23,7 @@ defaultproperties
 	End Object
 	
 	DefaultComponents[WCStock]=class'Arena.Wp_S_CheapStock'
-	DefaultComponents[WCBarrel]=class'Arena.Wp_B_BasicRifleBarrel'
+	DefaultComponents[WCBarrel]=class'Arena.Wp_B_Intensifier'
 	DefaultComponents[WCMuzzle]=class'Arena.Wp_M_NoMuzzle'
 	DefaultComponents[WCOptics]=class'Arena.Wp_O_NoOptics'
 	DefaultComponents[WCUnderAttachment]=class'Arena.Wp_UA_NoUnderAttachment'
@@ -36,7 +36,7 @@ defaultproperties
 	CycleTime=0.15
 	BurstCount=3
 	
-	FireSound=SoundCue'PhotonEmitterBase.Audio.FireSC'
+	FireSound=SoundCue'PhotonEmitter.Audio.FireSC'
 	IHBeamTemplate=ParticleSystem'PhotonEmitter.Particles.PhotonBeam'
 	
 	ViewOffset=(X=45, Y=10, Z=-22);

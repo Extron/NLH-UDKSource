@@ -423,11 +423,10 @@ function bool CanEquipBarrel(Wp_Barrel barrel)
 defaultproperties
 {
 	Subclasses[0]=class'Arena.Wp_CheapRifleBase'
-	Subclasses[1]=class'Arena.Wp_AssaultRifleBase'
-	Subclasses[2]=class'Arena.Wp_PhotonEmitterBase'
-	Subclasses[3]=class'Arena.Wp_LargeRailGun'
-	Subclasses[4]=class'Arena.Wp_PlasmaTorchBase'
-	Subclasses[5]=class'Arena.Wp_BeamRifle'
+	Subclasses[1]=class'Arena.Wp_PhotonEmitterBase'
+	Subclasses[2]=class'Arena.Wp_LargeRailGun'
+	Subclasses[3]=class'Arena.Wp_PlasmaTorchBase'
+	Subclasses[4]=class'Arena.Wp_BeamRifle'
 	
 	WeaponComponents[WCStock]=None
 	WeaponComponents[WCBarrel]=None

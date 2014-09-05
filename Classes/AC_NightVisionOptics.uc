@@ -55,4 +55,7 @@ defaultproperties
 	Slot=1
 	
 	ComponentName="Night Vision Implant"
+	ComponentDescription="Through the use of corneal implant technology, night vision implants give the wearer hightened night vision, granting them sight in low-level light areas.  These implants can be activated at will.   While active, the wearer is hightly suseptible to being stunned by bright lights."
+	EnergyCost=1
+	Cost=10
 }

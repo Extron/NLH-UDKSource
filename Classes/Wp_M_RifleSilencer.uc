@@ -33,7 +33,7 @@ defaultproperties
 	End Object
 	
 	MuzzleFlashTemplate=ParticleSystem'RifleMuzzles.Particles.MuzzleFlashPS'
-	FireSound=SoundCue'RifleMuzzles.Audio.GunshotSC'
+	FireSound=SoundCue'RifleMuzzles.Audio.FireSC'
 	
 	CompatibleTypes[0]=WTRifle
 	

@@ -7,7 +7,7 @@
 *******************************************************************************/
 
 class GFx_CharacterView extends GFx_Menu
-	dependson(PlayerData);
+	dependson(PlayerData, Pawn_HeadData);
 
 const NativeWidth = 1600;
 const NativeHeight = 900;
@@ -62,6 +62,11 @@ var LoadoutData Character;
  * The menu's cursor.
  */
 var GFxObject Cursor;
+
+/**
+ * A reference to the current component list.
+ */
+var array<class<PlayerAppearanceComponent> > CurrentComponentList;
 
 /**
  * The location to spawn the figure, relative to the viewer's location.
@@ -164,6 +169,11 @@ var bool DraggingMouse;
 var bool DraggingRightMouse;
 
 /**
+ * Indicates that the cursor is currently over the active menu box.
+ */
+var bool OverInfoBox;
+
+/**
  * The info box that is currently active.  Will be -1 if none are.
  */
 var int ActiveInfoBox;
@@ -213,85 +223,91 @@ function bool Start(optional bool StartPaused = false)
 	Pawn.Controller.GetPlayerViewPoint(playerViewLoc, playerViewRot);
 
 	Figure = Pawn.Spawn(class'Arena.PlayerFigure', , , Pawn.Location + (FigureLocation >> Pawn.Controller.Rotation), Pawn.Controller.Rotation, , true);
-	Figure.LoadFigure(Character, ArenaPlayerController(Pawn.Controller));
+	Figure.LoadFigure(Character, ArenaPlayerController(Pawn.Controller), false);
 	Figure.SetFigureDrawScale(FigureScale);
 	Figure.SetFigureTranslation(FigureTranslation);
 	
-	`log("Figure Location" @ Figure.Location);
-	
-	InfoBoxes[0].Socket = 'HeadInfoSocket';
-	InfoBoxes[0].Title = "Head";
-	InfoBoxes[0].Subtitle = "";
-	InfoBoxes[0].ActiveFigureLocation = vect(0, 0, -64);
-	InfoBoxes[0].ActiveFigureRotation = rot(0, 36864, 0);
-	InfoBoxes[0].ActiveFigureScale = 2.5;
-	InfoBoxes[0].AllowFigureRotation = true;
-	
-	InfoBoxes[1].Socket = 'LeftArmInfoSocket';
-	InfoBoxes[1].Title = "Left Arm";
-	InfoBoxes[1].Subtitle = "";
-	InfoBoxes[1].ActiveFigureLocation = vect(0, -5, -45);
-	InfoBoxes[1].ActiveFigureRotation = rot(0, 39000, 0);
-	InfoBoxes[1].ActiveFigureScale = 1.65;
-	
-	InfoBoxes[2].Socket = 'RightArmInfoSocket';
-	InfoBoxes[2].Title = "Right Arm";
-	InfoBoxes[2].Subtitle = "";
-	InfoBoxes[2].ActiveFigureLocation = vect(0, 5, -45);
-	InfoBoxes[2].ActiveFigureRotation = rot(0, 19500, 0);
-	InfoBoxes[2].ActiveFigureScale = 1.625;
-	
-	InfoBoxes[3].Socket = 'LeftLegInfoSocket';
-	InfoBoxes[3].Title = "Left Leg";
-	InfoBoxes[3].Subtitle = "";
-	InfoBoxes[3].ActiveFigureLocation = vect(0, 0, 0);
-	InfoBoxes[3].ActiveFigureRotation = rot(0, 33000, 0);
-	InfoBoxes[3].ActiveFigureScale = 1.175;
-	
-	InfoBoxes[4].Socket = 'RightLegInfoSocket';
-	InfoBoxes[4].Title = "Right Leg";
-	InfoBoxes[4].Subtitle = "";
-	InfoBoxes[4].ActiveFigureLocation = vect(0, 0, 0);
-	InfoBoxes[4].ActiveFigureRotation = rot(0, 20500, 0);
-	InfoBoxes[4].ActiveFigureScale = 1.175;
-		
-	InfoBoxes[5].Socket = 'TorsoInfoSocket';
-	InfoBoxes[5].Title = "Torso";
-	InfoBoxes[5].Subtitle = "";
-	InfoBoxes[5].ActiveFigureLocation = vect(0, 0, -40);
-	InfoBoxes[5].ActiveFigureRotation = rot(0, -37500, 0);
-	InfoBoxes[5].ActiveFigureScale = 1.40;
+	Figure.Avatar.SetHeadAnimTreeTemplate(AnimTree'Head.Animations.DHCharEditorAnimationTree');
+	Figure.Avatar.SetBodyAnimTreeTemplate(AnimTree'AC_Player.Animations.CharEditorAnimationTree');
+	Figure.Avatar.RestartAnimationTree();
 	
 	for (i = 0; i < InfoBoxCount; i++)
 	{
 		InfoBoxes[i].Display = Pawn.Spawn(class'Arena.InformationBoxDisplay', Figure);
-		InfoBoxes[i].Display.InfoBoxGFx.SetTitle(InfoBoxes[i].Title);
-		InfoBoxes[i].Display.InfoBoxGFx.SetSubtitle(Figure.Avatar.BodyParts[i].ComponentName);
-		InfoBoxes[i].Display.Socket = InfoBoxes[i].Socket;
 		InfoBoxes[i].Display.Figure = Figure;
 		
-		InfoBoxes[i].Display.ActiveLocation = Pawn.Location + (vect(-12, 20, 96) >> Pawn.Controller.Rotation);
-		InfoBoxes[i].Display.ActiveRotation = rot(-32768,16384, 16384);
+		InfoBoxes[i].Display.ActiveLocation = Pawn.Location + (vect(-10, 17, 92) >> Pawn.Controller.Rotation);
+		InfoBoxes[i].Display.ActiveRotation = rot(-32768, 16384, 16384);
 		InfoBoxes[i].Display.ActiveScale = 1;
 		
 		InfoBoxes[i].Display.InfoBoxGFx.OnBack = DeactivateInfoBox;
 	}
 	
-	InfoBoxes[0].Display.PopulateData = PopulateHeadData;
-	InfoBoxes[0].Display.Layout = "Head Layout";
+	InfoBoxes[0].Display.Socket = 'HeadInfoSocket';
+	InfoBoxes[0].Display.InfoBoxGFx.SetTitle("Head");
 	InfoBoxes[0].Display.InfoBoxGFx.SetSubtitle("");
+	InfoBoxes[0].ActiveFigureLocation = vect(0, 0, -64);
+	InfoBoxes[0].ActiveFigureRotation = rot(0, 36864, 0);
+	InfoBoxes[0].ActiveFigureScale = 2.5;
+	InfoBoxes[0].AllowFigureRotation = true;
+	InfoBoxes[0].Display.PopulateData = PopulateHeadData;
+	InfoBoxes[0].Display.InfoBoxGFx.OnSliderValueChanged = FacialFeatureChanged;
+	InfoBoxes[0].Display.InfoBoxGFx.OnColorChanged = FacialColorChanged;
+	InfoBoxes[0].Display.InfoBoxGFx.OnEquipSlot = EquipSlot;
+	InfoBoxes[0].Display.InfoBoxGFx.OnBarycentricSliderValueChanged = RaceSliderChanged;
+	InfoBoxes[0].Display.InfoBoxGFx.OnRadioButtonSelected = GenderChanged;
+	InfoBoxes[0].Display.InfoBoxGFx.OnDropdownSelectionChanged = HairChanged;
+	InfoBoxes[0].Display.Layout = "Head Layout";
 	
+	InfoBoxes[1].Display.Socket = 'LeftArmInfoSocket';
+	InfoBoxes[1].Display.InfoBoxGFx.SetTitle("Left Arm");
+	InfoBoxes[1].Display.InfoBoxGFx.SetSubtitle(Figure.Avatar.BodyParts[1].ComponentName);
+	InfoBoxes[1].ActiveFigureLocation = vect(-5, 0, -45);
+	InfoBoxes[1].ActiveFigureRotation = rot(0, 49152, 0);
+	InfoBoxes[1].ActiveFigureScale = 1.65;
 	InfoBoxes[1].Display.PopulateData = PopulateLeftArmData;
+	InfoBoxes[1].Display.InfoBoxGFx.OnEquipSlot = EquipSlot;
 	InfoBoxes[1].Display.Layout = "Limb Layout";
 	
+	InfoBoxes[2].Display.Socket = 'RightArmInfoSocket';
+	InfoBoxes[2].Display.InfoBoxGFx.SetTitle("Right Arm");
+	InfoBoxes[2].Display.InfoBoxGFx.SetSubtitle(Figure.Avatar.BodyParts[2].ComponentName);
+	InfoBoxes[2].ActiveFigureLocation = vect(-15, 0, -45);
+	InfoBoxes[2].ActiveFigureRotation = rot(0, 16384, 0);
+	InfoBoxes[2].ActiveFigureScale = 1.65;
 	InfoBoxes[2].Display.PopulateData = PopulateRightArmData;
+	InfoBoxes[2].Display.InfoBoxGFx.OnEquipSlot = EquipSlot;
 	InfoBoxes[2].Display.Layout = "Limb Layout";
 	
+	InfoBoxes[3].Display.Socket = 'LeftLegInfoSocket';
+	InfoBoxes[3].Display.InfoBoxGFx.SetTitle("Left Leg");
+	InfoBoxes[3].Display.InfoBoxGFx.SetSubtitle(Figure.Avatar.BodyParts[3].ComponentName);
+	InfoBoxes[3].ActiveFigureLocation = vect(0, 0, 0);
+	InfoBoxes[3].ActiveFigureRotation = rot(0, 40960, 0);
+	InfoBoxes[3].ActiveFigureScale = 1.175;
+	InfoBoxes[3].AllowFigureRotation = true;
 	InfoBoxes[3].Display.PopulateData = PopulateLeftLegData;
+	InfoBoxes[3].Display.InfoBoxGFx.OnEquipSlot = EquipSlot;
 	InfoBoxes[3].Display.Layout = "Limb Layout";
 	
+	InfoBoxes[4].Display.Socket = 'RightLegInfoSocket';
+	InfoBoxes[4].Display.InfoBoxGFx.SetTitle("Right Leg");
+	InfoBoxes[4].Display.InfoBoxGFx.SetSubtitle(Figure.Avatar.BodyParts[4].ComponentName);
+	InfoBoxes[4].ActiveFigureLocation = vect(0, 0, 0);
+	InfoBoxes[4].ActiveFigureRotation = rot(0, 24576, 0);
+	InfoBoxes[4].ActiveFigureScale = 1.175;
+	InfoBoxes[4].AllowFigureRotation = true;
 	InfoBoxes[4].Display.PopulateData = PopulateRightLegData;
+	InfoBoxes[4].Display.InfoBoxGFx.OnEquipSlot = EquipSlot;
 	InfoBoxes[4].Display.Layout = "Limb Layout";
+	
+	InfoBoxes[5].Display.Socket = 'TorsoInfoSocket';
+	InfoBoxes[5].Display.InfoBoxGFx.SetTitle("Torso");
+	InfoBoxes[5].Display.InfoBoxGFx.SetSubtitle(Figure.Avatar.BodyParts[5].ComponentName);
+	InfoBoxes[5].ActiveFigureLocation = vect(0, 0, -40);
+	InfoBoxes[5].ActiveFigureRotation = rot(0, -32768, 0);
+	InfoBoxes[5].ActiveFigureScale = 1.40;
+	InfoBoxes[5].AllowFigureRotation = true;
 	
 	return true;
 }
@@ -349,7 +365,14 @@ function PostRender()
 		infoBoxMousePos.x = (mousePos.x - topLeftScreen.x) * InfoBoxWidth / (bottomRightScreen.x - topLeftScreen.x);
 		infoBoxMousePos.y = (mousePos.y - topLeftScreen.y) * InfoBoxHeight / (bottomRightScreen.y - topLeftScreen.y);
 		
-		InfoBoxes[ActiveInfoBox].Display.InfoBoxGFx.SetCursorLocation(infoBoxMousePos.x, infoBoxMousePos.y);
+		InfoBoxes[ActiveInfoBox].Display.InfoBoxGFx.SetCursorLocation(infoBoxMousePos.x, infoBoxMousePos.y, DraggingMouse);
+		
+		if (infoBoxMousePos.x > 0 && infoBoxMousePos.x < InfoBoxWidth && infoBoxMousePos.y > 0 && infoBoxMousePos.y < InfoBoxHeight)
+			OverInfoBox = true;
+		else
+			OverInfoBox = false;
+			
+		//`log("Over Info Box?" @ OverInfoBox @ infoBoxMousePos.x @ infoBoxMousePos.y);
 	}
 	else
 	{
@@ -390,15 +413,15 @@ event OnMouseMove()
 	
 	if (DraggingMouse && !DraggingRightMouse)
 	{
-		if (ActiveInfoBox == -1 || InfoBoxes[ActiveInfoBox].AllowFigureRotation)
+		if (ActiveInfoBox == -1 || (InfoBoxes[ActiveInfoBox].AllowFigureRotation && !OverInfoBox))
 			FigureRotation.Yaw = (FigureRotation.Yaw + 64 * -delta.x) % 65536;
 			
-		if (ActiveInfoBox == -1 || InfoBoxes[ActiveInfoBox].AllowFigureTranslation)
+		if (ActiveInfoBox == -1 || (InfoBoxes[ActiveInfoBox].AllowFigureTranslation && !OverInfoBox))
 			FigureTranslation.Z = FClamp(FigureTranslation.Z - 0.25 * delta.y / FigureScale, -64 * Lerp(0, 1, FClamp((FigureScale - 0.5) * 2, 0, 1)), 0);
 	}
 	else if (DraggingRightMouse)
 	{
-		if (ActiveInfoBox == -1 || InfoBoxes[ActiveInfoBox].AllowFigureScale)
+		if (ActiveInfoBox == -1 || (InfoBoxes[ActiveInfoBox].AllowFigureScale && !OverInfoBox))
 			FigureScale = FClamp(FigureScale - delta.y * 0.01, 0.5, 2.5);
 			
 		FigureTranslation.Z = FClamp(FigureTranslation.Z, -64 * Lerp(0, 1, FClamp((FigureScale - 0.5) * 4, 0, 1)), 0);
@@ -435,6 +458,15 @@ event OnMouseClick()
 				FigureEndRotation = InfoBoxes[i].ActiveFigureRotation;
 				FigureEndScale = InfoBoxes[i].ActiveFigureScale;
 				break;
+			}
+		}
+		
+		if (ActiveInfoBox != -1)
+		{
+			for (i = 0; i < InfoBoxCount; i++)
+			{
+				if (i != ActiveInfoBox)
+					InfoBoxes[i].Display.SetHidden(true);
 			}
 		}
 	}
@@ -474,8 +506,50 @@ event OnRightMouseUp()
 	DraggingRightMouse = false;
 }
 
+function EquipComponentSelection(int selectedComponent)
+{
+	local class<PlayerAppearanceComponent> component;
+	local rotator oldRot;
+	
+	component = CurrentComponentList[selectedComponent];
+	oldRot = Figure.Rotation;
+	
+	Figure.SetRotation(rot(0, 0, 0));
+	
+	if (class<BodyPartComponent>(component) != None)
+	{
+		Figure.Avatar.ReplaceBodyPart(class<BodyPartComponent>(component));
+		Figure.Avatar.BodyParts[class<BodyPartComponent>(component).default.Type].MeshComponent.SetAnimTreeTemplate(AnimTree'AC_Player.Animations.CharEditorAnimationTree');
+		
+		if (class<BodyPartComponent>(component).default.Type == BPTRightArm)
+			Figure.ReattachWeapon();
+	}
+	else if (class<ArmorComponent>(component) != None)
+	{
+		Figure.Avatar.ReplaceArmor(class<ArmorComponent>(component));
+		Figure.Avatar.Armor[class<ArmorComponent>(component).default.Type].MeshComponent.SetAnimTreeTemplate(AnimTree'AC_Player.Animations.CharEditorAnimationTree');
+	}
+	else if (class<ClothingComponent>(component) != None)
+	{
+		Figure.Avatar.ReplaceClothes(class<ClothingComponent>(component));
+		Figure.Avatar.Clothes[class<ClothingComponent>(component).default.Type].MeshComponent.SetAnimTreeTemplate(AnimTree'AC_Player.Animations.CharEditorAnimationTree');
+	}
+		
+	Figure.SetRotation(oldRot);
+	Figure.Avatar.RestartAnimationTree();
+	
+	InfoBoxes[ActiveInfoBox].Display.SetHidden(false);
+}
+
+function CancelComponentSelection()
+{
+	InfoBoxes[ActiveInfoBox].Display.SetHidden(false);
+}
+
 function DeactivateInfoBox()
 {
+	local int i;
+	
 	InfoBoxes[ActiveInfoBox].Display.Deactivate();
 	
 	ActiveInfoBox = -1;
@@ -488,12 +562,169 @@ function DeactivateInfoBox()
 	FigureEndTranslation = vect(0, 0, 0);
 	FigureEndRotation = rot(0, 36864, 0);
 	FigureEndScale = 0.5;
+	
+	for (i = 0; i < InfoBoxCount; i++)
+	{
+		InfoBoxes[i].Display.SetHidden(false);
+	}
+}
+
+function FacialFeatureChanged(string featureName, string featureCategory, float featureValue)
+{
+	if (Figure.Avatar.BodyParts[BPTHead] != None)
+		BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetFacialFeatureMorphValue(featureName, featureCategory, featureValue);
+}
+
+function RaceSliderChanged(string featureName, float x, float y, float z)
+{
+	if (featureName == "Race")
+	{		
+		BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetFacialFeatureMorphValue("African", "Race", x);
+		BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetFacialFeatureMorphValue("Asian", "Race", z);
+	}
+}
+
+function FacialColorChanged(string featureName, Color newColor)
+{
+	if (Figure.Avatar.BodyParts[BPTHead] != None)
+	{
+		switch (featureName)
+		{
+		case "Eyes":
+			BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetEyeColor(newColor);
+			break;
+			
+		case "Hair":
+			BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetHairColor(newColor);
+			break;
+		}
+	}
+}
+
+function GenderChanged(string buttonName)
+{
+	if (buttonName == "Male")
+		BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetFacialFeatureMorphValue("Female", "Gender", 0.0);
+	else if (buttonName == "Female")
+		BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetFacialFeatureMorphValue("Female", "Gender", 1.0);
+}
+
+function HairChanged(string featureName, int selection)
+{
+	if (featureName != "Hair")
+		return;
+		
+	BPC_Head(Figure.Avatar.BodyParts[BPTHead]).SetHairMesh(selection);
+}
+
+function EquipSlot(string slotName)
+{
+	local GFxObject componentList, componentObject;
+	local PlayerAppearanceComponent component;
+	local int i, index;
+	
+	switch (slotName)
+	{
+	case "Eye Implants":
+		component = Figure.Avatar.Armor[ACTEyeImplant];
+		break;
+		
+	case "Helmet":
+		component = Figure.Avatar.Armor[ACTHelmet];
+		break;
+	
+	case "Upper Arm Armor":
+		if (activeInfoBox == 1)
+			component = Figure.Avatar.Armor[ACTLeftUpperArm];
+		else
+			component = Figure.Avatar.Armor[ACTRightUpperArm];
+		break;
+		
+	case "Left Arm":
+		component = Figure.Avatar.BodyParts[BPTLeftArm];
+		break;
+		
+	case "Right Arm":
+		component = Figure.Avatar.BodyParts[BPTRightArm];
+		break;
+		
+	case "Left Leg":
+		component = Figure.Avatar.BodyParts[BPTLeftLeg];
+		break;
+		
+	case "Right Leg":
+		component = Figure.Avatar.BodyParts[BPTRightLeg];
+		break;
+		
+	case "Forearm Armor":
+		if (activeInfoBox == 1)
+			component = Figure.Avatar.Armor[ACTLeftForearm];
+		else
+			component = Figure.Avatar.Armor[ACTRightForearm];
+		break;
+			
+	case "Thigh Armor":
+		if (activeInfoBox == 3)
+			component = Figure.Avatar.Armor[ACTLeftThigh];
+		else
+			component = Figure.Avatar.Armor[ACTRightThigh];
+		break;
+		
+	case "Calf Armor":
+		if (activeInfoBox == 3)
+			component = Figure.Avatar.Armor[ACTLeftFoot];
+		else
+			component = Figure.Avatar.Armor[ACTRightFoot];
+		break;
+	}
+	
+	componentList = CreateArray();
+	CurrentComponentList.Length = 0;
+	
+	index = 0;
+	
+	if (component != None)
+	{
+		for (i = 0; i < component.default.Subclasses.Length; i++)
+		{
+			if (component.IsOfSameType(component.default.Subclasses[i]))
+			{
+				componentObject = CreateObject("Object");
+				
+				componentObject.SetString("name", component.default.Subclasses[i].default.ComponentName);
+				componentObject.SetString("description", component.default.Subclasses[i].default.ComponentDescription);
+				componentObject.SetFloat("energy", component.default.Subclasses[i].default.EnergyCost);
+				componentObject.SetFloat("cost", component.default.Subclasses[i].default.Cost);
+				componentObject.SetString("imgSrc", component.default.Subclasses[i].default.ComponentIcon);
+				componentObject.SetBool("owned", true);
+				
+				CurrentComponentList.AddItem(component.default.Subclasses[i]);
+				componentList.SetElementObject(index, componentObject);
+				index++;
+			}
+		}
+	}
+	
+	OpenComponentList(componentList, -1);
+	InfoBoxes[ActiveInfoBox].Display.SetHidden(true);
 }
 
 function PopulateHeadData(GFxObject data, GFx_InformationBox sender)
 {
-	local GFxObject eyeImplantObject, helmetObject;
+	local GFxObject eyeImplantObject, helmetObject, facialFeatureObject, featuresList, featuresElement, hairStyles;
+	local MorphData morph;
+	local string featureCategories[8];
+	local int i, j, index;
 
+	featureCategories[0] = "Forehead";
+	featureCategories[1] = "Eyes";
+	featureCategories[2] = "Eyebrows";
+	featureCategories[3] = "Ears";
+	featureCategories[4] = "Nose";
+	featureCategories[5] = "Mouth";
+	featureCategories[6] = "Cheeks";
+	featureCategories[7] = "Chin";
+	
 	if (Figure.Avatar.Armor[ACTEyeImplant] != None && AC_None(Figure.Avatar.Armor[ACTEyeImplant]) == None)
 	{
 		eyeImplantObject = sender.CreateObject("Object");
@@ -514,6 +745,46 @@ function PopulateHeadData(GFxObject data, GFx_InformationBox sender)
 		helmetObject.SetFloat("energyCost", Figure.Avatar.Armor[ACTHelmet].EnergyCost);
 		
 		data.SetObject("helmet", helmetObject);
+	}
+	
+	if (Figure.Avatar.BodyParts[BPTHead] != None)
+	{
+		facialFeatureObject = sender.CreateObject("Object");
+		
+		for (j = 0; j < 8; j++)
+		{
+			featuresList = sender.CreateArray();
+			index = 0;
+			
+			for (i = 0; i < BPC_Head(Figure.Avatar.BodyParts[BPTHead]).HeadData.Morphs.Length; i++)
+			{
+				morph = BPC_Head(Figure.Avatar.BodyParts[BPTHead]).HeadData.Morphs[i];
+				
+				if (morph.Category == featureCategories[j])
+				{
+					featuresElement = sender.CreateObject("Object");
+					
+					featuresElement.SetString("featureName", morph.DisplayName);
+					featuresElement.SetFloat("featureValue", morph.DoubleSided ? 0.5 * (morph.MorphWeight + 1) : morph.MorphWeight);
+					featuresElement.SetString("featureCategory", morph.Category);
+					
+					featuresList.SetElementObject(index, featuresElement);
+					index++;
+				}
+			}
+			
+			facialFeatureObject.SetObject(Locs(featureCategories[j]) $ "Features", featuresList);
+		}
+		
+		hairStyles = sender.CreateArray();
+		
+		for (j = 0; j < class'Arena.Pawn_HeadData'.default.HairPieces.Length; j++)
+			hairStyles.SetElementString(j, class'Arena.Pawn_HeadData'.default.HairPieces[j].DisplayName);
+		
+		facialFeatureObject.SetObject("hairStyles", hairStyles);
+		facialFeatureObject.SetInt("currentHairStyle", BPC_Head(Figure.Avatar.BodyParts[BPTHead]).HeadData.HairMesh);
+		
+		data.SetObject("facialFeatures", facialFeatureObject);
 	}
 }
 
@@ -876,9 +1147,9 @@ function CreateNewWeaponSchematic()
 	newWeap.BaseClass = class'Arena.Wp_CheapRifleBase';
 	
 	newWeap.Components[WCStock] = class'Arena.Wp_S_CheapStock';
-	newWeap.Components[WCBarrel] = class'Arena.Wp_B_BasicRifleBarrel';
+	newWeap.Components[WCBarrel] = class'Arena.Wp_B_ShortSimpleBarrel';
 	newWeap.Components[WCMuzzle] = class'Arena.Wp_M_NoMuzzle';
-	newWeap.Components[WCOptics] = class'Arena.Wp_O_CheapIronSights';
+	newWeap.Components[WCOptics] = class'Arena.Wp_O_VIronSights';
 	newWeap.Components[WCUnderAttachment] = class'Arena.Wp_UA_NoUnderAttachment';
 	newWeap.Components[WCSideAttachment] = class'Arena.Wp_SA_NoSideAttachment';
 	newWeap.WeaponName = "New Weapon" @ ArenaPlayerController(Pawn.Controller).SaveData.WeapData.WeaponLibrary.Length;
@@ -913,6 +1184,16 @@ function RemoveAbility(int abilityIndex)
 	BuildClassInfo();
 }
 
+function OpenComponentList(GFxObject componentList, int selectedComponent)
+{
+	ActionScriptVoid("_root.OpenComponentList");
+}
+
+function CloseComponentList()
+{
+	ActionScriptVoid("_root.CloseComponentList");
+}
+
 function CloseMenu()
 {
 	ActionScriptVoid("_root.CloseMenu");
@@ -932,6 +1213,7 @@ function CloseAnimCompleted()
 function GotoMainMenu()
 {
 	local GFx_MainMenu menu;
+	local int i;
 	
 	`log("Going to main menu");
 	
@@ -940,6 +1222,13 @@ function GotoMainMenu()
 	menu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerController(Pawn.Controller).Player));
 	menu.SetTimingMode(TM_Real);
 
+	Figure.Destroy();
+	
+	for (i = 0; i < InfoBoxCount; i++)
+	{
+		InfoBoxes[i].Display.Destroy();
+	}
+	
 	Cube.Owner.SetRotation(rot(0, -16384, 0));
 	Cube.Owner.SetPhysics(PHYS_Rotating);
 	

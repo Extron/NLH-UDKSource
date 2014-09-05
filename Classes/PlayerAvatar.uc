@@ -64,7 +64,8 @@ function LoadAvatar(AvatarSchematic schematic)
 		
 		BodyParts.AddItem(bodyPart);
 
-		Pawn.AttachComponent(bodyPart.MeshComponent);
+		bodyPart.SetBase(Pawn);
+		//Pawn.AttachComponent(bodyPart.MeshComponent);
 		Pawn.AddStatMod(bodyPart.StatMod);
 	}
 	
@@ -74,7 +75,8 @@ function LoadAvatar(AvatarSchematic schematic)
 		
 		Armor.AddItem(armorPart);
 
-		Pawn.AttachComponent(armorPart.MeshComponent);
+		armorPart.SetBase(Pawn);
+		//Pawn.AttachComponent(armorPart.MeshComponent);
 		Pawn.AddStatMod(armorPart.StatMod);
 	}
 	
@@ -84,7 +86,8 @@ function LoadAvatar(AvatarSchematic schematic)
 		
 		Clothes.AddItem(clothing);
 
-		Pawn.AttachComponent(clothing.MeshComponent);
+		clothing.SetBase(Pawn);
+		//Pawn.AttachComponent(clothing.MeshComponent);
 		Pawn.AddStatMod(clothing.StatMod);
 	}
 	
@@ -125,7 +128,8 @@ function LoadFigureAvatar(PlayerFigure figure, AvatarSchematic schematic, option
 		
 		BodyParts.AddItem(bodyPart);
 
-		figure.AttachComponent(bodyPart.MeshComponent);
+		bodyPart.SetBase(figure);
+		//figure.AttachComponent(bodyPart.MeshComponent);
 	}
 	
 	for (i = 0; i < schematic.Armor.Length; i++)
@@ -138,8 +142,9 @@ function LoadFigureAvatar(PlayerFigure figure, AvatarSchematic schematic, option
 		armorPart.MeshComponent.SetOnlyOwnerSee(false);
 		
 		Armor.AddItem(armorPart);
-
-		figure.AttachComponent(armorPart.MeshComponent);
+		
+		armorPart.SetBase(figure);
+		//figure.AttachComponent(armorPart.MeshComponent);
 	}
 	
 	for (i = 0; i < schematic.Clothing.Length; i++)
@@ -153,7 +158,8 @@ function LoadFigureAvatar(PlayerFigure figure, AvatarSchematic schematic, option
 		
 		Clothes.AddItem(clothing);
 
-		figure.AttachComponent(clothing.MeshComponent);
+		clothing.SetBase(figure);
+		//figure.AttachComponent(clothing.MeshComponent);
 	}
 	
 	for (i = 0; i < schematic.Attachments.Length; i++)
@@ -175,6 +181,70 @@ function LoadFigureAvatar(PlayerFigure figure, AvatarSchematic schematic, option
 		}
 		
 	}
+}
+
+simulated function ReplaceBodyPart(class<BodyPartComponent> bodyPartClass)
+{
+	local BodyPartComponent bodyPart;
+	local ArmorAttachment iter;
+	
+	bodyPart = Spawn(bodyPartClass, BodyParts[bodyPartClass.default.Type].Owner);
+		
+	bodyPart.MeshComponent.SetDepthPriorityGroup(BodyParts[bodyPart.Type].MeshComponent.DepthPriorityGroup);		
+	bodyPart.MeshComponent.SetOnlyOwnerSee(false);
+	bodyPart.SetBase(BodyParts[bodyPart.Type].Base);
+
+	if (Pawn != None)
+	{
+		Pawn.RemoveStatMod(BodyParts[bodyPart.Type].StatMod);
+		Pawn.AddStatMod(bodyPart.StatMod);
+	}
+	
+	foreach BodyParts[bodyPart.Type].Attachments(iter)
+		bodyPart.AttachArmor(iter);
+	
+	BodyParts[bodyPart.Type].Destroy();
+	BodyParts[bodyPart.Type] = bodyPart;
+}
+
+simulated function ReplaceArmor(class<ArmorComponent> armorClass)
+{
+	local ArmorComponent armorPart;
+
+	armorPart = Spawn(armorClass, Armor[armorClass.default.Type].Owner);
+		
+	armorPart.MeshComponent.SetDepthPriorityGroup(Armor[armorPart.Type].MeshComponent.DepthPriorityGroup);		
+	armorPart.MeshComponent.SetOnlyOwnerSee(false);
+	armorPart.SetBase(Armor[armorPart.Type].Base);
+		
+	if (Pawn != None)
+	{
+		Pawn.RemoveStatMod(Armor[armorPart.Type].StatMod);
+		Pawn.AddStatMod(armorPart.StatMod);
+	}
+	
+	Armor[armorPart.Type].Destroy();
+	Armor[armorPart.Type] = armorPart;
+}
+
+simulated function ReplaceClothes(class<ClothingComponent> clothingClass)
+{
+	local ClothingComponent clothing;
+
+	clothing = Spawn(clothingClass, Clothes[clothingClass.default.Type].Owner);
+		
+	clothing.MeshComponent.SetDepthPriorityGroup(Clothes[clothing.Type].MeshComponent.DepthPriorityGroup);		
+	clothing.MeshComponent.SetOnlyOwnerSee(false);
+	clothing.SetBase(Clothes[clothing.Type].Base);
+		
+	if (Pawn != None)
+	{
+		Pawn.RemoveStatMod(Clothes[clothing.Type].StatMod);
+		Pawn.AddStatMod(clothing.StatMod);
+	}
+	
+	Clothes[clothing.Type].Destroy();
+	Clothes[clothing.Type] = clothing;
 }
 
 simulated function SetTranslation(vector translation)
@@ -205,6 +275,21 @@ simulated function SetScale(float scale)
 		Clothes[i].MeshComponent.SetScale(scale);
 }
 
+simulated function SetAvatarDrawScale(float scale)
+{
+	local int i;
+	
+	for (i = 0; i < BodyParts.Length; i++)
+		BodyParts[i].SetDrawScale(scale);
+		
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].SetDrawScale(scale);
+		
+	for (i = 0; i < Clothes.Length; i++)
+		Clothes[i].SetDrawScale(scale);
+}
+
+
 simulated function PlayAnimation(name sequence, optional float duration, optional bool loop, optional float blendIn, optional float blendOut, optional bool uninterruptable = false)
 {
 	local int i;
@@ -231,6 +316,39 @@ function AddAnimationSet(AnimSet animSet)
 		
 	for (i = 0; i < Clothes.Length; i++)
 		Clothes[i].MeshComponent.AnimSets.AddItem(animSet);
+}
+
+function SetHeadAnimTreeTemplate(AnimTree newTree)
+{
+	BodyParts[0].MeshComponent.SetAnimTreeTemplate(newTree);
+}
+
+function SetBodyAnimTreeTemplate(AnimTree newTree)
+{
+	local int i;
+
+	for (i = 1; i < BodyParts.Length; i++)
+		BodyParts[i].MeshComponent.SetAnimTreeTemplate(newTree);
+		
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].MeshComponent.SetAnimTreeTemplate(newTree);
+		
+	for (i = 0; i < Clothes.Length; i++)
+		Clothes[i].MeshComponent.SetAnimTreeTemplate(newTree);
+}
+
+function RestartAnimationTree()
+{
+	local int i;
+
+	for (i = 0; i < BodyParts.Length; i++)
+		BodyParts[i].MeshComponent.Animations.ReplayAnim();
+		
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].MeshComponent.Animations.ReplayAnim();
+		
+	for (i = 0; i < Clothes.Length; i++)
+		Clothes[i].MeshComponent.Animations.ReplayAnim();
 }
 
 function SetFOV(float angle)

@@ -52,14 +52,16 @@ simulated function EnvironmentEffect FindEffect(name effectClass);
  *
  * @param effect The effect to add to the object.
  */
-simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController controller);
+simulated function AddEffect(EnvironmentEffect effect);
 
 /**
  * Removes an effect from the environment object. 
  *
  * @param effect The effect to remove.
  */
-simulated function RemoveEffect();
+simulated function RemoveEffect(EnvironmentEffect effect);
+
+simulated function ClearEffect(EnvironmentEffect effect);
 
 /**
  * Allows the environment effect to affect a pawn when it is touched by one.

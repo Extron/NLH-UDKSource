@@ -27,10 +27,9 @@
 		public var titleText:String;
 		public var subtitleText:String;
 		public var cursor:MenuCursor;
-
-		//public var limbDetails:LimbDetails;
 		
 		var prevOverObjects:Array;
+		var prevOverObject:Object;
 		
 		public function InformationBox()
 		{
@@ -47,142 +46,151 @@
 			prevOverObjects = [];
 		}
 		
-		public function SetCursorLocation(x:Number, y:Number)
+		public function SetCursorLocation(x:Number, y:Number, mouseDown:Boolean)
 		{
 			cursor.x = x;
 			cursor.y = y;
 			
 			var point = new Point(x, y);
-			var objects:Array = getObjectsUnderPoint(point);
+			var objects:Array = stage.getObjectsUnderPoint(point);
 			
 			var i = 0;
 			var object;
 			var localPoint;
-			
-			for (i = 0; i < objects.length; i++)
-			{
-				while (!(objects[i] is MovieClip) && objects[i].hasOwnProperty("parent"))
-					objects[i] = objects[i].parent;
-				
-				object = objects[i];
 
-				if (objects.indexOf(object) != i || object is InformationBox || object is MenuCursor)
-				{
-					objects.splice(i, 1);
-					i--;
-					continue;
-				}
-				
-				if (object is MovieClip)
-				{
-					localPoint = (object as DisplayObject).globalToLocal(point);
+			if (objects.length < 0)
+				return;
 
-					(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.MOUSE_MOVE, true, false, localPoint.x, localPoint.y));
-					
-					if (prevOverObjects.indexOf(object) == -1)
-					{
-						(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.ROLL_OVER, true, false, localPoint.x, localPoint.y));
-					}
-					
-				}
-			}
-					
-			for (i = 0; i < prevOverObjects.length; i++)
-			{
-				object = prevOverObjects[i];
-				
-				if (objects.indexOf(object) == -1)
-				{
-					localPoint = (object as DisplayObject).globalToLocal(point);
-					
-					(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.ROLL_OUT, true, false, localPoint.x, localPoint.y));
-				}
-			}
+			var last = objects.length;
 			
-			prevOverObjects = objects;
+			do
+			{
+				last--;
+				
+				while (!(objects[last] is MovieClip) && objects[last].hasOwnProperty("parent"))
+					objects[last] = objects[last].parent;
+				
+				object = objects[last];
+			}
+			while (object is MenuCursor && object != null)
+			
+			if (object is InformationBox || object is MenuCursor)
+				return;
+				
+			if (object is MovieClip)
+			{
+				localPoint = (object as DisplayObject).globalToLocal(point);
+
+				(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.MOUSE_MOVE, true, false, localPoint.x, localPoint.y, null, false, false, false, mouseDown));
+				
+				if (prevOverObject != null && prevOverObject != object)
+				{
+					(prevOverObject as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.ROLL_OUT, true, false, localPoint.x, localPoint.y));
+					prevOverObject = null;
+				}
+				
+				if (prevOverObject != object)
+				{
+					(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.ROLL_OVER, true, false, localPoint.x, localPoint.y));
+					prevOverObject = object;
+				}
+				
+			}
 		}
 		
 		public function ClickMouse()
 		{
 			var point = new Point(cursor.x, cursor.y);
-			var objects:Array = getObjectsUnderPoint(point);
-			
-			for (var i = 0; i < objects.length; i++)
-			{
-				while (!(objects[i] is MovieClip) && objects[i].hasOwnProperty("parent"))
-					objects[i] = objects[i].parent;
-				
-				var object = objects[i];
-				
-				if (objects.indexOf(object) != i || object is InformationBox || object is MenuCursor)
-				{
-					objects.splice(i, 1);
-					i--;
-					continue;
-				}
-				
-				if (object is MovieClip)
-				{
-					var localPoint = (object as DisplayObject).globalToLocal(point);
+			var objects:Array = stage.getObjectsUnderPoint(point);
 
-					(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, localPoint.x, localPoint.y));
-				}
+			if (objects.length < 0)
+				return;
+
+			var last = objects.length;
+			
+			do
+			{
+				last--;
+				
+				while (!(objects[last] is MovieClip) && objects[last].hasOwnProperty("parent"))
+					objects[last] = objects[last].parent;
+				
+				var object = objects[last];
+			}
+			while (object is MenuCursor && object != null)
+			
+			if (object is InformationBox || object is MenuCursor)
+				return;
+				
+			
+			if (object is MovieClip)
+			{
+				var localPoint = (object as DisplayObject).globalToLocal(point);
+				(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.CLICK, true, false, localPoint.x, localPoint.y));
 			}
 		}
 		
 		public function MouseDown()
 		{
 			var point = new Point(cursor.x, cursor.y);
-			var objects:Array = getObjectsUnderPoint(point);
+			var objects:Array = stage.getObjectsUnderPoint(point);
+
+			if (objects.length < 0)
+				return;
+
+			var last = objects.length;
 			
-			for (var i = 0; i < objects.length; i++)
+			do
 			{
-				while (!(objects[i] is MovieClip) && objects[i].hasOwnProperty("parent"))
-					objects[i] = objects[i].parent;
+				last--;
 				
-				var object = objects[i];
-
-				if (objects.indexOf(object) != i)
-				{
-					objects.splice(i, 1);
-					i--;
-					continue;
-				}
-
-				if (object is MovieClip)
-				{
-					var localPoint = (object as DisplayObject).globalToLocal(point);
-					
-					(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.MOUSE_DOWN, true, false, localPoint.x, localPoint.y));
-				}
+				while (!(objects[last] is MovieClip) && objects[last].hasOwnProperty("parent"))
+					objects[last] = objects[last].parent;
+				
+				var object = objects[last];
+			}
+			while (object is MenuCursor && object != null)
+			
+			if (object is InformationBox || object is MenuCursor)
+				return;
+				
+			
+			if (object is MovieClip)
+			{
+				var localPoint = (object as DisplayObject).globalToLocal(point);
+				(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.MOUSE_DOWN, true, false, localPoint.x, localPoint.y));
 			}
 		}
 		
 		public function MouseUp()
 		{
 			var point = new Point(cursor.x, cursor.y);
-			var objects:Array = getObjectsUnderPoint(point);
+			var objects:Array = stage.getObjectsUnderPoint(point);
+
+			if (objects.length < 0)
+				return;
+
+			var last = objects.length;
 			
-			for (var i = 0; i < objects.length; i++)
+			do
 			{
-				while (!(objects[i] is MovieClip) && objects[i].hasOwnProperty("parent"))
-					objects[i] = objects[i].parent;
+				last--;
 				
-				var object = objects[i];
+				while (!(objects[last] is MovieClip) && objects[last].hasOwnProperty("parent"))
+					objects[last] = objects[last].parent;
 				
-				if (objects.indexOf(object) != i)
-				{
-					objects.splice(i, 1);
-					i--;
-					continue;
-				}
+				var object = objects[last];
+			}
+			while (object is MenuCursor && object != null)
+			
+			if (object is InformationBox || object is MenuCursor)
+				return;
 				
-				if (object is MovieClip)
-				{
-					var localPoint = (object as DisplayObject).globalToLocal(point);
-					
-					(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.MOUSE_UP, true, false, localPoint.x, localPoint.y));
-				}
+			
+			if (object is MovieClip)
+			{
+				var localPoint = (object as DisplayObject).globalToLocal(point);
+				(object as MovieClip).dispatchEvent(new MouseEvent(MouseEvent.MOUSE_UP, true, false, localPoint.x, localPoint.y));
 			}
 		}
 		
@@ -289,6 +297,23 @@
 		function OnMouseMove(e:MouseEvent)
 		{
 			//SetCursorLocation(stage.mouseX, stage.mouseY);
+			/*var point = new Point(e.stageX, e.stageY);
+			var objects:Array = stage.getObjectsUnderPoint(point);
+			
+			var i = 0;
+			var object;
+			var localPoint;
+
+			if (objects.length < 0)
+				return;
+			
+			for (var i = 0; i < objects.length; i++)
+			{
+				while (!(objects[i] is MovieClip) && objects[i].hasOwnProperty("parent"))
+					objects[i] = objects[i].parent;
+				
+				trace(i + " " + objects[i]);
+			}*/
 		}
 
 		function OnMouseClick(e:MouseEvent)

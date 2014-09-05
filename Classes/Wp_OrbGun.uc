@@ -55,7 +55,7 @@ defaultproperties
 	CycleTime=0.25
 	BurstCount=3
 	
-	FireSound=SoundCue'PhotonEmitterBase.Audio.FireSC'
+	FireSound=SoundCue'PhotonEmitter.Audio.FireSC'
 	IHBeamTemplate=ParticleSystem'PhotonEmitter.Particles.PhotonBeam'
 	
 	Type=WTHardLightRifle

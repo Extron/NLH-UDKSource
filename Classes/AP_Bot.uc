@@ -50,7 +50,7 @@ simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vect
 {
 	super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType,  HitInfo, DamageCauser);
 	
-	if (DamagePS != None)
+	if (DamagePS != None && DamageAmount > 0)
 	{
 		DamagePS.SetFloatParameter('Health', 1 - (float(Health) / float(HealthMax)));
 	}

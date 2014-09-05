@@ -25,9 +25,9 @@ var(Properties) float MatUVXScale;
 var(Properties) float MatUVYScale;
 
 /**
- * The currently active effect on the object.
+ * The currently active effects on the object.
  */
-var EnvironmentEffect ActiveEffect;
+var array<EnvironmentEffect> ActiveEffects;
 
 /** 
  * A reference to the base material that the actor uses. 
@@ -62,8 +62,19 @@ var bool Frozen;
 
 simulated function Tick(float delta)
 {
-	if (ActiveEffect != None)
-		ActiveEffect.UpdateEffect(delta);
+	local int i;
+	
+	for (i = 0; i < ActiveEffects.Length; i++)
+	{
+		if (ActiveEffects[i] == None)
+		{
+			ActiveEffects.Remove(i, 1);
+			i--;
+			continue;
+		}
+		
+		ActiveEffects[i].Tick(delta);
+	}
 
 	if (BaseMaterial == None)
 	{
@@ -110,23 +121,32 @@ simulated function Tick(float delta)
 simulated function TakeDamage(int DamageAmount, Controller EventInstigator, vector HitLocation, vector Momentum, class<DamageType> DamageType, optional TraceHitInfo HitInfo, optional Actor DamageCauser)
 {
 	local int i;
-	local class<EnvironmentEffect> e;
+	local class<EnvironmentEffect> effectClass;
 	local EnvironmentEffect effect;
 	
 	`log("Hit environment object.");
 	
-	if (class<AbilityDamageType>(DamageType) != None && ArenaPlayerController(EventInstigator) != None)
+	if (class<ElementDamageType>(DamageType) != None && ArenaPlayerController(EventInstigator) != None)
 	{
-		for (i = 0; i < class<AbilityDamageType>(DamageType).Default.EnvironmentEffects.Length; i++)
+		for (i = 0; i < ActiveEffects.Length; i++)
 		{
-			e = class<AbilityDamageType>(DamageType).Default.EnvironmentEffects[i];
-			
-			if (HasProperties(e.Default.Properties))
+			ActiveEffects[i].Explode(class<ElementDamageType>(DamageType));
+		}
+		
+		for (i = 0; i < class<ElementDamageType>(DamageType).Default.EntityEffects.Length; i++)
+		{
+			if (class<EnvironmentEffect>(class<ElementDamageType>(DamageType).Default.EntityEffects[i]) != None)
 			{
-				effect = spawn(e, Self);
-				AddEffect(effect, ArenaPlayerController(EventInstigator));
+				effectClass = class<EnvironmentEffect>(class<ElementDamageType>(DamageType).Default.EntityEffects[i]);
 				
-				super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+				if (HasProperties(effectClass.Default.Properties))
+				{
+					effect = spawn(effectClass, Self);
+					effect.Instigator = EventInstigator.Pawn;
+					AddEffect(effect);
+					
+					super.TakeDamage(DamageAmount, EventInstigator, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
+				}
 			}
 		}
 	}
@@ -239,48 +259,53 @@ simulated function bool HasProperties(array<string> properties)
 
 simulated function bool HasEffect(string effectName)
 {
-	return InStr(ActiveEffect.EffectName, effectName) > -1;
+	local int i;
+
+	for (i = 0; i < ActiveEffects.Length; i++)
+	{
+		if (ActiveEffects[i].EffectName == effectName)
+			return true;
+	}
+		
+	return false;
 }
 
 simulated function EnvironmentEffect FindEffect(name effectClass)
 {
-	if (ActiveEffect != None)
-		return ActiveEffect.FindEffect(effectClass);
-	else
-		return None;
+	local int i;
+	
+	for (i = 0; i < ActiveEffects.Length; i++)
+	{
+		if (ActiveEffects[i].IsA(effectClass))
+			return ActiveEffects[i];
+	}
+
+	return None;
 }
 
 /**
  * Adds an effect to the environment object.
- *
- * @param effect The effect to add to the object.
  */
-simulated function AddEffect(EnvironmentEffect effect, ArenaPlayerController controller)
+simulated function AddEffect(EnvironmentEffect effect)
 {
-	local EnvironmentEffect sum;
-	
-	if (ActiveEffect != None)
-	{
-		sum = class'Arena.EnvironmentEffect'.static.AddEffects(effect, ActiveEffect);
-		ActiveEffect.DeactivateEffect();
-		ActiveEffect = sum;
-	}
-	else
-	{
-		ActiveEffect = effect;
-	}
-		
-	ActiveEffect.ActivateEffect(Self, controller, true);
+	ActiveEffects.AddItem(effect);
+	effect.ActivateEffect(self);
 }
 
 /**
- * Removes the currently active effect from the environment object. 
+ * Removes an active effect from the environment object. 
  */
-simulated function RemoveEffect()
+simulated function RemoveEffect(EnvironmentEffect effect)
 {
-	ActiveEffect.DeactivateEffect();
-	ActiveEffect.Destroy();
-	ActiveEffect = None;
+	ActiveEffects.RemoveItem(effect);
+}
+
+/**
+ * Clears an active effect from the environment object. 
+ */
+simulated function ClearEffect(EnvironmentEffect effect)
+{
+	effect.DeactivateEffect();
 }
 
 /*
@@ -290,8 +315,10 @@ simulated function RemoveEffect()
  */
 simulated function TouchPawn(ArenaPawn pawn)
 {
-	if (ActiveEffect != None)
-		ActiveEffect.AffectPawn(pawn);
+	local int i;
+	
+	for (i = 0; i < ActiveEffects.Length; i++)
+		ActiveEffects[i].AffectTarget(pawn);
 }
 
 defaultproperties

@@ -63,3 +63,21 @@ simulated function AnimNodePlayCustomAnim GetAnimNode()
 
 	return None;
 }
+
+function bool IsOfSameType(class<PlayerAppearanceComponent> component)
+{
+	if (class<ArmorComponent>(component) == None)
+		return false;
+		
+	if (component == class'Arena.AC_None')
+		return true;
+		
+	return class<ArmorComponent>(component).default.Type == Type;
+}
+
+defaultproperties
+{
+	Subclasses[0]=class'Arena.AC_None'
+	Subclasses[1]=class'Arena.AC_NightVisionOptics'
+	Subclasses[2]=class'Arena.AC_ThermalVisionOptics'
+}

@@ -13,4 +13,8 @@ class AC_None extends ArmorComponent;
 
 defaultproperties
 {
+	ComponentName="None"
+	ComponentDescription="Clear this armor slot"
+	EnergyCost=0
+	Cost=0
 }

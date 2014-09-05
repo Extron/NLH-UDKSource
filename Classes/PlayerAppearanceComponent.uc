@@ -11,6 +11,10 @@
  */
 class PlayerAppearanceComponent extends Actor;
 
+/**
+ * A list of all the valid subclasses of this component.
+ */
+var array<class<PlayerAppearanceComponent> > Subclasses;
 
 /**
  * The mesh component used to draw the armor.
@@ -28,6 +32,11 @@ var PlayerStatModifier StatMod;
 var string ComponentName;
 
 /**
+ * The description of the component.
+ */
+var string ComponentDescription;
+
+/**
  * The icon texture the component uses.
  */
 var string ComponentIcon;
@@ -36,6 +45,11 @@ var string ComponentIcon;
  * The energy cost of attaching the armor.
  */
 var float EnergyCost;
+
+/**
+ * The monetary price of the component.
+ */
+var float Cost;
 
 /**
  * Allows armor to indicate that they are active or not.
@@ -84,6 +98,11 @@ function SetFOV(float angle)
 	MeshComponent.SetFOV(angle);
 }
 
+function bool IsOfSameType(class<PlayerAppearanceComponent> component)
+{
+	return true;
+}
+
 defaultproperties
 {
 	Begin Object Class=PlayerStatModifier Name=PSM
@@ -117,6 +136,7 @@ defaultproperties
 		bPerBoneMotionBlur=true
 	End Object
 	MeshComponent=Mesh
+	Components.Add(Mesh)
 	
 	Slot=-1
 }

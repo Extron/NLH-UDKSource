@@ -8,7 +8,9 @@
 
 class EE_Charged extends EnvironmentEffect;
 
-/** The particle template to use when this effect is active. */
+/**
+ * The particle template to use when this effect is active. 
+ */
 var ParticleSystem ActiveTemplate_Static;
 
 /**
@@ -16,9 +18,14 @@ var ParticleSystem ActiveTemplate_Static;
  */
 var ParticleSystem ActiveTemplate_Dynamic;
 
-/** The particle system of the activated effect. */
+/** 
+ * The particle system of the activated effect.
+ */
 var ParticleSystemComponent ActiveEffects;
 
+/**
+ * The light to illuminate the object with when charged.
+ */
 var class<LightComponent> LightClass;
 
 /**
@@ -26,26 +33,33 @@ var class<LightComponent> LightClass;
  */
 var LightComponent Light;
 
+/**
+ * The time it takes for the charge to spread to nearby objects.
+ */
 var float SpreadTime;
 
+/**
+ * Indicates that the charge can spread to other objects.
+ */
 var bool CanSpread;
 
-simulated function UpdateEffect(float dt)
+
+simulated function Tick(float dt)
 {
 	local Actor obj;
 	
-	super.UpdateEffect(dt);
+	super.Tick(dt);
 	
 	if (CanSpread)
 	{
 		if (Counter >= SpreadTime)
 		{
-			foreach Actor(Affectee).TouchingActors(class'Actor', obj)
+			foreach Affectee.TouchingActors(class'Actor', obj)
 			{
 				if (IEnvObj(obj) != None)
 				{
 					if (IEnvObj(obj).HasProperties(Properties) && !IEnvObj(obj).HasEffect(EffectName))
-						IEnvObj(obj).AddEffect(Spawn(class'EE_Charged', obj), Affector);
+						IEnvObj(obj).AddEffect(Spawn(class'EE_Charged', obj));
 				}
 			}
 		}
@@ -62,19 +76,20 @@ simulated function UpdateEffect(float dt)
 	}
 }
 
-simulated function ActivateEffect(IEnvObj envobj, ArenaPlayerController player, bool isBase)
+simulated function ActivateEffect(Actor target)
 {
-	super.ActivateEffect(envobj, player, isBase);
+	super.ActivateEffect(target);
 	
-	EmitEffect(envobj);
+	if (IEnvObj(target) != None)
+		EmitEffect(IEnvObj(target));
 }
 
 simulated function DeactivateEffect()
-{
-	super.DeactivateEffect();
-	
-	Actor(Affectee).DetachComponent(Light);
+{	
+	Affectee.DetachComponent(Light);
 	ActiveEffects.DeactivateSystem();
+	
+	super.DeactivateEffect();
 }
 
 simulated function EmitEffect(IEnvObj envobj)
@@ -125,7 +140,7 @@ simulated function EmitEffect(IEnvObj envobj)
 
 defaultproperties
 {
-	StatusEffects[0]=class'SE_Electrocuted'
+	DamageTypes[0]=class'Arena.Dmg_Shock'
 	
 	Properties[0]="Conductive"
 	
@@ -137,4 +152,6 @@ defaultproperties
 	Duration=15
 	CanSpread=false
 	SpreadTime=7.5
+	
+	Explosions[0]=(Trigger=class'Arena.Dmg_Water',ExplosionType=class'Arena.ElectricExplosion')
 }

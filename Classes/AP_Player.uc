@@ -532,6 +532,14 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_TremblingEarth', true);
 		break;
 		
+	case "Wash":
+		CreateInventory(class'Arena.Ab_Wash', true);
+		break;
+	
+	case "HealingWater":
+		CreateInventory(class'Arena.Ab_HealingWater', true);
+		break;
+		
 	case "All":
 	case "all":
 		CreateInventory(class'Arena.Ab_ShockShort', true);
@@ -567,6 +575,8 @@ exec function GiveAbility(string ability)
 		CreateInventory(class'Arena.Ab_SandFlesh', true);
 		CreateInventory(class'Arena.Ab_HeavyHanded', true);
 		CreateInventory(class'Arena.Ab_RockFist', true);
+		CreateInventory(class'Arena.Ab_Wash', true);
+		CreateInventory(class'Arena.Ab_HealingWater', true);
 		break;
 	}
 }
@@ -581,6 +591,7 @@ exec function GiveStatus(string status)
 	case "Electrocuted":
 		c = class'Arena.SE_Electrocuted';
 		break;
+		
 	case "Flashed":
 		c = class'Arena.SE_Flash';
 		break;
@@ -588,13 +599,17 @@ exec function GiveStatus(string status)
 	case "Blinded":
 		c = class'Arena.SE_Blind';
 		break;
+		
+	case "Wet":
+		c = class'Arena.SE_Wet';
+		break;
 	}
 	
 	if (c != None)
 	{
 		se = Spawn(c, None);
-		se.Affector = ArenaPlayerController(self.Owner);
-		se.Affectee = ArenaPlayerController(self.Owner);
+		se.Instigator = self;
+		se.Affectee = self;
 		
 		AddEffect(se);
 	}
@@ -650,6 +665,7 @@ defaultproperties
 	IdleCamAnim=CameraAnim'CameraAssets.Animations.IdleAnimation'
 	WalkCamAnim=CameraAnim'CameraAssets.Animations.WalkAnimation'
 	
+	WalkableFloorZ=0.5
 	bScriptTickSpecial=true
 	RecoilControlName=RecoilNode
 	LeftArmControlName=LeftArmNode

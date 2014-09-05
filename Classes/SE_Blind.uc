@@ -21,22 +21,6 @@ defaultproperties
 	
 	EffectName="Blinded"
 	Duration=5
-	SEGroup=SEG_Earth
+	Group=EG_Earth
 	ScreenEffect=PostProcessChain'ArenaMaterials.PostProcess.BlindedPPC';
-	
-	InitialHealthDamage=0
-	InitialEnergyDamage=0
-	InitialStaminaDamage=0
-	
-	HealthDamage=0
-	EnergyDamage=0
-	StaminaDamage=0
-	
-	DurationWeight=0
-	HealthDamageWeight=0
-	EnergyDamageWeight=0
-	StaminaDamageWeight=0
-	IHDWeight=0
-	IEDWeight=0
-	ISDWeight=0
 }

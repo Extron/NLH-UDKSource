@@ -48,7 +48,7 @@ defaultproperties
 	CycleTime=0.25
 	BurstCount=3
 	
-	FireSound=SoundCue'BasicRifleBase.Audio.GunshotSC'
+	FireSound=SoundCue'CheapRifle.Audio.FireSC'
 	
 	FireAnims[0]=Fire
 	EquipAnims[0]=CheapRifleTakeOut

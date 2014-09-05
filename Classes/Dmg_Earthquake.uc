@@ -6,14 +6,11 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class Dmg_Earthquake extends AbilityDamageType;
+class Dmg_Earthquake extends ElementDamageType;
 
 defaultproperties
 {
-	ActionString="Earthquaked"
+	ActionString="Shaken"
 	DisplayColor=0x5E2605
 	Points=1
-	
-	EnvironmentEffects[0]=class'Arena.EE_Charged'
-	StatusEffects[0]=class'Arena.SE_Electrocuted'
 }

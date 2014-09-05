@@ -21,7 +21,9 @@ var(Weapon) array<WeaponSize> CompatibleSizes;
  */
 var array<class<ArenaWeaponComponent> > Subclasses;
 
-/** The mesh used to draw the component. */
+/** 
+ * The mesh used to draw the component. 
+ */
 var() editinline MeshComponent Mesh;
 
 /**
@@ -86,8 +88,7 @@ simulated function AttachToBase(ArenaWeaponBase weap, name socket)
 	
 	if (weaponSocket != None)
 	{
-		`log(self @ "Weapon Owner" @ weap.Owner);
-		SetBase(weap.Owner, , SkeletalMeshComponent(weap.Mesh), socket);
+		SetBase(weap.Mesh.Owner, , SkeletalMeshComponent(weap.Mesh), socket);
 		scale = weaponSocket.RelativeScale * pawn.GetWeaponHandSocketScale();
 	}
 	
@@ -231,7 +232,7 @@ defaultproperties
 {
 	Begin Object Class=UDKSkeletalMeshComponent Name=FirstPersonMesh
 		DepthPriorityGroup=SDPG_PostProcess
-		bOnlyOwnerSee=true
+		bOnlyOwnerSee=false
 		bOverrideAttachmentOwnerVisibility=true
 		bCastDynamicShadow=false
 		CastShadow=false

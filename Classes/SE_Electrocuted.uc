@@ -18,43 +18,40 @@ var ParticleSystem ActiveTemplate;
  */
 var ParticleSystemComponent ActivePS;
 
+/**
+ * The total health damage that the effect should do over its duration.
+ */
+var float HealthDamage;
 
-simulated function float GetHealthDamage(float dt)
+/**
+ * The total energy damage that the effect should do over its duration.
+ */
+var float EnergyDamage;
+
+/**
+ * The total stamina damage that the effect should do over its duration.
+ */
+var float StaminaDamage;
+
+
+simulated function Tick(float dt)
 {
-	return HealthDamage * dt / Duration;
-}
-
-simulated function float GetEnergyDamage(float dt)
-{
-	return EnergyDamage * dt / Duration;
-}
-
-simulated function float GetStaminaDamage(float dt)
-{
-	return StaminaDamage * dt / Duration;
-}
-
-simulated function bool ApplyHealthDamage()
-{
-	return true;
-}
-
-simulated function bool ApplyEnergyDamage()
-{
-	return true;
-}
-
-simulated function bool ApplyStaminaDamage()
-{
-	return true;
-}
-
-
-simulated function ActivateEffect(ArenaPawn pawn)
-{
-	super.ActivateEffect(pawn);
+	super.Tick(dt);
 	
-	EmitActivePS(pawn);
+	if (ArenaPawn(Affectee) != None)
+    {
+        ArenaPawn(Affectee).TakeDamage(HealthDamage * dt / Duration, Instigator.Controller, Affectee.Location, vect(0, 0, 0), DamageType);
+        ArenaPawn(Affectee).SpendEnergy(EnergyDamage * dt / Duration);
+        ArenaPawn(Affectee).SpendStamina(StaminaDamage * dt / Duration);
+    }
+}
+
+simulated function ActivateEffect(Actor target)
+{
+	super.ActivateEffect(target);
+	
+	if (ArenaPawn(target) != None)
+		EmitActivePS(ArenaPawn(target));
 }
 
 simulated function EmitActivePS(ArenaPawn pawn)
@@ -81,12 +78,12 @@ simulated function EmitActivePS(ArenaPawn pawn)
 	}
 }
 
-function DeactivateEffect()
+simulated function DeactivateEffect()
 {
-	super.DeactivateEffect();
-	
 	if (ActivePS != None)
 		ActivePS.DeactivateSystem();
+		
+	super.DeactivateEffect();
 }
 
 defaultproperties
@@ -98,28 +95,18 @@ defaultproperties
 		
 	End Object
 	
-	DisplayColors[0]=0x0BB5FF
+	DisplayColor=0x0BB5FF
 	
 	EffectName="Electrocuted"
 	Duration=5
 	DamageType=class'Arena.SDT_Electrocuted'
-	SEGroup=SEG_Electromagnetism
+	Group=EG_Electromagnetism
 	ScreenEffect=PostProcessChain'ArenaMaterials.PostProcess.ElectrocutedPPC'
 	ActiveTemplate=ParticleSystem'ArenaParticles.Particles.ChargedDEOParticles'
-	
-	InitialHealthDamage=100
-	InitialEnergyDamage=25
-	InitialStaminaDamage=5
 	
 	HealthDamage=50
 	EnergyDamage=50
 	StaminaDamage=25
 	
-	DurationWeight=1
-	HealthDamageWeight=1
-	EnergyDamageWeight=0.5
-	StaminaDamageWeight=0.25
-	IHDWeight=1
-	IEDWeight=0.5
-	ISDWeight=0.25
+	Explosions[0]=(Trigger=class'Arena.Dmg_Water',ExplosionType=class'Arena.ElectricExplosion')
 }
