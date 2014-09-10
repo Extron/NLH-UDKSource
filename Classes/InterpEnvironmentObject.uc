@@ -1,13 +1,13 @@
 /*******************************************************************************
-	EnvironmentObject
+	InterpEnvironmentObject
 
-	Creation date: 01/07/2012 11:35
-	Copyright (c) 2012, Trystan
-	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
+	Creation date: 09/09/2014 10:15
+	Creator: Trystan
+	Copyright (c) 2014, Strange Box Software
 *******************************************************************************/
-/* An environment object is a placable world object that can be affected by elemental abilities */
-class EnvironmentObject extends StaticMeshActor implements(IEnvObj)
-	placeable;
+
+class InterpEnvironmentObject extends InterpActor implements(IEnvObj) placeable;
+
 
 /* A list of properties that the object has.  These define how elemental abilities affect the object.*/
 var(Properties) Array<string> ObjectProperties;
@@ -59,6 +59,7 @@ var float RainLevel;
  * Indicates that the object should be frozen.
  */
 var bool Frozen;
+
 
 simulated function PreBeginPlay()
 {
@@ -326,5 +327,5 @@ simulated function TouchPawn(ArenaPawn pawn)
 defaultproperties
 {
 	bStatic=false
-	bMovable=false
+	bMovable=true
 }

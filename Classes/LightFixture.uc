@@ -18,11 +18,6 @@ class LightFixture extends Actor implements(IToggleableObject)
 var(Fixture) MeshComponent Mesh;
 
 /**
- * The light environment for the fixture's mesh.
- */
-var(Fixture) DynamicLightEnvironmentComponent LightEnvironment;
-
-/**
  * The light component of the light fixture.
  */
 var(Fixture) LightComponent LightComponent;
@@ -72,7 +67,6 @@ simulated function PostBeginPlay()
 /**
  * Toggles the light, turning it on or off.
  */
- 
 simulated function Toggle()
 {
 	On = !On;
@@ -106,15 +100,7 @@ defaultproperties
 	End Object
 	Components.Add(DrawLightSourceRadius)
 	
-	
-	Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
-		bEnabled=TRUE
-	End Object
-	LightEnvironment=MyLightEnvironment
-	Components.Add(MyLightEnvironment)
-	
 	Begin Object Class=StaticMeshComponent Name=SM
-		LightEnvironment=MyLightEnvironment
 	End Object
 	Mesh=SM
 	Components.Add(SM)
