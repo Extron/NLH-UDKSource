@@ -59,32 +59,12 @@ var GFxObject Cursor;
 /**
  * The tooltip to display when hovering over a weapon part.
  */
-var GFx_Tooltip PartTooltip, StatTooltip;
+var GFx_Tooltip PartTooltip;
 
 /**
  * The accept and cancel buttons.
  */
-var GFxClikWidget AcceptButton, CancelButton, NameLabel, AddMuzzle, AddSide, AddUnder, AddOptics, AddStock;
-
-/**
- * The container for all stat bars that are displayed to the screen.
- */
-var GFx_StatBarContainer StatsContainer;
-
-/**
- * The container for all value stats that are displayed to the screen.
- */
-var GFx_ValueDisplayContainer ValuesContainer;
-
-/**
- * The energy bar of the weapon.  Will not be visible if the weapon base has no energy amount.
- */
-var GFx_StatBar EnergyBar;
-
-/**
- * The drop down list to use for fire modes.
- */
-var GFx_ValueDropdown FireModeDDL;
+var GFxClikWidget SaveButton, CancelButton, AddMuzzle, AddSide, AddUnder, AddOptics, AddStock;
 
 /**
  * The materials of the various weapon parts.  This is used for highlighting selected parts.
@@ -96,6 +76,9 @@ var array<MaterialInstanceConstant> WeaponMaterials;
  */
 var vector WeaponOffset;
 
+/**
+ * Stores the weapon's current rotation in the view window.
+ */
 var rotator Rotation;
 
 /**
@@ -123,6 +106,9 @@ var float WeaponScale;
  */
 var float HighlightPulseRate;
 
+/**
+ * A counter to keep track of time.
+ */
 var float Counter;
 
 /**
@@ -130,6 +116,9 @@ var float Counter;
  */
 var bool ChangedWeapon;
 
+/**
+ * Indicates that the weapon's name was changed.
+ */
 var bool ChangedName;
 
 /**
@@ -157,38 +146,31 @@ var int FireModeIndex;
 delegate OnClose();
 
 function bool Start(optional bool StartPaused = false)
-{	
-	local int i;
-	
+{
 	super.Start(StartPaused);
 			
     Advance(0);
 
 	OriginalName = WeaponData.WeaponName;
 	
-	StatsContainer = GFx_StatBarContainer(GetVariableObject("_root.details.stats", class'GFx_StatBarContainer'));
-	ValuesContainer = GFx_ValueDisplayContainer(GetVariableObject("_root.details.values", class'GFx_ValueDisplayContainer'));
-	NameLabel = GfxClikWidget(GetVariableObject("_root.details.name_label", class'GFxClikWidget'));
 	Cursor = GetVariableObject("_root.cursor");
-	EnergyBar = GFx_StatBar(GetVariableObject("_root.details.energy_bar", class'GFx_StatBar'));
 	
-	PartTooltip = GFx_Tooltip(GetVariableObject("_root.part_tooltip", class'GFx_Tooltip'));
-	StatTooltip = GFx_Tooltip(GetVariableObject("_root.stat_tooltip", class'GFx_Tooltip'));
+	PartTooltip = GFx_Tooltip(GetVariableObject("_root.partTooltip", class'GFx_Tooltip'));
 	
-	AcceptButton = GFxClikWidget(GetVariableObject("_root.accept_button", class'GFxClikWidget'));
-	CancelButton = GFxClikWidget(GetVariableObject("_root.cancel_button", class'GFxClikWidget'));
+	SaveButton = GFxClikWidget(GetVariableObject("_root.saveButton", class'GFxClikWidget'));
+	CancelButton = GFxClikWidget(GetVariableObject("_root.cancelButton", class'GFxClikWidget'));
 	
-	AcceptButton.AddEventListener('CLIK_click', OnPressAcceptButton);
+	SaveButton.AddEventListener('CLIK_click', OnPressSaveButton);
 	CancelButton.AddEventListener('CLIK_click', OnPressCancelButton);
 	
 	if (ChangedWeapon)
-		AcceptButton.SetBool("enabled", true);
+		SaveButton.SetBool("enabled", true);
 		
-	AddMuzzle = GFxClikWidget(GetVariableObject("_root.add_muzzle_button", class'GFxClikWidget'));	
-	AddSide = GFxClikWidget(GetVariableObject("_root.add_side_button", class'GFxClikWidget'));	
-	AddUnder = GFxClikWidget(GetVariableObject("_root.add_under_button", class'GFxClikWidget'));
-	AddOptics = GFxClikWidget(GetVariableObject("_root.add_optics_button", class'GFxClikWidget'));
-	AddStock = GFxClikWidget(GetVariableObject("_root.add_stock_button", class'GFxClikWidget'));
+	AddMuzzle = GFxClikWidget(GetVariableObject("_root.addMuzzleButton", class'GFxClikWidget'));	
+	AddSide = GFxClikWidget(GetVariableObject("_root.addSideButton", class'GFxClikWidget'));	
+	AddUnder = GFxClikWidget(GetVariableObject("_root.addUnderButton", class'GFxClikWidget'));
+	AddOptics = GFxClikWidget(GetVariableObject("_root.addOpticsButton", class'GFxClikWidget'));
+	AddStock = GFxClikWidget(GetVariableObject("_root.addStockButton", class'GFxClikWidget'));
 	
 	AddMuzzle.AddEventListener('CLIK_click', OnPressAddMuzzleButton);
 	AddSide.AddEventListener('CLIK_click', OnPressAddSideButton);
@@ -241,31 +223,11 @@ function bool Start(optional bool StartPaused = false)
 	Weapon.AttachComponent(UpLight);
 	Weapon.AttachComponent(LeftLight);
 	Weapon.AttachComponent(RightLight);
-	
-	if (ArenaWeaponBase(Weapon).EnergyMax <= 0)
-		EnergyBar.SetVisible(false);
 
-	EnergyBar.SetStatValue(ArenaWeaponBase(Weapon).GetEnergyUsed(), ArenaWeaponBase(Weapon).EnergyMax);
+	SetEnergyReserve(ArenaWeaponBase(Weapon).GetEnergyUsed(), ArenaWeaponBase(Weapon).EnergyMax);
 
-	NameLabel.SetString("text", "\"" $ Weapon.WeaponName $ "\"");
-	NameLabel.AddEventListener('CLIK_click', OnTextInputClick);
-	
-	for (i = 0; i < 9; i++)
-	{		
-		if (i > 0)
-			StatsContainer.AddStatBar(GetStatName(i), Weapon.Stats.Values[i], Weapon.Stats.GetGGCMax(i));
-		else
-			StatsContainer.AddStatBar("Weight", ArenaWeaponBase(Weapon).GetWeight(), 25);
-	}
+	SetWeaponName("\"" $ Weapon.WeaponName $ "\"");
 
-	for (i = 0; i < 9; i++)
-	{
-		if (GetValueName(i) == "Fire Mode" && ArenaWeaponBase(Weapon).AllowedFireModes.Length > 1 && Weapon.FireModes.Length == 1)
-			ValuesContainer.AddDropdown(GetValueName(i) $ ":", GetFireModesString(), GetFireModeIndex(ArenaWeaponBase(Weapon).AllowedFireModes, Weapon.FireModes[0]));
-		else
-			ValuesContainer.AddValue(GetValueName(i) $ ":", GetValue(i));
-	}
-	
 	return true;	
 }
 
@@ -311,11 +273,10 @@ function PostRender()
 			SelectedPart = index + 1;
 			
 			PartTooltip.SetVisible(true);
-			StatTooltip.SetVisible(true);
-			SetStatTooltip(StatTooltip, iter.StatMod.ValueMods, 1, iter.Weight);
+			//SetStatTooltip(StatTooltip, iter.StatMod.ValueMods, 1, iter.Weight);
 			
 			PartTooltip.SetTooltipTitle(iter.ComponentName);
-			PartTooltip.SetTooltipBody(iter.ComponentDescription);
+			PartTooltip.SetTooltipDescription(iter.ComponentDescription);
 			
 			hit = true;
 			
@@ -331,11 +292,10 @@ function PostRender()
 		SelectedPart = 0;
 		
 		PartTooltip.SetVisible(true);
-		StatTooltip.SetVisible(true);
-		SetStatTooltip(StatTooltip, Weapon.default.Stats.Values, -1);
+		//SetStatTooltip(StatTooltip, Weapon.default.Stats.Values, -1);
 		
 		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).BaseName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).BaseDescription);
+		PartTooltip.SetTooltipDescription(ArenaWeaponBase(Weapon).BaseDescription);
 		
 		hit = true;
 	}
@@ -348,7 +308,6 @@ function PostRender()
 		SelectedPart = -1;
 		
 		PartTooltip.SetVisible(false);
-		StatTooltip.SetVisible(false);
 	}
 }
 
@@ -385,9 +344,8 @@ event OnMouseClick()
 }
 
 event OnMouseDown()
-{	
-	if (Cursor.GetFloat("x") > 800)
-		DraggingMouse = true;
+{
+	DraggingMouse = true;
 }
 
 event OnMouseUp()
@@ -397,15 +355,15 @@ event OnMouseUp()
 
 event OnRightMouseDown()
 {
-	`log("Right mouse down");
-	if (Cursor.GetFloat("x") > 800)
-		DraggingRightMouse = true;
+	DraggingRightMouse = true;
 }
 
 event OnRightMouseUp()
 {
 	DraggingRightMouse = false;
 }
+
+/*
 event OnTextInputClick(GFxClikWidget.EventData ev)
 {
 	if (!ChangedName)
@@ -413,15 +371,13 @@ event OnTextInputClick(GFxClikWidget.EventData ev)
 	
 	ChangedName = true;
 	AcceptButton.SetBool("enabled", true);
-}
+}*/
 
-function OnPressAcceptButton(GFxClikWidget.EventData ev)
+function OnPressSaveButton(GFxClikWidget.EventData ev)
 {
 	SaveWeapon();
 	ArenaPlayerController(Pawn.Controller).SetWeaponSchematic(WeaponData, OriginalName);
 	GFx_CharacterView(Parent).Character.PrimaryWeaponName = WeaponData.WeaponName;
-	
-	GFx_CharacterView(Parent).BuildPrimanyWeaponInfo();
 	
 	OnClose = GoBack;
     CloseMenu();
@@ -431,6 +387,16 @@ function OnPressCancelButton(GFxClikWidget.EventData ev)
 {
 	OnClose = GoBack;
 	CloseMenu();
+}
+
+function SetEnergyReserve(float energy, float maxEnergy)
+{
+	ActionScriptVoid("_root.SetEnergyReserve");
+}
+
+function SetWeaponName(string weaponName)
+{
+	ActionScriptVoid("_root.SetWeaponName");
 }
 
 function CloseMenu()
@@ -461,7 +427,6 @@ function GotoSubmenu()
 		submenu.ComponentClass = ArenaWeaponBase(Weapon).WeaponComponents[SelectedPart - 1].Class;
 	
 	PartTooltip.SetVisible(false);
-	StatTooltip.SetVisible(false);
 	Cursor.SetVisible(false);
 	Weapon.HideWeapon(true);
 
@@ -491,7 +456,6 @@ function GoBack()
 function EnableMenu()
 {
 	PartTooltip.SetVisible(true);
-	StatTooltip.SetVisible(true);
 	Cursor.SetVisible(true);
 	Weapon.HideWeapon(false);
 	
@@ -554,7 +518,7 @@ function OnDropdownIndexChanged(string ddlName, int index)
 {
 	ChangedWeapon = true;
 	FireModeIndex = index;
-	AcceptButton.SetBool("enabled", true);
+	SaveButton.SetBool("enabled", true);
 }
 
 function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
@@ -564,7 +528,6 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 	local MaterialInstanceConstant mat;
 	local name socket;
 	local int index;
-	local int i;
 	
 	base = ArenaWeaponBase(Weapon);
 	component = base.spawn(componentClass, base, , base.Location, base.Rotation);
@@ -630,18 +593,7 @@ function ChangeWeaponComponent(class<ArenaWeaponComponent> componentClass)
 	
 	WeaponMaterials[index] = mat;
 	
-	for (i = 0; i < 9; i++)
-	{
-		if (i > 0)
-			StatsContainer.ChangeStat(i, Weapon.Stats.Values[i], Weapon.Stats.GetGGCMax(i));
-		else
-			StatsContainer.ChangeStat(i, ArenaWeaponBase(Weapon).GetWeight(), 25);
-	}
-
-	for (i = 0; i < 9; i++)
-		ValuesContainer.ChangeValue(i, GetValue(i));
-	
-	AcceptButton.SetBool("enabled", true);
+	SaveButton.SetBool("enabled", true);
 	ChangedWeapon = true;
 }
 
@@ -649,8 +601,6 @@ function ChangeWeaponBase(class<ArenaWeaponBase> baseClass)
 {
 	local ArenaWeaponBase base;
 	local ArenaWeaponComponent iter, component;
-	local bool prevHadMultipleFM;
-	local int i;
 	
 	base = Weapon.Spawn(baseClass, None, , Weapon.Location, Weapon.Rotation);
 	base.WeaponName = Weapon.WeaponName;
@@ -737,8 +687,6 @@ function ChangeWeaponBase(class<ArenaWeaponBase> baseClass)
 		}
 	}
 	
-	prevHadMultipleFM = ArenaWeaponBase(Weapon).AllowedFireModes.Length > 1;
-	
 	Weapon.DetachComponent(UpLight);
 	Weapon.DetachComponent(LeftLight);
 	Weapon.DetachComponent(RightLight);
@@ -755,43 +703,9 @@ function ChangeWeaponBase(class<ArenaWeaponBase> baseClass)
 	Weapon.AttachComponent(LeftLight);
 	Weapon.AttachComponent(RightLight);
 	
-	if (ArenaWeaponBase(Weapon).EnergyMax <= 0)
-		EnergyBar.SetVisible(false);
+	SetEnergyReserve(ArenaWeaponBase(Weapon).GetEnergyUsed(), ArenaWeaponBase(Weapon).EnergyMax);
 
-	EnergyBar.SetStatValue(ArenaWeaponBase(Weapon).GetEnergyUsed(), ArenaWeaponBase(Weapon).EnergyMax);
-
-	for (i = 0; i < 9; i++)
-	{
-		if (i > 0)
-			StatsContainer.ChangeStat(i, Weapon.Stats.Values[i], Weapon.Stats.GetGGCMax(i));
-		else
-			StatsContainer.ChangeStat(i, ArenaWeaponBase(Weapon).GetWeight(), 25);
-	}
-
-	if (prevHadMultipleFM && base.AllowedFireModes.Length <= 1)
-	{
-		ValuesContainer.RemoveDropdown("Fire Mode:");
-		ValuesContainer.InsertValue("Fire Mode:", GetValue(2), 3);
-	}
-	else if (!prevHadMultipleFM && base.AllowedFireModes.Length > 1)
-	{
-		ValuesContainer.RemoveValue("Fire Mode:");
-		ValuesContainer.InsertDropdown("Fire Mode:", GetFireModesString(), 0, 3);
-	}
-	else if (prevHadMultipleFM && base.AllowedFireModes.Length > 1)
-	{
-		ValuesContainer.ChangeDropdown(2, GetFireModesString(), 0);
-	}
-	
-	for (i = 0; i < 9; i++)
-	{
-		if (prevHadMultipleFM && base.AllowedFireModes.Length <= 1 && i > 0)
-			ValuesContainer.ChangeValue(i, GetValue(i - 1));
-		else
-			ValuesContainer.ChangeValue(i, GetValue(i - 1));
-	}
-	
-	AcceptButton.SetBool("enabled", true);
+	SaveButton.SetBool("enabled", true);
 	ChangedWeapon = true;
 }
 
@@ -831,7 +745,7 @@ function SaveWeapon()
 {
 	local int i;
 	
-	WeaponData.WeaponName = Repl(NameLabel.GetString("text"), "\"", "");
+	//WeaponData.WeaponName = Repl(NameLabel.GetString("text"), "\"", "");
 	
 	WeaponData.BaseClass = class<ArenaWeaponBase>(Weapon.class);
 	
@@ -1103,6 +1017,7 @@ function string GetValue(int value)
 	return "";
 }
 
+/*
 function SetStatTooltip(GFx_Tooltip tooltip, array<float> valueList, float ignoreValue, optional float weight = -1)
 {
 	local string statString;
@@ -1121,7 +1036,7 @@ function SetStatTooltip(GFx_Tooltip tooltip, array<float> valueList, float ignor
 	}
 	
 	tooltip.SetTooltipBody(statString);
-}
+}*/
 
 function string TruncTo(string Str, int Places)
 {
@@ -1167,9 +1082,9 @@ defaultproperties
 	
 	RightLight=RL
 
-	MovieInfo=SwfMovie'ArenaUI.WeaponLockerUI'
+	MovieInfo=SwfMovie'ArenaUI.WeaponEditor'
 	Rotation=()
-	WeaponOffset=(X=0,Y=30,Z=128)
+	WeaponOffset=(X=0,Y=0,Z=128)
 	WeaponScale=0.5
 	SpinRate=0.05
 	HighlightPulseRate=2.5

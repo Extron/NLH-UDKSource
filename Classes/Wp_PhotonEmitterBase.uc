@@ -6,12 +6,13 @@
 	<!-- $Id: NewClass.uc,v 1.1 2004/03/29 10:39:26 elmuerte Exp $ -->
 *******************************************************************************/
 
-class Wp_PhotonEmitterBase extends ArenaWeaponBase;
+class Wp_PhotonEmitterBase extends Wp_PhotonEmitter;
 
 defaultproperties
 {
 	Begin Object Name=FirstPersonMesh
 		SkeletalMesh=SkeletalMesh'PhotonEmitter.Meshes.PhotonEmitterBase'
+		Scale=0.5
 	End Object
 	
 	Begin Object Name=NewStats
@@ -33,6 +34,7 @@ defaultproperties
 	InstantHitDamageTypes[0]=class'Arena.Dmg_LightBeam'
 	InstantHitMomentum[0]=500
 	FireModes[0]=FMSemiAuto
+	AllowedFireModes[0]=FMSemiAuto
 	CycleTime=0.15
 	BurstCount=3
 	

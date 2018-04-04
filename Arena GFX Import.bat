@@ -1,1 +1,1 @@
-C:\UDK\UDK-2012-05\Binaries\Win32\UDK.exe gfximport
+..\..\..\Binaries\Win32\UDK.exe gfximport

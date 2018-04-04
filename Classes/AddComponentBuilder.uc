@@ -1,17 +1,12 @@
 /*******************************************************************************
-	AC_Shirt
+	AddComponentBuilder
 
-	Creation date: 15/05/2014 08:19
+	Creation date: 26/12/2014 03:32
 	Creator: Trystan
 	Copyright (c) 2014, Strange Box Software
 *******************************************************************************/
 
-/**
- * A wearable shirt that provides the user no benefit other than aesthetic customization.
- */
-class AC_Shirt extends ArmorComponent;
+class AddComponentBuilder extends BrushBuilder;
 
-defaultproperties
-{	
-	Type=ACTUpperBody
-}
+var() ActorComponent NewComponent<DisplayName=New Component>;
+

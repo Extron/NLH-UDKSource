@@ -7,7 +7,7 @@
 *******************************************************************************/
 
 class GFx_CharacterView extends GFx_Menu
-	dependson(PlayerData, Pawn_HeadData);
+	dependson(PlayerData, Pawn_HeadData, ArenaWeapon);
 
 const NativeWidth = 1600;
 const NativeHeight = 900;
@@ -16,7 +16,7 @@ const InfoBoxHeight = 544;
 const AspectRatio = 1.777777778;
 const Far = 100;
 const Near = 1;
-const InfoBoxCount = 6;
+const InfoBoxCount = 7;
 
 struct InfoBoxContainer
 {
@@ -57,6 +57,11 @@ var PlayerFigure Figure;
  * The character data that the player is currently editing.
  */
 var LoadoutData Character;
+
+/**
+ * Allows a submenu to be displayed on top of this one.
+ */
+var GFx_Menu Submenu;
 
 /**
  * The menu's cursor.
@@ -218,8 +223,6 @@ function bool Start(optional bool StartPaused = false)
 	
 	Cursor = GetVariableObject("_root.cursor");
 	
-	BuildCharacterProfile();
-	
 	Pawn.Controller.GetPlayerViewPoint(playerViewLoc, playerViewRot);
 
 	Figure = Pawn.Spawn(class'Arena.PlayerFigure', , , Pawn.Location + (FigureLocation >> Pawn.Controller.Rotation), Pawn.Controller.Rotation, , true);
@@ -308,6 +311,17 @@ function bool Start(optional bool StartPaused = false)
 	InfoBoxes[5].ActiveFigureRotation = rot(0, -32768, 0);
 	InfoBoxes[5].ActiveFigureScale = 1.40;
 	InfoBoxes[5].AllowFigureRotation = true;
+	
+	InfoBoxes[6].Display.Socket = 'PrimaryWeaponInfoSocket';
+	InfoBoxes[6].Display.InfoBoxGFx.SetTitle("Weapon");
+	InfoBoxes[6].Display.InfoBoxGFx.SetSubtitle(Figure.Weapons[0].WeaponName);
+	InfoBoxes[6].ActiveFigureLocation = vect(-15, 0, -45);
+	InfoBoxes[6].ActiveFigureRotation = rot(0, 16384, 0);;
+	InfoBoxes[6].ActiveFigureScale = 1.40;
+	InfoBoxes[6].AllowFigureRotation = false;
+	InfoBoxes[6].Display.PopulateData = PopulateWeaponData;
+	InfoBoxes[6].Display.InfoBoxGFx.OnDetailsButtonPressed = WeaponDetailsButtonPressed;
+	InfoBoxes[6].Display.Layout = "Weapon Layout";
 	
 	return true;
 }
@@ -401,6 +415,23 @@ function PostRender()
 function LookUp(out vector loc, out rotator rot)
 {
 	rot.Pitch = 16384 * FMin(LookUpCounter / LookUpTime, 1.0);
+}
+
+function SetFigureVisibility(bool visible)
+{
+	local int i;
+	
+	Figure.Avatar.SetVisibility(visible);
+	
+	if (ActiveInfoBox < 0)
+	{
+		for (i = 0; i < InfoBoxCount; i++)
+			InfoBoxes[i].Display.SetHidden(!visible);
+	}
+	else
+	{
+		InfoBoxes[ActiveInfoBox].Display.SetHidden(!visible);
+	}
 }
 
 event OnMouseMove()
@@ -933,161 +964,72 @@ function PopulateRightLegData(GFxObject data, GFx_InformationBox sender)
 	}
 }
 
-
-function BuildCharacterProfile()
+function PopulateWeaponData(GFxObject data, GFx_InformationBox sender)
 {
-	local GFxObject classInfo, stats;
-	local GFxObject equippedAbilities;
-	local GFxObject ability;
-	local GFxObject stat;
-	local string charType;
-	local array<string> statNames;
+	local GFxObject componentsArray, componentObject, attributesArray, attributeObject;
+	local ArenaWeaponBase weapon;
 	local int i;
 	
-	statNames[0] = "Weight"; statNames[1] = "Mobility";  statNames[2] = "Accuracy";  statNames[3] = "Stability";  statNames[4] = "Movement";  statNames[5] = "Health";  statNames[6] = "Energy"; 
+	weapon = ArenaWeaponBase(Figure.Weapons[0]);
+	data.SetString("type", Figure.Weapons[0].GetWeaponTypeStr());
+
+	componentsArray = sender.CreateArray();
 	
-	classInfo = CreateObject("Object");
-	equippedAbilities = CreateArray();
+	componentObject = sender.CreateObject("Object");
 	
-	`log("Character Loadout" @ Character.CharacterName);
+	componentObject.SetString("category", "Base");
+	componentObject.SetString("name", ArenaWeaponBase(Figure.Weapons[0]).BaseName);
 	
-	if (Character.AbilityClass == class'Arena.PC_Electricity')
+	componentsArray.SetElementObject(0, componentObject);
+	
+	for (i = 0; i < ArenaWeaponBase(Figure.Weapons[0]).WeaponComponents.Length; i++)
 	{
-		charType = "Tempest";
-		classInfo.SetString("className", "Electricity");
-	}
-	else if (Character.AbilityClass == class'Arena.PC_Water')
-	{
-		charType = "Lamentia";
-		classInfo.SetString("className", "water");
-	}
-	else if (Character.AbilityClass == class'Arena.PC_Earth')
-	{
-		charType = "Solus";
-		classInfo.SetString("className", "earth");
-	}
-		 
-	for (i = 0; i < Character.EquippedAbilities.Length; i++)
-	{
-		ability = CreateObject("Object");
+		componentObject = sender.CreateObject("Object");
+	
+		componentObject.SetString("category", GetComponentType(ArenaWeaponBase(Figure.Weapons[0]).WeaponComponents[i]));
+		componentObject.SetString("name", ArenaWeaponBase(Figure.Weapons[0]).WeaponComponents[i].ComponentName);
 		
-		ability.SetString("ability", Character.EquippedAbilities[i].default.AbilityName);
-		ability.SetFloat("cost", Character.EquippedAbilities[i].default.EnergyCost);
-		ability.SetFloat("cooldown", Character.EquippedAbilities[i].default.CoolDown);
-		ability.SetString("description", Character.EquippedAbilities[i].default.AbilityDescription);
-		ability.SetString("imgSrc", "img://" $ Character.EquippedAbilities[i].default.AbilityIcon);
-		
-		equippedAbilities.SetElementObject(i, ability);
+		if (weapon.WeaponComponents[i].IsA('Wp_SideAttachment') || weapon.WeaponComponents[i].IsA('Wp_UnderAttachment') || weapon.WeaponComponents[i].IsA('Wp_Optics'))
+			componentObject.SetBool("attachment", true);
+		else
+			componentObject.SetBool("attachment", false);
+			
+		componentsArray.SetElementObject(i + 1, componentObject);
 	}
 	
-	classInfo.SetObject("equippedAbilities", equippedAbilities);
+	data.SetObject("parts", componentsArray);
 	
-	SetClassInfo(classInfo);
-	SetCharacter(Character.CharacterName, charType, Character.Level);
-	SetXP(Character.XP, ArenaPlayerController(Pawn.Controller).ComputeNextLevelXP(Character.Level));
+	attributesArray = sender.CreateArray();
 	
-	BuildPrimanyWeaponInfo();
 	
-	stats = CreateArray();
+	attributeObject = sender.CreateObject("Object");
 	
-	for (i = 0; i < 7; i++)
-	{
-		stat = CreateObject("Object");
-		
-		stat.SetString("statName", statNames[i]);
-		stat.SetFloat("statValue", class'Arena.GlobalGameConstants'.static.GetStatDefault(statNames[i]) * Character.AbilityClass.default.Mod.ValueMods[class'Arena.PlayerStats'.static.GetStatEnum(statNames[i])]);
-		stat.SetFloat("statDefault", class'Arena.GlobalGameConstants'.static.GetStatDefault(statNames[i]));
-		
-		stats.SetElementObject(i, stat);
-	}
+	attributeObject.SetString("name", "Magazine Size:");
+	attributeObject.SetString("value", string(weapon.MaxClip));
+	attributesArray.SetElementObject(0, attributeObject);
 	
-	SetStats(stats);
+	
+	attributeObject = sender.CreateObject("Object");
+	
+	attributeObject.SetString("name", "Fire Mode:");
+	attributeObject.SetString("value", Figure.Weapons[0].GetFireModeStr());
+	attributesArray.SetElementObject(1, attributeObject);
+	
+	
+	data.SetObject("attributes", attributesArray);
 }
 
-function BuildClassInfo()
+function WeaponDetailsButtonPressed(string buttonName)
 {
-	local GFxObject classInfo;
-	local GFxObject equippedAbilities;
-	local GFxObject ability;
-	local int i;
+	local string weapon;
 	
-	classInfo = CreateObject("Object");
-	equippedAbilities = CreateArray();
-	
-	if (Character.AbilityClass == class'Arena.PC_Electricity')
-		classInfo.SetString("className", "Electricity");
-	else if (Character.AbilityClass == class'Arena.PC_Water')
-		classInfo.SetString("className", "water");
-	else if (Character.AbilityClass == class'Arena.PC_Earth')
-		classInfo.SetString("className", "earth");
-		 
-	for (i = 0; i < Character.EquippedAbilities.Length; i++)
+	if (buttonName == "Edit Weapon")
 	{
-		ability = CreateObject("Object");
-		
-		ability.SetString("ability", Character.EquippedAbilities[i].default.AbilityName);
-		ability.SetFloat("cost", Character.EquippedAbilities[i].default.EnergyCost);
-		ability.SetFloat("cooldown", Character.EquippedAbilities[i].default.CoolDown);
-		ability.SetString("description", Character.EquippedAbilities[i].default.AbilityDescription);
-		ability.SetString("imgSrc", "img://" $ Character.EquippedAbilities[i].default.AbilityIcon);
-		
-		equippedAbilities.SetElementObject(i, ability);
-	}
-	
-	classInfo.SetObject("equippedAbilities", equippedAbilities);
-	
-	SetClassInfo(classInfo);
-}
-
-function BuildPrimanyWeaponInfo()
-{
-	local WeaponSchematicData schematic, nullData;
-	local GFxObject weapSchem;
-	local GFxObject baseObj;
-	local GFxObject componentArray;
-	local GFxObject component;
-	local int i, index;
-	
-	schematic = ArenaPlayerController(Pawn.Controller).GetWeapon(Character.PrimaryWeaponName);
-	
-	if (schematic == nullData)
-		return;
-		
-	weapSchem = CreateObject("Object");
-	
-	weapSchem.SetString("weapName", schematic.WeaponName);
-	
-	baseObj = CreateObject("Object");
-	
-	baseObj.SetString("baseName", schematic.BaseClass.default.BaseName);
-	baseObj.SetString("icon", "img://" $ schematic.BaseClass.default.BaseIcon);
-	
-	componentArray = CreateArray();
-	
-	index = 0;
-	
-	for (i = 0; i < schematic.Components.Length; i++)
-	{
-		if (schematic.Components[i] == None)
-			continue;
-		
-		if (DisplayComponentType(schematic.Components[i]))
-		{
-			component = CreateObject("Object");
+		if (ActiveInfoBox == 6)
+			weapon = Figure.Weapons[0].WeaponName;
 			
-			component.SetString("compType", GetComponentType(schematic.Components[i]));
-			component.SetString("compName", schematic.Components[i].default.ComponentName);
-			component.SetString("icon", "img://" $ schematic.Components[i].default.ComponentIcon);
-			
-			componentArray.SetElementObject(index, component);
-			index++;
-		}
+		GotoWeaponEditorMenu(weapon);
 	}
-	
-	weapSchem.SetObject("baseComp", baseObj);
-	weapSchem.SetObject("components", componentArray);
-	
-	SetPrimaryWeapon(weapSchem);
 }
 
 function vector ProjectPosition(vector pos)
@@ -1121,16 +1063,6 @@ function ButtonClicked(string label)
 		LookDirection = -1;
 		LookUpCounter = LookUpTime;
 	}
-	else if (label == "Equip Ability")
-	{
-		OnClose = GotoAbilitiesMenu;
-		CloseMenu();
-	}
-	else if (label == "Edit Weapon")
-	{
-		OnClose = GotoWeaponEditorMenu;
-		CloseMenu();
-	}
 }
 
 function CancelButtonClicked()
@@ -1157,7 +1089,7 @@ function CreateNewWeaponSchematic()
 	
 	ArenaPlayerController(Pawn.Controller).AddWeaponSchematic(newWeap);
 	SelectedWeapon = newWeap.WeaponName;
-	OnClose = GotoWeaponEditorMenu;
+	//OnClose = GotoWeaponEditorMenu;
 	NewWeapon = true;
 	CloseMenu();
 }
@@ -1166,22 +1098,19 @@ function EditWeaponSchematic(string weapon)
 {
 	NewWeapon = false;
 	SelectedWeapon = weapon;
-	OnClose = GotoWeaponEditorMenu;
+	//OnClose = GotoWeaponEditorMenu;
 	CloseMenu();
 }
 
 function SelectWeaponSchematic(string weapon)
 {
 	Character.PrimaryWeaponName = weapon;
-	BuildPrimanyWeaponInfo();
 	DispatchPopupClose();
 }
 
 function RemoveAbility(int abilityIndex)
 {
 	Character.EquippedAbilities.Remove(abilityIndex, 1);
-	
-	BuildClassInfo();
 }
 
 function OpenComponentList(GFxObject componentList, int selectedComponent)
@@ -1201,6 +1130,8 @@ function CloseMenu()
 
 function PlayOpenAnimation()
 {
+	SetFigureVisibility(true);
+	
 	ActionScriptVoid("_root.OpenMenu");
 }
 
@@ -1262,8 +1193,10 @@ function GotoAbilitiesMenu()
 	Pawn.SetMenu(menu);
 }
 
-
-function GotoWeaponEditorMenu()
+/**
+ * Opens the weapon editor menu for the specific weapon, as determined by the weapon's name.
+ */
+function GotoWeaponEditorMenu(string weapon)
 {
 	local GFx_WeaponEditor menu;
 
@@ -1271,14 +1204,15 @@ function GotoWeaponEditorMenu()
 	menu.bEnableGammaCorrection = FALSE;
 	menu.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerController(Pawn.Controller).Player));
 	menu.SetTimingMode(TM_Real);
-	menu.WeaponData = ArenaPlayerController(Pawn.Controller).GetWeapon(SelectedWeapon);
+	menu.WeaponData = ArenaPlayerController(Pawn.Controller).GetWeapon(weapon);
 	menu.Parent = self;
-	//menu.Character = Character;
 	
 	if (NewWeapon)
 		menu.ChangedWeapon = true;
 		
 	ArenaPlayerController(Pawn.Controller).OnSetPlayerViewpoint = None;
+	
+	SetFigureVisibility(false);
 	
 	menu.Start();
 	menu.PlayOpenAnimation();
@@ -1319,20 +1253,50 @@ function array<string> GetWeaponLibrary()
 	return ArenaPlayerController(Pawn.Controller).GetWeapons();
 }
 
-function string GetComponentType(class<ArenaWeaponComponent> component)
+function string GetWeaponType(WeaponType type)
 {
-	if (class<Wp_Stock>(component) != None)
-		return "Stock:";
-	else if (class<Wp_Barrel>(component) != None)
-		return "Barrel:";
-	else if (class<Wp_Muzzle>(component) != None)
-		return "Muzzle:";
-	else if (class<Wp_Optics>(component) != None)
-		return "Optics:";
-	else if (class<Wp_UnderAttachment>(component) != None)
-		return "Under Attachment:";
-	else if (class<Wp_SideAttachment>(component) != None)
-		return "Side Attachment:";
+	switch (type)
+	{
+	case WTRifle:
+		return "Mechanical Driver";
+		break;
+		
+	case WTRocketLauncher:
+		return "Rocket Launcher";
+		break;
+		
+	case WTHardLightRifle:
+		return "Photon Emitter";
+		break;
+		
+	case WTBeamRifle:
+		return "Beam Rifle";
+		break;
+		
+	case WTPlasmaRifle:
+		return "Plasma Torch";
+		break;
+		
+	case WTRailGun:
+		return "Rail Gun";
+		break;
+	}
+}
+
+function string GetComponentType(ArenaWeaponComponent component)
+{
+	if (Wp_Stock(component) != None)
+		return "Stock";
+	else if (Wp_Barrel(component) != None)
+		return "Barrel";
+	else if (Wp_Muzzle(component) != None)
+		return "Muzzle";
+	else if (Wp_Optics(component) != None)
+		return "Optics";
+	else if (Wp_UnderAttachment(component) != None)
+		return "Under Attachment";
+	else if (Wp_SideAttachment(component) != None)
+		return "Side Attachment";
 	else
 		return "";
 }

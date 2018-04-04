@@ -27,6 +27,7 @@
 		public var titleText:String;
 		public var subtitleText:String;
 		public var cursor:MenuCursor;
+		public var weaponDetails:WeaponDetails;
 		
 		var prevOverObjects:Array;
 		var prevOverObject:Object;

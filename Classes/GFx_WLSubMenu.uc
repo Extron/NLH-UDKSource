@@ -240,8 +240,8 @@ function OnMouseHover(GFxClikWidget.EventData ev)
 		currBase = ArenaWeaponBase(Parent.Weapon);
 		selectedBase = ComponentLibrary.ValidBases[ComponentLibrary.CurrentType].Bases[index];
 		
-		Tooltip.SetTooltipDesc(selectedBase.default.BaseDescription);
-		Tooltip.ClearStats();
+		Tooltip.SetTooltipDescription(selectedBase.default.BaseDescription);
+		//Tooltip.ClearStats();
 		
 		for (i = 0; i < 9; i++)
 		{
@@ -249,7 +249,7 @@ function OnMouseHover(GFxClikWidget.EventData ev)
 			{
 				diff = selectedBase.default.Stats.Values[i] - Base.Stats.Values[i];
 				
-				Tooltip.AddTooltipStat(GetStatName(i), selectedBase.default.Stats.Values[i], diff);
+				//Tooltip.AddTooltipStat(GetStatName(i), selectedBase.default.Stats.Values[i], diff);
 			}
 		}
 		
@@ -262,8 +262,8 @@ function OnMouseHover(GFxClikWidget.EventData ev)
 	{
 		baseComponent = GetBaseComponent(Component);
 		
-		Tooltip.SetTooltipDesc(ComponentLibrary.ValidComponents[index].default.ComponentDescription);
-		Tooltip.ClearStats();
+		Tooltip.SetTooltipDescription(ComponentLibrary.ValidComponents[index].default.ComponentDescription);
+		//Tooltip.ClearStats();
 		
 		for (i = 0; i < 9; i++)
 		{
@@ -271,7 +271,7 @@ function OnMouseHover(GFxClikWidget.EventData ev)
 			{
 				diff = ComponentLibrary.ValidComponents[index].default.StatMod.ValueMods[i] - Component.StatMod.ValueMods[i];
 				
-				Tooltip.AddTooltipStat(GetStatName(i), ComponentLibrary.ValidComponents[index].default.StatMod.ValueMods[i], diff);
+				//Tooltip.AddTooltipStat(GetStatName(i), ComponentLibrary.ValidComponents[index].default.StatMod.ValueMods[i], diff);
 			}
 		}
 		

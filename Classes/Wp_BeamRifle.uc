@@ -325,8 +325,8 @@ defaultproperties
 	WeaponFireTypes[0]=EWFT_Custom
 	InstantHitDamageTypes[0]=class'Arena.Dmg_Beam'
 	InstantHitMomentum[0]=100
-	AllowedFireModes[0]=FMFullAuto
-	FireModes[0]=FMFullAuto
+	AllowedFireModes[0]=FMBeam
+	FireModes[0]=FMBeam
 	Mode=0
 	CycleTime=0.25
 	BurstCount=3

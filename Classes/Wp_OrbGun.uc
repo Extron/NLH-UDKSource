@@ -8,27 +8,20 @@
 
 class Wp_OrbGun extends ArenaWeapon;
 
-simulated function EmitIHBeam(vector hitLocation)
+simulated function EmitIHBeam(ImpactInfo impact)
 {
-	local vector l;
-	local rotator r;
+	local ParticleSystemComponent beam;
 	
 	if (WorldInfo.NetMode != NM_DedicatedServer && IHBeamTemplate != None)
 	{
-		GetMuzzleSocketLocRot(l, r);		
-		
-		`log("Hit lotation:" @ hitLocation @ "Source" @ l);
-		
-		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
-		IHBeam.SetAbsolute(false, false, false);
-		IHBeam.SetVectorParameter('HitLocation', hitLocation);
-		IHBeam.SetVectorParameter('SourceLocation', l);
-		IHBeam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
-		IHBeam.bUpdateComponentInTick = true;
-		//AttachComponent(IHBeam);
+		beam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, impact.StartTrace);
+		beam.SetAbsolute(false, false, false);
+		beam.SetVectorParameter('HitLocation', impact.HitLocation);
+		beam.SetVectorParameter('SourceLocation', impact.StartTrace);
+		beam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
+		beam.bUpdateComponentInTick = true;
 	}
 }
-
 /**
  * Computes the location of the muzzle socket for the weapon.  Is designed to be overridden in subclasses.
  */

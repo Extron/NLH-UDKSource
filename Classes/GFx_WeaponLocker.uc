@@ -335,7 +335,7 @@ function PostRender()
 			SetStatTooltip(StatTooltip, iter.StatMod.ValueMods, 1, iter.Weight);
 			
 			PartTooltip.SetTooltipTitle(iter.ComponentName);
-			PartTooltip.SetTooltipBody(iter.ComponentDescription);
+			PartTooltip.SetTooltipDescription(iter.ComponentDescription);
 			
 			hit = true;
 			
@@ -355,7 +355,7 @@ function PostRender()
 		SetStatTooltip(StatTooltip, Weapon.default.Stats.Values, -1);
 		
 		PartTooltip.SetTooltipTitle(ArenaWeaponBase(Weapon).BaseName);
-		PartTooltip.SetTooltipBody(ArenaWeaponBase(Weapon).BaseDescription);
+		PartTooltip.SetTooltipDescription(ArenaWeaponBase(Weapon).BaseDescription);
 		
 		hit = true;
 	}
@@ -1113,7 +1113,7 @@ function SetStatTooltip(GFx_Tooltip tooltip, array<float> valueList, float ignor
 			statString = statString @ GetStatName(i) $ ":" @ valueList[i] $ "\n";
 	}
 	
-	tooltip.SetTooltipBody(statString);
+	tooltip.SetTooltipDescription(statString);
 }
 
 function string TruncTo(string Str, int Places)

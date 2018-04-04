@@ -32,6 +32,7 @@ var array<ArmorComponent> Armor;
  */
 var array<ClothingComponent> Clothes;
 
+
 simulated function Destroyed()
 {
 	local int i;
@@ -363,4 +364,18 @@ function SetFOV(float angle)
 		
 	for (i = 0; i < Clothes.Length; i++)
 		Clothes[i].SetFOV(angle);
+}
+
+function SetVisibility(bool visible)
+{
+	local int i;
+	
+	for (i = 0; i < BodyParts.Length; i++)
+		BodyParts[i].SetHidden(!visible);
+		
+	for (i = 0; i < Armor.Length; i++)
+		Armor[i].SetHidden(!visible);
+		
+	for (i = 0; i < Clothes.Length; i++)
+		Clothes[i].SetHidden(!visible);
 }

@@ -1,1 +1,1 @@
-C:\UDK\UDK-2012-05\Binaries\Win32\UDK.exe AlphaTesting_Pillars_New?listen?GoalScore=0?TimeLimit=0?Game=Arena.GI_BotBattle -log -wxwindows
+..\..\..\Binaries\Win32\UDK.exe AlphaTesting_Pillars_New?listen?GoalScore=0?TimeLimit=0?Game=Arena.GI_BotBattle -log -wxwindows

@@ -212,7 +212,6 @@ function ReturnToCharacterView()
 	GFx_AbilitiesMenu(Parent).Character = Character;
 	
 	GFx_AbilitiesMenu(Parent).GoBack();
-	GFx_CharacterView(GFx_AbilitiesMenu(Parent).Parent).BuildClassInfo();
 	ArenaPlayerController(Pawn.Controller).OnSetPlayerViewpoint = GFx_CharacterView(GFx_AbilitiesMenu(Parent).Parent).LookUp;
 }
 

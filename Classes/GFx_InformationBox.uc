@@ -26,6 +26,8 @@ delegate OnDropdownSelectionChanged(string featureName, int selection);
 
 delegate OnEquipSlot(string slotName);
 
+delegate OnDetailsButtonPressed(string buttonName);
+
 function bool Start(optional bool StartPaused = false)
 {
 	super.Start(StartPaused);
@@ -131,6 +133,11 @@ function DropdownSelectionChanged(string featureName, int selection)
 function EquipSlot(string slotName)
 {
 	if (OnEquipSlot != None) OnEquipSlot(slotName);
+}
+
+function DetailsButtonPressed(string buttonName)
+{
+	if (OnDetailsButtonPressed != None) OnDetailsButtonPressed(buttonName);
 }
 
 defaultproperties

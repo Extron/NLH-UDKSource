@@ -13,22 +13,12 @@ function SetTooltipTitle(string titleString)
 	ActionScriptVoid("SetTooltipTitle");
 }
 
-function SetTooltipBody(string bodyString)
+function SetTooltipDescription(string bodyString)
 {
 	ActionScriptVoid("SetTooltipBody");
 }
 
-function SetTooltipDesc(string desc)
+function SetStats(string stats)
 {
-	ActionScriptVoid("SetTooltipDesc");
-}
-
-function AddTooltipStat(string n, float val, float diff)
-{
-	ActionScriptVoid("AddTooltipStat");
-}
-
-function ClearStats()
-{
-	ActionScriptVoid("ClearStats");
+	ActionScriptVoid("SetStats");
 }

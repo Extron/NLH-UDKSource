@@ -57,16 +57,24 @@ var AnimSet WeaponAnimSet;
  */
 var AnimSet PlayerAnimSet;
 
-/** A list of names of the reload animations to use when the weapon reloads. */
+/**
+ * A list of names of the reload animations to use when the weapon reloads.
+ */
 var array<name> ReloadAnims;
 
-/** A list of names of animations to use when cycling the weapon's bolt. */
+/**
+ * A list of names of animations to use when cycling the weapon's bolt. 
+ */
 var array<name> CycleAnims;
 
-/** The animations to play when firing the weapon. */
+/**
+ * The animations to play when firing the weapon. 
+ */
 var array<name> FireAnims;
 
-/** A list of animations to play from when the weapon is being equipped. */
+/** 
+ * A list of animations to play from when the weapon is being equipped. 
+ */
 var array<name> EquipAnims;
 
 /**
@@ -89,16 +97,24 @@ var array<FireMode> AllowedFireModes;
  */
 var UDKSkeletalMeshComponent ClipMesh;
 
-/** The type of the weapon, which determines what kind of projectile the weapon fires and what components can be used on it. */
+/**
+ * The type of the weapon, which determines what kind of projectile the weapon fires and what components can be used on it. 
+ */
 var WeaponType Type;
 
-/** The size of the weapon.  This determines pojectile size and power, and what components can be used on it. */
+/**
+ * The size of the weapon.  This determines pojectile size and power, and what components can be used on it. 
+ */
 var WeaponSize Size;
 
-/** The stats of the weapon. */
+/**
+ * The stats of the weapon. 
+ */
 var WeaponStats Stats;
 
-/** The sound of the ability firing. */
+/** 
+ * The sound of the ability firing. 
+ */
 var SoundCue FireSound;
 
 /**
@@ -106,7 +122,9 @@ var SoundCue FireSound;
  */
 var SoundCue CycleSound;
 
-/** The weapon's fire mode. */
+/** 
+ * The weapon's fire mode. 
+ */
 var int Mode;
  
 /**
@@ -129,16 +147,24 @@ var ParticleSystemComponent MuzzleFlash;
  */
 var	UDKExplosionLight MuzzleFlashLight;
 
-/** The weapon's offset on the screen. */
+/**
+ * The weapon's offset on the screen.
+ */
 var vector ViewOffset;
 
-/** The recoil acceleration. */
+/**
+ * The recoil acceleration.
+ */
 var vector RecoilAccel;
 
-/** The recoil velocity. */
+/**
+ * The recoil velocity. 
+ */
 var vector RecoilVel;
 
-/** The recoil position. */
+/** 
+ * The recoil position. 
+ */
 var vector RecoilPos;
 
 /**
@@ -146,7 +172,9 @@ var vector RecoilPos;
  */
 var vector SweepExtent;
 
-/** The name of the weapon. */
+/** 
+ * The name of the weapon. 
+ */
 var string WeaponName;
 
 /**
@@ -155,8 +183,10 @@ var string WeaponName;
  */
 var float BaseDamage;
 
-/** This keeps track of the inaccuracy of the weapon caused by firing it.  It will increase the more the 
-    weapon is fired, and will only decrease once the weapon is not fired for a short time. */ 
+/** 
+ * This keeps track of the inaccuracy of the weapon caused by firing it.  It will increase the more the 
+ *  weapon is fired, and will only decrease once the weapon is not fired for a short time. 
+ */ 
 var float Bloom;
 
 /** 
@@ -185,10 +215,14 @@ var float SweepRange;
  */
 var float IdealRange;
 
-/** Indicates that the weapon is reloading. */
+/** 
+ * Indicates that the weapon is reloading. 
+ */
 var bool Reloading;
 
-/** Indicates that the weapon is being equipped. */
+/** 
+ * Indicates that the weapon is being equipped. 
+ */
 var bool Equipping;
 
 /**
@@ -216,19 +250,29 @@ var int BurstCount;
  */
 var int BulletsFired;
 
-/** The max amount of ammo the player can carry for this weapon. */
+/** 
+ * The max amount of ammo the player can carry for this weapon.
+ */
 var int MaxAmmo;
 
-/** The current amount of ammo the player has for the weapon. */
+/** 
+ * The current amount of ammo the player has for the weapon.
+ */
 var int Ammo;
 
-/** The max amount of ammo per clip for the weapon. */
+/**
+ * The max amount of ammo per clip for the weapon.
+ */
 var int MaxClip;
 
-/** The amount of ammo left in the current clip. */
+/** 
+ * The amount of ammo left in the current clip.
+ */
 var int Clip;
 
-/** The amount of ammo that is used in one shot.  This is largely only used if the weapon is a burst fire weapon. */
+/**
+ * The amount of ammo that is used in one shot.  This is largely only used if the weapon is a burst fire weapon. 
+ */
 var int AmmoPerShot;
 
 var bool StatsInitialized;
@@ -320,7 +364,8 @@ simulated function FireAmmunition()
 	if (EndedFire)
 		return;
 
-	if (FireModes[Mode] == FMFullAuto || (FireModes[Mode] == FMSemiAuto && BulletsFired < 1) || (FireModes[Mode] == FMBurst && BulletsFired < BurstCount) || (FireModes[Mode] == FMBoltAction && !Cycling))
+	if (FireModes[Mode] == FMFullAuto || FireModes[Mode] == FMBeam || (FireModes[Mode] == FMSemiAuto && BulletsFired < 1) ||
+	    (FireModes[Mode] == FMBurst && BulletsFired < BurstCount) || (FireModes[Mode] == FMBoltAction && !Cycling))
 	{
 		FireWeapon();
 	
@@ -346,7 +391,7 @@ simulated function bool ShouldRefire()
 	if (EndedFire || Clip <= 0 || Overheated)
 		return false;
 	 
-	if (FireModes[Mode] == FMFullAuto)
+	if (FireModes[Mode] == FMFullAuto || FireModes[Mode] == FMBeam)
 		return true;
 	else if (FireModes[Mode] == FMSemiAuto || FireModes[Mode] == FMBoltAction)
 		return false;
@@ -367,34 +412,40 @@ simulated function float GetFireInterval(byte FireModeNum)
 
 simulated function InstantFire()
 {
-	local vector			StartTrace, EndTrace;
-	local Array<ImpactInfo>	ImpactList;
-	local int				Idx;
-	local ImpactInfo		RealImpact;
+	local vector start, end;
+	local rotator r;
+	local array<ImpactInfo>	impacts;
+	local ImpactInfo initialImpact;
+	local int i;
 
-	// define range to use for CalcWeaponFire()
-	StartTrace = Instigator.GetWeaponStartTraceLocation();
-	EndTrace = (StartTrace + vector(GetAdjustedAim(StartTrace)) * GetTraceRange()); //<< Stats.GetInaccuracyShift();
+	GetMuzzleSocketLocRot(start, r);
+	
+	//start = Instigator.GetWeaponStartTraceLocation();
+	end = (start + vector(GetAdjustedAim(start)) * GetTraceRange()); //<< Stats.GetInaccuracyShift();
 
-	// Perform shot
-	RealImpact = CalcWeaponFire(StartTrace, EndTrace, ImpactList);
+	initialImpact = CalcWeaponFire(start, end, impacts);
 
-	SweepBullet(StartTrace, Normal(EndTrace - StartTrace), SweepExtent, FMin(SweepRange, VSize(RealImpact.HitLocation - StartTrace)));
+	SweepBullet(start, Normal(end - start), SweepExtent, FMin(SweepRange, VSize(initialImpact.HitLocation - start)));
 	
 	if (Role == ROLE_Authority)
 	{
-		SetFlashLocation(RealImpact.HitLocation);	
+		SetFlashLocation(initialImpact.HitLocation);	
 	}
 
-	EmitIHBeam(RealImpact.HitLocation);
+	//EmitIHBeam(RealImpact.HitLocation);
 	
 	if (ArenaPawn(Instigator) != None)
 		InstantHitDamage[0] = ArenaPawn(Instigator).Stats.GetDamageGiven(BaseDamage * Stats.GetDamageModifier(), InstantHitDamageTypes[0]);
 	
-	for (Idx = 0; Idx < ImpactList.Length; Idx++)
-	{
-		ProcessInstantHit(CurrentFireMode, ImpactList[Idx]);
-	}
+	for (i = 0; i < impacts.Length; i++)
+		ProcessInstantHit(CurrentFireMode, impacts[i]);
+}
+
+simulated function ProcessInstantHit(byte FiringMode, ImpactInfo Impact, optional int NumHits)
+{
+	super.ProcessInstantHit(FiringMode, Impact, NumHits);
+	
+	EmitIHBeam(Impact);
 }
 
 simulated function Projectile ProjectileFire()
@@ -589,21 +640,20 @@ simulated function WeaponPlaySound(SoundCue Sound)
  *
  * @param hitLocation - The location where the shot hit.
  */
-simulated function EmitIHBeam(vector hitLocation)
+simulated function EmitIHBeam(ImpactInfo impact)
 {
-	local vector l;
-	local rotator r;
+	local ParticleSystemComponent beam;
 	
 	if (WorldInfo.NetMode != NM_DedicatedServer && IHBeamTemplate != None)
 	{
-		GetMuzzleSocketLocRot(l, r);		
+		`log(self @ "Emitting IH Beam" @ impact.StartTrace @ impact.HitLocation);
 		
-		IHBeam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, l);
-		IHBeam.SetAbsolute(false, false, false);
-		IHBeam.SetVectorParameter('HitLocation', hitLocation);
-		IHBeam.SetVectorParameter('SourceLocation', l);
-		IHBeam.SetLODLevel(WorldInfo.bDropDetail ? 1 : 0);
-		IHBeam.bUpdateComponentInTick = true;
+		beam = WorldInfo.MyEmitterPool.SpawnEmitter(IHBeamTemplate, impact.StartTrace);
+		beam.SetAbsolute(false, false, false);
+		beam.SetVectorParameter('HitLocation', impact.HitLocation);
+		beam.SetVectorParameter('SourceLocation', impact.StartTrace);
+		beam.SetLODLevel(0);
+		beam.bUpdateComponentInTick = true;
 	}
 }
 
@@ -1014,6 +1064,74 @@ simulated function Overheat()
 simulated function CoolDown()
 {
 }
+
+function string GetWeaponTypeStr()
+{
+	switch (Type)
+	{
+	case WTRifle:
+		return "Mechanical Driver";
+		break;
+		
+	case WTRocketLauncher:
+		return "Rocket Launcher";
+		break;
+		
+	case WTHardLightRifle:
+		return "Photon Emitter";
+		break;
+		
+	case WTBeamRifle:
+		return "Beam Rifle";
+		break;
+		
+	case WTPlasmaRifle:
+		return "Plasma Torch";
+		break;
+		
+	case WTRailGun:
+		return "Rail Gun";
+		break;
+	}
+}
+
+function string GetFireModeStr()
+{
+	local string str;
+	local int i;
+	
+	for (i = 0; i < FireModes.Length; i++)
+	{
+		switch (FireModes[i])
+		{
+		case FMBoltAction:
+			str = str @ "Bolt action";
+			break;
+			
+		case FMSemiAuto:
+			str = str @ "Semi-auto";
+			break;
+			
+		case FMBurst:
+			str = str @ string(BurstCount) $ "-round burst";
+			break;
+			
+		case FMFullAuto:
+			str = str @ "Automatic";
+			break;
+			
+		case FMBeam:
+			str = str @ "Continuous";
+			break;
+		}
+		
+		if (i + 1 < FireModes.Length)
+			str = str @ "+";
+	}
+	
+	return str;
+}
+
 
 /**
  * State Reloading
